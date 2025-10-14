@@ -23,7 +23,7 @@ export default function LoginPage() {
     setError("");
     setLoading(true);
 
-    try {      
+    try {
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -49,34 +49,51 @@ export default function LoginPage() {
     <AuthLayout
       title="Welcome Back"
       subtitle="Sign in to your procurement dashboard"
+      background={
+        <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
+          {/* Animated Background Elements */}
+          <div className="absolute inset-0 overflow-hidden">
+            {/* Floating orbs */}
+            <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-blue-500/10 rounded-full blur-3xl animate-float-slow"></div>
+            <div className="absolute top-1/3 right-1/4 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl animate-float-medium"></div>
+            <div className="absolute bottom-1/4 left-1/3 w-80 h-80 bg-indigo-500/10 rounded-full blur-3xl animate-float-slow"></div>
+            
+            {/* Grid pattern */}
+            <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:64px_64px] [mask-image:radial-gradient(ellipse_80%_50%_at_50%_50%,black,transparent)]"></div>
+            
+            {/* Shimmer effect */}
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -skew-x-12 animate-shimmer"></div>
+          </div>
+        </div>
+      }
     >
-      {/* Animated Error Message */}
+      {/* Enhanced Error Message - More Visible */}
       {error && (
         <div 
-          className={`bg-gradient-to-r from-red-500/20 to-orange-500/20 text-red-100 text-sm p-4 rounded-2xl mb-6 text-center border border-red-400/30 backdrop-blur-sm transform transition-all duration-500 ${
+          className={`bg-gradient-to-r from-red-500/40 to-orange-500/40 text-white text-sm p-4 rounded-2xl mb-6 text-center border border-red-300/50 backdrop-blur-sm transform transition-all duration-500 shadow-lg ${
             mounted ? 'translate-y-0 opacity-100 scale-100' : '-translate-y-4 opacity-0 scale-95'
           }`}
         >
           <div className="flex items-center justify-center gap-3">
-            <div className="flex-shrink-0 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center animate-pulse">
-              <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="flex-shrink-0 w-6 h-6 bg-red-500 rounded-full flex items-center justify-center animate-pulse shadow-md">
+              <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
               </svg>
             </div>
-            <span className="font-medium">{error}</span>
+            <span className="font-semibold text-white drop-shadow-sm">{error}</span>
           </div>
         </div>
       )}
 
       <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Email Input with Animation */}
+        {/* Email Input with Enhanced Visibility */}
         <div 
           className={`space-y-2 transform transition-all duration-700 delay-100 ${
             mounted ? 'translate-x-0 opacity-100' : 'translate-x-8 opacity-0'
           }`}
         >
-          <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
-            <div className="w-2 h-2 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-full animate-pulse"></div>
+          <label className="block text-sm font-bold text-white mb-2 flex items-center gap-2">
+            <div className="w-2 h-2 bg-gradient-to-r from-blue-400 to-cyan-400 rounded-full animate-pulse shadow-sm"></div>
             Email Address
           </label>
           <div className="relative group">
@@ -86,25 +103,25 @@ export default function LoginPage() {
               placeholder="you@example.com"
               value={formData.email}
               onChange={handleChange}
-              className="w-full p-4 bg-white border border-gray-200 rounded-2xl focus:outline-none focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-300 shadow-sm hover:shadow-md group-hover:border-blue-300"
+              className="w-full p-4 bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl focus:outline-none focus:ring-4 focus:ring-blue-400/50 focus:border-blue-400 transition-all duration-300 text-white placeholder-white/70 shadow-lg hover:shadow-blue-500/20 group-hover:border-blue-400/50 font-medium"
               required
             />
             <div className="absolute inset-y-0 right-0 flex items-center pr-4">
-              <svg className="w-5 h-5 text-gray-400 group-focus-within:text-blue-500 transition-colors duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-6 h-6 text-blue-300 group-focus-within:text-blue-200 group-hover:text-blue-200 transition-all duration-300 drop-shadow-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
               </svg>
             </div>
           </div>
         </div>
 
-        {/* Password Input with Animation */}
+        {/* Password Input with Enhanced Visibility */}
         <div 
           className={`space-y-2 transform transition-all duration-700 delay-200 ${
             mounted ? 'translate-x-0 opacity-100' : 'translate-x-8 opacity-0'
           }`}
         >
-          <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
-            <div className="w-2 h-2 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full animate-pulse"></div>
+          <label className="block text-sm font-bold text-white mb-2 flex items-center gap-2">
+            <div className="w-2 h-2 bg-gradient-to-r from-purple-400 to-pink-400 rounded-full animate-pulse shadow-sm"></div>
             Password
           </label>
           <div className="relative group">
@@ -114,11 +131,11 @@ export default function LoginPage() {
               placeholder="••••••••"
               value={formData.password}
               onChange={handleChange}
-              className="w-full p-4 bg-white border border-gray-200 rounded-2xl focus:outline-none focus:ring-4 focus:ring-purple-500/20 focus:border-purple-500 transition-all duration-300 shadow-sm hover:shadow-md group-hover:border-purple-300"
+              className="w-full p-4 bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl focus:outline-none focus:ring-4 focus:ring-purple-400/50 focus:border-purple-400 transition-all duration-300 text-white placeholder-white/70 shadow-lg hover:shadow-purple-500/20 group-hover:border-purple-400/50 font-medium"
               required
             />
             <div className="absolute inset-y-0 right-0 flex items-center pr-4">
-              <svg className="w-5 h-5 text-gray-400 group-focus-within:text-purple-500 transition-colors duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-6 h-6 text-purple-300 group-focus-within:text-purple-200 group-hover:text-purple-200 transition-all duration-300 drop-shadow-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
               </svg>
             </div>
@@ -134,21 +151,21 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 text-white py-4 rounded-2xl hover:from-blue-700 hover:via-purple-700 hover:to-indigo-700 transition-all duration-500 font-bold text-lg shadow-lg hover:shadow-xl transform hover:-translate-y-1 disabled:opacity-50 disabled:transform-none disabled:hover:shadow-lg group relative overflow-hidden"
+            className="w-full bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 text-white py-4 rounded-2xl hover:from-blue-500 hover:via-purple-500 hover:to-indigo-500 transition-all duration-500 font-bold text-lg shadow-2xl hover:shadow-3xl transform hover:-translate-y-1 disabled:opacity-50 disabled:transform-none disabled:hover:shadow-2xl group relative overflow-hidden border border-white/30"
           >
             {/* Animated background shine */}
-            <div className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 bg-gradient-to-r from-transparent via-white/20 to-transparent"></div>
+            <div className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 bg-gradient-to-r from-transparent via-white/30 to-transparent"></div>
             
             {/* Loading State */}
             {loading ? (
               <div className="flex items-center justify-center gap-3">
-                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                <span className="animate-pulse">Signing In...</span>
+                <div className="w-6 h-6 border-3 border-white border-t-transparent rounded-full animate-spin shadow-sm" />
+                <span className="animate-pulse font-semibold">Signing In...</span>
               </div>
             ) : (
-              <span className="relative flex items-center justify-center gap-2">
+              <span className="relative flex items-center justify-center gap-2 font-bold">
                 Access Dashboard
-                <svg className="w-5 h-5 group-hover:translate-x-1 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-6 h-6 group-hover:translate-x-1 transition-transform duration-300 drop-shadow-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
                 </svg>
               </span>
@@ -165,9 +182,9 @@ export default function LoginPage() {
       >
         <a 
           href="/forgot-password" 
-          className="text-gray-600 hover:text-blue-600 font-medium transition-all duration-300 inline-flex items-center gap-2 group hover:underline underline-offset-4"
+          className="text-white/90 hover:text-blue-300 font-semibold transition-all duration-300 inline-flex items-center gap-2 group hover:underline underline-offset-4 hover:scale-105"
         >
-          <svg className="w-4 h-4 group-hover:scale-110 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-5 h-5 group-hover:scale-110 transition-transform duration-300 text-blue-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
           </svg>
           Forgot Password?
@@ -175,20 +192,20 @@ export default function LoginPage() {
         
         <a 
           href="/signup" 
-          className="text-gray-600 hover:text-purple-600 font-medium transition-all duration-300 inline-flex items-center gap-2 group hover:underline underline-offset-4"
+          className="text-white/90 hover:text-purple-300 font-semibold transition-all duration-300 inline-flex items-center gap-2 group hover:underline underline-offset-4 hover:scale-105"
         >
           Create Account
-          <svg className="w-4 h-4 group-hover:translate-x-1 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-5 h-5 group-hover:translate-x-1 transition-transform duration-300 text-purple-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
           </svg>
         </a>
       </div>
+    
 
-      {/* Decorative Animated Elements */}
-      <div className="absolute top-6 right-6 w-16 h-16 bg-blue-500/10 rounded-full animate-bounce delay-1000"></div>
-      <div className="absolute bottom-6 left-6 w-12 h-12 bg-purple-500/10 rounded-full animate-pulse delay-1500"></div>
-      <div className="absolute top-1/4 left-8 w-8 h-8 bg-cyan-500/10 rounded-full animate-ping delay-2000"></div>
-            
+      {/* Enhanced Decorative Animated Elements */}
+      <div className="absolute top-6 right-6 w-20 h-20 bg-blue-400/30 rounded-full animate-bounce delay-1000 backdrop-blur-sm shadow-lg"></div>
+      <div className="absolute bottom-6 left-6 w-16 h-16 bg-purple-400/30 rounded-full animate-pulse delay-1500 backdrop-blur-sm shadow-lg"></div>
+      <div className="absolute top-1/4 left-8 w-10 h-10 bg-cyan-400/30 rounded-full animate-ping delay-2000 shadow-lg"></div>
     </AuthLayout>
   );
 }
