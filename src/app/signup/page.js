@@ -163,8 +163,9 @@ export default function SignupPage() {
             className="w-full p-4 bg-white border border-gray-200 rounded-2xl focus:outline-none focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-300 shadow-sm hover:shadow-md"
           />
           <p className="text-xs text-gray-500 italic">
-            Leave blank if you're a vendor.
-          </p>
+             Leave blank if you&apos;re a vendor.
+            </p>
+
         </div>
 
         {/* Intended Role Dropdown (Only for Staff Code) */}
