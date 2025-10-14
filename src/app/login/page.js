@@ -188,20 +188,7 @@ export default function LoginPage() {
       <div className="absolute top-6 right-6 w-16 h-16 bg-blue-500/10 rounded-full animate-bounce delay-1000"></div>
       <div className="absolute bottom-6 left-6 w-12 h-12 bg-purple-500/10 rounded-full animate-pulse delay-1500"></div>
       <div className="absolute top-1/4 left-8 w-8 h-8 bg-cyan-500/10 rounded-full animate-ping delay-2000"></div>
-      
-      {/* Quick Access Demo Hint */}
-      <div 
-        className={`mt-8 p-4 bg-gradient-to-r from-gray-50 to-blue-50 rounded-2xl border border-gray-200 transform transition-all duration-700 delay-500 ${
-          mounted ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0'
-        }`}
-      >
-        <div className="flex items-center gap-3 text-sm text-gray-600">
-          <svg className="w-5 h-5 text-blue-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-          <span>Demo: Use your registered credentials to access the dashboard</span>
-        </div>
-      </div>
+            
     </AuthLayout>
   );
 }
