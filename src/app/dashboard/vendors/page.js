@@ -58,7 +58,7 @@ export default function VendorsPage() {
   const fetchVendors = async () => {
     try {
       setLoading(true);
-      const res = await axios.get(`${API_BASE_URL}/vendors`, getAuthHeader());
+      const res = await axios.get(`${API_BASE_URL}/api/vendors`, getAuthHeader());
       setVendors(res.data || []);
     } catch (err) {
       console.error("Vendor fetch error:", err);
