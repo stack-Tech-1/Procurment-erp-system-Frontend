@@ -37,7 +37,16 @@ export default function LoginPage() {
       localStorage.setItem("token", data.token);
       localStorage.setItem("user", JSON.stringify(data.user));
 
-      router.push("/dashboard");
+      //Redirect based on role Id
+      if (data.user.roleId === 1) 
+        router.push("/dashboard");
+      else if (data.user.roleId === 3) 
+        router.push("/vendor-dashboard");
+      else 
+        router.push("/");
+
+
+
     } catch (err) {
       setError(err.message);
     } finally {
