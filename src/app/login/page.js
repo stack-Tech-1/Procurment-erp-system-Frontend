@@ -24,7 +24,7 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/login`, {
+      const res = await fetch("http://localhost:4000/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),
@@ -34,7 +34,7 @@ export default function LoginPage() {
       if (!res.ok) throw new Error(data.message || "Invalid credentials");
 
       // Save token & user
-      localStorage.setItem("token", data.token);
+      localStorage.setItem("authToken", data.token); // Ensure the token is stored with the correct key
       localStorage.setItem("user", JSON.stringify(data.user));
 
       //Redirect based on role Id
@@ -42,9 +42,10 @@ export default function LoginPage() {
         router.push("/dashboard");
       else if (data.user.roleId === 3) 
         router.push("/vendor-dashboard");
+      else if (data.user.roleId === 2)
+        router.push("dashboard");
       else 
         router.push("/");
-
 
 
     } catch (err) {
@@ -209,8 +210,7 @@ export default function LoginPage() {
           </svg>
         </a>
       </div>
-    
-
+      
       {/* Enhanced Decorative Animated Elements */}
       <div className="absolute top-6 right-6 w-20 h-20 bg-blue-400/30 rounded-full animate-bounce delay-1000 backdrop-blur-sm shadow-lg"></div>
       <div className="absolute bottom-6 left-6 w-16 h-16 bg-purple-400/30 rounded-full animate-pulse delay-1500 backdrop-blur-sm shadow-lg"></div>

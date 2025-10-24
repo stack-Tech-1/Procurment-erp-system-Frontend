@@ -1,7 +1,7 @@
 /* ---------- File: src/app/vendor/tracker/page.jsx ---------- */
 "use client";
 import React from 'react';
-import ProposalTrackingTable from '../components/ProposalTrackingTable.client';
+import ProposalTrackingTable from '../components/ProjectExperienceTable.js';
 
 const mockProposals = [
   { id: 'P001', rfqRef: 'RFQ-2024-05-012', title: 'Supply of Cement & Aggregates', date: '2024-09-01', status: 'Pending Review', stage: 'Technical Evaluation' },

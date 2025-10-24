@@ -62,7 +62,7 @@ export default function Sidebar() {
   // 📋 Nav Items
   const navItems = [
     { name: "Dashboard", icon: <Home size={18} />, href: "/dashboard" },
-    { name: "Vendors", icon: <Users size={18} />, href: "/dashboard/vendors" },
+    { name: "Vendors", icon: <Users size={18} />, href: "/dashboard/procurement/vendors" },
     { name: "RFQs", icon: <ClipboardList size={18} />, href: "/rfqs" },
     { name: "Contracts", icon: <FileText size={18} />, href: "/contracts" },
     { name: "IPCs", icon: <FileSignature size={18} />, href: "/ipcs" },
@@ -75,6 +75,14 @@ export default function Sidebar() {
       name: "Approvals",
       icon: <CheckSquare size={18} />,
       href: "/dashboard/admin/approvals",
+    });
+  }
+
+  if (user?.roleId === 1) {
+    navItems.push({
+      name: "User Management",
+      icon: <Users size={18} />,
+      href: "/dashboard/admin/users",
     });
   }
 

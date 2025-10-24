@@ -77,7 +77,7 @@ export default function VendorsPage() {
   const handleAddVendor = async (newVendorData) => {
     setSaving(true);
     try {
-      const res = await axios.post(`${API_BASE_URL}/api/vendors`, newVendorData, getAuthHeader());
+      const res = await axios.post(`${API_BASE_URL}/vendors`, newVendorData, getAuthHeader());
       setVendors((prev) => [...prev, res.data]);
       showMessage("Vendor added successfully!");
       setIsAddModalOpen(false);
@@ -93,7 +93,7 @@ export default function VendorsPage() {
     setSaving(true);
     try {
       const res = await axios.put(
-        `${API_BASE_URL}/api/vendors/${updatedVendor._id}`,
+        `${API_BASE_URL}/vendors/${updatedVendor._id}`,
         updatedVendor,
         getAuthHeader()
       );
@@ -113,7 +113,7 @@ export default function VendorsPage() {
   const handleDeleteVendor = async (id, name) => {
     if (!window.confirm(`Are you sure you want to delete ${name}?`)) return;
     try {
-      await axios.delete(`${API_BASE_URL}/api/vendors/${id}`, getAuthHeader());
+      await axios.delete(`${API_BASE_URL}/vendors/${id}`, getAuthHeader());
       setVendors((prev) => prev.filter((v) => v._id !== id));
       showMessage("Vendor deleted successfully!");
     } catch (err) {
