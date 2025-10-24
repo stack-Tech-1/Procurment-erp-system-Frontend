@@ -4,7 +4,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { Loader2, AlertTriangle, FileText, CheckCircle, Edit, Save } from 'lucide-react';
-import VendorQualificationForm from '@/components/VendorQualificationForm'; // Assuming this is your existing form component
+import VendorQualificationForm from '../../../vendor-dashboard/proposal/page.js'; // Assuming this is your existing form component
 import { toast } from 'react-hot-toast'; 
 
 const API_BASE_URL = 'http://localhost:4000/api/vendor/qualification/me';

@@ -1,4 +1,4 @@
-// components/VendorQualificationForm.jsx or page.js (if it's the page itself)
+
 
 "use client";
 import { useState, useEffect } from "react"; 
