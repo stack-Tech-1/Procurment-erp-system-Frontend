@@ -10,8 +10,9 @@ export default function VendorLayout({ children }) {
     { name: 'Dashboard', href: '/vendor-dashboard', icon: <Home size={18} /> },
     { name: 'Submit Proposal', href: '/vendor-dashboard/proposal', icon: <Send size={18} /> },
     { name: 'Track Submissions', href: '/vendor-dashboard/tracker', icon: <ListOrdered size={18} /> },
+    { name: 'My Profile', href: '../dashboard/vendors/profile', icon: <Briefcase size={18} /> },
   ];
-
+  
   return (
     <div className="flex min-h-screen bg-gray-50">
       {/* Sidebar */}

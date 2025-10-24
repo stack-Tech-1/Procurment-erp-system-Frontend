@@ -1,13 +1,14 @@
-// src/app/dashboard/vendor/profile/page.jsx
-
 "use client";
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { Loader2, AlertTriangle, FileText, CheckCircle, Edit, Save } from 'lucide-react';
-import VendorQualificationForm from '../../../vendor-dashboard/proposal/page.js'; // Assuming this is your existing form component
+// Assuming correct relative path for component import
+import VendorQualificationForm from '../../../vendor-dashboard/proposal/page.js'; 
 import { toast } from 'react-hot-toast'; 
+// Import the Layout component manually from the vendor-dashboard directory
+import VendorLayout from '../../../vendor-dashboard/layout.js'; 
 
-const API_BASE_URL = 'http://localhost:4000/api/vendor/qualification/me';
+const API_BASE_URL = 'http://localhost:4000/api/vendors/qualification/me';
 
 const VendorQualificationViewPage = () => {
     const [initialData, setInitialData] = useState(null);
@@ -31,7 +32,7 @@ const VendorQualificationViewPage = () => {
         setLoading(true);
         setError(null);
         try {
-            const token = localStorage.getItem('token');
+            const token = localStorage.getItem('authToken');
             if (!token) throw new Error("Authentication token missing.");
 
             const response = await axios.get(API_BASE_URL, {
@@ -69,116 +70,127 @@ const VendorQualificationViewPage = () => {
 
     // --- Render Logic (Loading, Error) ---
     if (loading) {
+        // We wrap the loading state in the layout too, for consistency
         return (
-            <div className="p-8 flex justify-center items-center min-h-screen-minus-topbar bg-gray-50">
-                <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
-                <p className="ml-3 text-lg text-gray-600">Loading your qualification profile...</p>
-            </div>
+            <VendorLayout>
+                <div className="flex justify-center items-center h-full min-h-[500px] bg-gray-50">
+                    <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+                    <p className="ml-3 text-lg text-gray-600">Loading your qualification profile...</p>
+                </div>
+            </VendorLayout>
         );
     }
 
     if (error) {
+        // We wrap the error state in the layout too
         return (
-            <div className="p-8 text-center min-h-screen-minus-topbar bg-gray-50">
-                <h1 className="text-3xl font-bold text-red-600 mb-4">Error Loading Profile</h1>
-                <p className="text-gray-600">{error}</p>
-                <button onClick={fetchQualificationData} className="mt-4 text-blue-600 hover:underline">Retry Loading</button>
-            </div>
+            <VendorLayout>
+                <div className="p-8 text-center bg-gray-50">
+                    <h1 className="text-3xl font-bold text-red-600 mb-4">Error Loading Profile</h1>
+                    <p className="text-gray-600">{error}</p>
+                    <button onClick={fetchQualificationData} className="mt-4 text-blue-600 hover:underline">Retry Loading</button>
+                </div>
+            </VendorLayout>
         );
     }
 
     if (!initialData) {
-        return <div className="p-8 text-center text-gray-600">No qualification data found.</div>;
+        return (
+            <VendorLayout>
+                <div className="p-8 text-center text-gray-600">No qualification data found.</div>
+            </VendorLayout>
+        );
     }
     
     const { status, reviewNotes } = initialData;
     const canEdit = status === 'NEW' || status === 'REJECTED' || isEditing;
 
-    // --- Main Render ---
+    // --- Main Render: Wrap the page content with the manually imported VendorLayout ---
     return (
-        <div className="flex-1 overflow-y-auto p-4 sm:p-8 bg-gray-50">
-            <div className="max-w-6xl mx-auto">
-                
-                {/* Header and Status Block */}
-                <div className="bg-white p-6 rounded-xl shadow-lg border-t-4 border-blue-600 mb-6">
-                    <div className="flex justify-between items-start">
-                        <h1 className="text-3xl font-bold text-gray-900 flex items-center">
-                            <FileText className="w-7 h-7 mr-3 text-blue-600" />
-                            Vendor Qualification Profile
-                        </h1>
-                        <span className={`px-4 py-2 rounded-full text-sm font-bold border ${getStatusColor(status)}`}>
-                            {status.replace(/_/g, ' ')}
-                        </span>
+        <VendorLayout>
+            <div className="p-4 sm:p-0"> {/* Use padding here instead of outer container */}
+                <div className="max-w-6xl mx-auto">
+                    
+                    {/* Header and Status Block */}
+                    <div className="bg-white p-6 rounded-xl shadow-lg border-t-4 border-blue-600 mb-6">
+                        <div className="flex justify-between items-start">
+                            <h1 className="text-3xl font-bold text-gray-900 flex items-center">
+                                <FileText className="w-7 h-7 mr-3 text-blue-600" />
+                                Vendor Qualification Profile
+                            </h1>
+                            <span className={`px-4 py-2 rounded-full text-sm font-bold border ${getStatusColor(status)}`}>
+                                {status.replace(/_/g, ' ')}
+                            </span>
+                        </div>
+
+                        {/* Status-Based Actions/Messages */}
+                        <div className="mt-4 space-y-3">
+                            {/* Display Review Notes if Rejected */}
+                            {status === 'REJECTED' && reviewNotes && (
+                                <div className="p-4 bg-red-50 border-l-4 border-red-500 rounded-md">
+                                    <h3 className="font-bold text-red-800 flex items-center">
+                                        <AlertTriangle className="w-5 h-5 mr-2" />
+                                        Rejection Reason:
+                                    </h3>
+                                    <p className="text-sm text-red-700 mt-1">{reviewNotes}</p>
+                                </div>
+                            )}
+                            
+                            {/* Toggle Edit Button */}
+                            {(status === 'APPROVED' || status === 'UNDER_REVIEW') && (
+                                 <div className="flex justify-end">
+                                    <button
+                                        onClick={() => setIsEditing(!isEditing)}
+                                        className={`px-4 py-2 rounded-lg text-sm font-semibold transition ${
+                                            isEditing 
+                                                ? 'bg-red-500 text-white hover:bg-red-600 flex items-center gap-1'
+                                                : 'bg-blue-100 text-blue-700 hover:bg-blue-200 flex items-center gap-1'
+                                        }`}
+                                    >
+                                        {isEditing ? (
+                                            <>
+                                                <Save className="w-4 h-4" />
+                                                Exit Edit Mode
+                                            </>
+                                        ) : (
+                                            <>
+                                                <Edit className="w-4 h-4" />
+                                                Request Edit Access
+                                            </>
+                                        )}
+                                    </button>
+                                </div>
+                            )}
+                            
+                            {/* Status Message */}
+                            {status === 'APPROVED' && (
+                                <div className="p-4 bg-green-50 border-l-4 border-green-500 rounded-md">
+                                    <p className="text-green-800 flex items-center font-semibold">
+                                        <CheckCircle className="w-5 h-5 mr-2" />
+                                        Your qualification is APPROVED. You are a qualified supplier.
+                                    </p>
+                                </div>
+                            )}
+                            {status === 'UNDER_REVIEW' && (
+                                <div className="p-4 bg-yellow-50 border-l-4 border-yellow-500 rounded-md">
+                                    <p className="text-yellow-800 flex items-center font-semibold">
+                                        <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                                        Your qualification is currently UNDER REVIEW by the Procurement team.
+                                    </p>
+                                </div>
+                            )}
+                        </div>
                     </div>
 
-                    {/* Status-Based Actions/Messages */}
-                    <div className="mt-4 space-y-3">
-                        {/* Display Review Notes if Rejected */}
-                        {status === 'REJECTED' && reviewNotes && (
-                            <div className="p-4 bg-red-50 border-l-4 border-red-500 rounded-md">
-                                <h3 className="font-bold text-red-800 flex items-center">
-                                    <AlertTriangle className="w-5 h-5 mr-2" />
-                                    Rejection Reason:
-                                </h3>
-                                <p className="text-sm text-red-700 mt-1">{reviewNotes}</p>
-                            </div>
-                        )}
-                        
-                        {/* Toggle Edit Button */}
-                        {(status === 'APPROVED' || status === 'UNDER_REVIEW') && (
-                             <div className="flex justify-end">
-                                <button
-                                    onClick={() => setIsEditing(!isEditing)}
-                                    className={`px-4 py-2 rounded-lg text-sm font-semibold transition ${
-                                        isEditing 
-                                            ? 'bg-red-500 text-white hover:bg-red-600 flex items-center gap-1'
-                                            : 'bg-blue-100 text-blue-700 hover:bg-blue-200 flex items-center gap-1'
-                                    }`}
-                                >
-                                    {isEditing ? (
-                                        <>
-                                            <Save className="w-4 h-4" />
-                                            Exit Edit Mode
-                                        </>
-                                    ) : (
-                                        <>
-                                            <Edit className="w-4 h-4" />
-                                            Request Edit Access
-                                        </>
-                                    )}
-                                </button>
-                            </div>
-                        )}
-                        
-                        {/* Status Message */}
-                        {status === 'APPROVED' && (
-                            <div className="p-4 bg-green-50 border-l-4 border-green-500 rounded-md">
-                                <p className="text-green-800 flex items-center font-semibold">
-                                    <CheckCircle className="w-5 h-5 mr-2" />
-                                    Your qualification is **APPROVED**. You are a qualified supplier.
-                                </p>
-                            </div>
-                        )}
-                        {status === 'UNDER_REVIEW' && (
-                            <div className="p-4 bg-yellow-50 border-l-4 border-yellow-500 rounded-md">
-                                <p className="text-yellow-800 flex items-center font-semibold">
-                                    <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                                    Your qualification is currently **UNDER REVIEW** by the Procurement team.
-                                </p>
-                            </div>
-                        )}
-                    </div>
+                    {/* Qualification Form/View */}
+                    <VendorQualificationForm 
+                        initialData={initialData}
+                        isEditable={canEdit}
+                        onSuccess={handleSuccessfulSubmission}
+                    />
                 </div>
-
-                {/* Qualification Form/View */}
-                {/* The VendorQualificationForm should handle both view and edit modes internally */}
-                <VendorQualificationForm 
-                    initialData={initialData}
-                    isEditable={canEdit}
-                    onSuccess={handleSuccessfulSubmission}
-                />
             </div>
-        </div>
+        </VendorLayout>
     );
 };
 
