@@ -210,8 +210,9 @@ const App = () => {
     };
 
     return (
-        <div className="min-h-screen bg-gray-50 p-6 font-sans">
-            <script src="https://cdn.tailwindcss.com" async></script>
+        <div className="min-h-screen bg-gray-50 p-6 font-sans">            
+            <script async src="https://cdn.tailwindcss.com"></script>
+
             {/* Header */}
             <header className="mb-8">
                 <h1 className="text-3xl font-extrabold text-gray-900">Admin Qualification Review</h1>

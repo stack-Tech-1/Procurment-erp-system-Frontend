@@ -198,7 +198,9 @@ export default function SignupPage() {
             </div>
           </div>
           <p className="text-xs text-white/70 italic">
-            Leave blank if you are a vendor.
+          <p>Leave blank if you&apos;re a vendor.</p>
+            
+
           </p>
         </div>
 
