@@ -8,7 +8,8 @@ import { Search, Sliders, ChevronDown, CheckCircle, Clock, XCircle, ArrowUp, Arr
 import Sidebar from '@/components/Sidebar'; 
 import Topbar from '@/components/Topbar'; 
 
-const API_BASE_URL = 'http://localhost:4000/api/vendor'; // Your backend URL
+
+const API_BASE_URL = `${process.env.NEXT_PUBLIC_API_URL}/api/vendor`;
 
 // MOCK DATA for Filter Options (Match your backend enums/data)
 const STATUS_OPTIONS = ['NEW', 'UNDER_REVIEW', 'APPROVED', 'REJECTED', 'NEEDS_RENEWAL'];

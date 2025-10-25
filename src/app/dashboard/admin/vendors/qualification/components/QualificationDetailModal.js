@@ -8,7 +8,7 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
 
 // Helper function to get the authorization header
 const getAuthHeader = () => {
-    const token = localStorage.getItem("token");
+    const token = localStorage.getItem("authToken");
     if (!token) return {};
     return {
         headers: {

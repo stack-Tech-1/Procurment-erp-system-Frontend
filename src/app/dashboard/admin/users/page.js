@@ -10,7 +10,7 @@ import { toast } from 'react-hot-toast';
 import Sidebar from "@/components/Sidebar";
 import Topbar from "@/components/Topbar";
 
-const API_BASE_URL = 'http://localhost:4000/api/users';
+const API_BASE_URL = `${process.env.NEXT_PUBLIC_API_URL}/api/users`;
 
 // --- Separate Component for Content (Table/Loading/Error UI) ---
 const UserManagementContent = ({ users, loading, error, fetchUsers, handleToggleStatus }) => {

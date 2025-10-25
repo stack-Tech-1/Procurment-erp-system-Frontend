@@ -15,7 +15,7 @@ import { useRouter } from "next/navigation";
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
 
 const getAuthHeader = () => {
-    const token = localStorage.getItem("token");
+    const token = localStorage.getItem("authToken");
     if (!token) {
         console.error("Authentication token not found in localStorage.");
         // Depending on your auth flow, you might want to redirect here
@@ -85,7 +85,7 @@ export default function QualificationReviewPage() {
 
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
-    const storedToken = localStorage.getItem("token"); // Check for token
+    const storedToken = localStorage.getItem("authToken"); // Check for token
     
     if (!storedUser || !storedToken) {
         // ⛔ Critical Check: If no user or token, redirect to login

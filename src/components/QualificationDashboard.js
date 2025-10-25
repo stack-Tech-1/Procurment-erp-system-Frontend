@@ -25,7 +25,7 @@ const ReviewModal = ({ submission, onClose, onReviewComplete }) => {
         setError(null);
         setLoading(true);
         const endpoint = action === 'APPROVED' ? 'approve' : 'reject';
-        const apiUrl = `/api/admin/submissions/${submission.id}/${endpoint}`;
+        const apiUrl = `${process.env.NEXT_PUBLIC_API_URL}/api/admin/submissions/${submission.id}/${endpoint}`;
         
         try {
             const response = await fetch(apiUrl, {
@@ -141,7 +141,7 @@ const App = () => {
         try {
             console.log("[FRONTEND] Fetching pending submissions from /api/admin/submissions/pending...");
             
-            const response = await fetch('/api/admin/submissions/pending', {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/admin/submissions/pending`, {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json',

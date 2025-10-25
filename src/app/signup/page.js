@@ -3,6 +3,9 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import AuthLayout from "@/components/AuthLayout";
 
+
+const SIGNUP_URL = `${process.env.NEXT_PUBLIC_API_URL}/api/auth/register`;
+
 export default function SignupPage() {
   const router = useRouter();
   const [formData, setFormData] = useState({
@@ -37,7 +40,7 @@ export default function SignupPage() {
       setLoading(true);
       setError("");
 
-      const res = await fetch("https://procurement-api-ppx9.onrender.com/api/auth/register", {
+      const res = await fetch(SIGNUP_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
