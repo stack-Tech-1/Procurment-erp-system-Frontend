@@ -10,8 +10,9 @@ import {
     FileText as FileIcon, Calendar, Hash
 } from 'lucide-react';
 
-const API_BASE_URL = 'http://localhost:4000/api/vendors'; 
-const REVIEW_ENDPOINT = 'http://localhost:4000/api/vendors/status'; 
+// --- API Endpoints ---
+const API_BASE_URL = `${process.env.NEXT_PUBLIC_API_URL}/api/vendors`;
+const REVIEW_ENDPOINT = `${process.env.NEXT_PUBLIC_API_URL}/api/vendors/status`;
 
 // --- Helper Components ---
 
