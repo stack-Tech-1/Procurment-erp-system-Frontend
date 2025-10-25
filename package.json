@@ -2,12 +2,11 @@
   "name": "frontend",
   "version": "0.1.0",
   "private": true,
- "scripts": {
+  "scripts": {
     "dev": "next dev",
-    "build": "next build",    
-    "export": "next export", 
-    "start": "next start",
-    "lint": "next lint"
+    "build": "next build",
+    "start": "next start",    
+    "lint": "eslint"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.75.1",
