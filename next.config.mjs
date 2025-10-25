@@ -1,9 +1,13 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-    reactStrictMode: true,
-    // no 'output: export'
+    // CRUCIAL: Must be set to true for Amplify Static Hosting
+    output: 'export',
+    
+    // Optional: If you use images, set this to prevent errors during export
+    images: {
+      unoptimized: true,
+    },
   }
   
-  export default nextConfig;
-  
+  module.exports = nextConfig
   
