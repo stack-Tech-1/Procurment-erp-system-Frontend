@@ -3,6 +3,8 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import AuthLayout from "@/components/AuthLayout";
 
+
+const LOGIN_URL = `${process.env.NEXT_PUBLIC_API_URL}/api/auth/login`;
 export default function LoginPage() {
   const router = useRouter();
   const [formData, setFormData] = useState({ email: "", password: "" });
@@ -24,7 +26,7 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      const res = await fetch("https://procurement-api-ppx9.onrender.com/api/auth/login", {
+      const res = await fetch(LOGIN_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),
