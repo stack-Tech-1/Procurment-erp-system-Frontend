@@ -11,8 +11,8 @@ import {
 } from 'lucide-react';
 
 // --- API Endpoints ---
-const API_BASE_URL = 'https://procurement-api-ppx9.onrender.com/api/vendors';
-const REVIEW_ENDPOINT = 'https://procurement-api-ppx9.onrender.com/api/vendors/status';
+const API_BASE_URL = `${process.env.NEXT_PUBLIC_API_URL}/api/vendors`;
+const REVIEW_ENDPOINT = `${process.env.NEXT_PUBLIC_API_URL}/api/vendors/status`;
 
 // --- Helper Components ---
 
