@@ -1,13 +1,15 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-    // CRUCIAL: Must be set to true for Amplify Static Hosting
-    output: 'export',
+    // CRUCIAL: Set this for static export to the 'out' directory
+    output: 'export', 
     
-    // Optional: If you use images, set this to prevent errors during export
+    // OPTIONAL: Keep this if you use images
     images: {
       unoptimized: true,
     },
-  }
+      
+  };
   
-  module.exports = nextConfig
+  // Use the ES Module 'export default' syntax
+  export default nextConfig; 
   
