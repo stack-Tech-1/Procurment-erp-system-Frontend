@@ -100,7 +100,7 @@ const VendorDetailPage = () => {
         setSubmitMessage(null);
         
         try {
-            const token = localStorage.getItem('token');
+            const token = localStorage.getItem('authToken');
             if (!token) throw new Error("Authentication token missing.");
 
             // The endpoint expects the vendor's database ID, not the custom vendorId
@@ -191,6 +191,23 @@ const VendorDetailPage = () => {
             return <p className="text-gray-500 italic">No project experience provided.</p>;
         }
 
+
+
+
+        if (error || !vendor) {
+            return (
+              <div className="p-8 text-center bg-gray-50 min-h-screen-minus-topbar">
+                <h1 className="text-2xl font-bold text-gray-800 mb-3">Vendor not found</h1>
+                <p className="text-gray-600">{error || "We couldn’t find this vendor."}</p>
+                <button onClick={() => router.back()} className="mt-4 text-blue-600 hover:underline">
+                  Go Back
+                </button>
+              </div>
+            );
+          }
+
+          
+          
         return (
             <div className="space-y-4">
                 {vendor.projectExperience.map(project => (

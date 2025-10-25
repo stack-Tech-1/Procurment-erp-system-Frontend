@@ -1,10 +1,9 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
     reactStrictMode: true,
-    output: 'standalone', // 👈 ADD THIS
-    images: {
-      unoptimized: true,
-    },
+    images: { unoptimized: true },
+    // ❌ Remove "output: 'export'"
+    // ✅ Let Amplify handle server rendering
   };
   
   export default nextConfig;
