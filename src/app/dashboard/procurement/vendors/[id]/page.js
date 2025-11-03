@@ -247,7 +247,7 @@ const VendorDetailPage = () => {
                 <div className="bg-white p-6 rounded-xl shadow-lg border-t-4 border-blue-600">
                     <div className="flex justify-between items-center mb-4">
                         <h1 className="text-4xl font-extrabold text-gray-900">
-                            {vendor.name}
+                        {vendor.companyLegalName}
                         </h1>
                         <span className={`px-4 py-2 rounded-full text-sm font-bold border ${getStatusColor(vendor.status)}`}>
                             {vendor.status.replace(/_/g, ' ')}

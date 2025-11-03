@@ -217,12 +217,6 @@ const getExpiryClass = (dateString) => {
 
 </div>
 
-
-
-
-
-
-
             {/* Filter and Search Bar (Remains here) */}
             <div className="bg-white p-4 rounded-lg shadow-md mb-6 flex items-center space-x-4">
                 <div className="relative flex-grow">
