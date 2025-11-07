@@ -8,8 +8,7 @@ import { toast } from 'react-hot-toast';
 // Import the Layout component manually from the vendor-dashboard directory
 import VendorLayout from '../../../vendor-dashboard/layout.js'; 
 
-const API_BASE_URL = `${process.env.NEXT_PUBLIC_API_URL}/api/vendors/qualification/me`;
-
+const API_BASE_URL = 'http://localhost:4000/api/vendors/qualification/me';
 
 const VendorQualificationViewPage = () => {
     const [initialData, setInitialData] = useState(null);

@@ -7,11 +7,11 @@ import { Search, Sliders, ChevronDown, CheckCircle, Clock, XCircle, ArrowUp, Arr
 // Assuming these paths are correct for your Next.js project
 import Sidebar from '@/components/Sidebar'; 
 import Topbar from '@/components/Topbar';
-//import VendorChart from '@/components/VendorChart'; 
+import VendorChart from '@/components/VendorChart'; 
 import StatusChart from '@/components/StatusChart';
 import ExpiryRiskCard from '@/components/ExpiryRiskCard';
 
-const API_BASE_URL = `${process.env.NEXT_PUBLIC_API_URL}/api/vendor`;
+const API_BASE_URL = 'http://localhost:4000/api/vendor'; // Your backend URL
 
 // MOCK DATA for Filter Options (Match your backend enums/data)
 const STATUS_OPTIONS = ['NEW', 'UNDER_REVIEW', 'APPROVED', 'REJECTED', 'NEEDS_RENEWAL'];
@@ -129,93 +129,92 @@ const getExpiryClass = (dateString) => {
             <h1 className="text-3xl font-bold text-gray-800 mb-6">Vendor Qualification Dashboard</h1>
             
             {/* Enhanced KPI Summary Block */}
-<div className="grid grid-cols-5 gap-6 mb-8">
-    {/* Helper to map label to icon, color, and key in the summary data */}
-    {[
-        { 
-            label: 'Total Vendors', 
-            icon: Clock, 
-            color: 'blue', 
-            dataKey: 'totalVendors' 
-        },
-        { 
-            label: 'Approved', 
-            icon: CheckCircle, 
-            color: 'green', 
-            dataKey: 'statusBreakdown?.APPROVED',
-        },
-        { 
-            label: 'Under Review', 
-            icon: Clock, 
-            color: 'yellow', 
-            dataKey: 'statusBreakdown?.UNDER_REVIEW' 
-        },
-        { 
-            label: 'Expired', 
-            icon: XCircle, 
-            color: 'red', 
-            dataKey: 'expiredVendorsCount' 
-        },
-        { 
-            label: 'Expiring Soon', 
-            icon: Clock, 
-            color: 'orange', 
-            dataKey: 'expiringSoonVendorsCount' 
-        },
-    ].map(({ label, icon: Icon, color, dataKey }) => {
-        let value = 0;
-        
-        // Dynamic value retrieval (handles the specific logic for Under Review)
-        if (label === 'Under Review') {
-            value = (summary.statusBreakdown?.UNDER_REVIEW || 0) + (summary.statusBreakdown?.NEW || 0);
-        } else if (dataKey.includes('.')) {
-            // Simplified way to access nested data (e.g., statusBreakdown?.APPROVED)
-            value = dataKey.split('.').reduce((acc, part) => acc?.[part.replace('?', '')] ?? 0, summary);
-        } else {
-            value = summary[dataKey] || 0;
-        }
+            `<div className="grid grid-cols-5 gap-6 mb-8">
+                {/* Helper to map label to icon, color, and key in the summary data */}
+                {[
+                    { 
+                        label: 'Total Vendors', 
+                        icon: Clock, 
+                        color: 'blue', 
+                        dataKey: 'totalVendors' 
+                    },
+                    { 
+                        label: 'Approved', 
+                        icon: CheckCircle, 
+                        color: 'green', 
+                        dataKey: 'statusBreakdown?.APPROVED',
+                    },
+                    { 
+                        label: 'Under Review', 
+                        icon: Clock, 
+                        color: 'yellow', 
+                        dataKey: 'statusBreakdown?.UNDER_REVIEW' 
+                    },
+                    { 
+                        label: 'Expired', 
+                        icon: XCircle, 
+                        color: 'red', 
+                        dataKey: 'expiredVendorsCount' 
+                    },
+                    { 
+                        label: 'Expiring Soon', 
+                        icon: Clock, 
+                        color: 'orange', 
+                        dataKey: 'expiringSoonVendorsCount' 
+                    },
+                ].map(({ label, icon: Icon, color, dataKey }) => {
+                    let value = 0;
+                    
+                    // Dynamic value retrieval (handles the specific logic for Under Review)
+                    if (label === 'Under Review') {
+                        value = (summary.statusBreakdown?.UNDER_REVIEW || 0) + (summary.statusBreakdown?.NEW || 0);
+                    } else if (dataKey.includes('.')) {
+                        // Simplified way to access nested data (e.g., statusBreakdown?.APPROVED)
+                        value = dataKey.split('.').reduce((acc, part) => acc?.[part.replace('?', '')] ?? 0, summary);
+                    } else {
+                        value = summary[dataKey] || 0;
+                    }
 
-        // CSS Classes based on the data
-        const cardClasses = `bg-white p-5 rounded-xl shadow-lg transition duration-300 hover:shadow-xl border-l-4 border-${color}-500`;
-        const iconClasses = `text-${color}-500 w-8 h-8 p-1.5 bg-${color}-100 rounded-full`;
+                    // CSS Classes based on the data
+                    const cardClasses = `bg-white p-5 rounded-xl shadow-lg transition duration-300 hover:shadow-xl border-l-4 border-${color}-500`;
+                    const iconClasses = `text-${color}-500 w-8 h-8 p-1.5 bg-${color}-100 rounded-full`;
 
-        return (
-            <div key={label} className={cardClasses}>
-                <div className="flex items-start justify-between">
-                    <p className="text-sm font-medium text-gray-500">{label}</p>
-                    <Icon className={iconClasses} />
-                </div>
-                <p className="text-3xl font-bold text-gray-900 mt-2">
-                    {value}
-                </p>
-                {/* Optional: Add a small percentage change or subtext */}
-                 <p className="text-xs text-gray-400 mt-1">based on latest update</p> 
+                    return (
+                        <div key={label} className={cardClasses}>
+                            <div className="flex items-start justify-between">
+                                <p className="text-sm font-medium text-gray-500">{label}</p>
+                                <Icon className={iconClasses} />
+                            </div>
+                            <p className="text-3xl font-bold text-gray-900 mt-2">
+                                {value}
+                            </p>
+                            {/* Optional: Add a small percentage change or subtext */}
+                            <p className="text-xs text-gray-400 mt-1">based on latest update</p> 
+                        </div>
+                    );
+                })}
             </div>
-        );
-    })}
-</div>
 
 
            {/* Expanded Analytics Section: Two-Column Layout */}
-<div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
 
-{/* COLUMN 1: TYPE CHART & EXPIRY CARD (1/3 Width) */}
-<div className="lg:col-span-1 space-y-6">
-    <ExpiryRiskCard 
-        expired={summary.expiredVendorsCount || 0}
-        expiringSoon={summary.expiringSoonVendorsCount || 0}
-        total={summary.totalVendors || 0}
-    />
-    {/* The Pie Chart takes the remaining space in this column 
-    <VendorChart data={summary.vendorTypeBreakdown} />*/}
-</div>
+            {/* COLUMN 1: TYPE CHART & EXPIRY CARD (1/3 Width) */}
+            <div className="lg:col-span-1 space-y-6">
+                <ExpiryRiskCard 
+                    expired={summary.expiredVendorsCount || 0}
+                    expiringSoon={summary.expiringSoonVendorsCount || 0}
+                    total={summary.totalVendors || 0}
+                />
+                {/* The Pie Chart takes the remaining space in this column 
+                <VendorChart data={summary.vendorTypeBreakdown} />*/}
+            </div>
 
-{/* COLUMN 2: STATUS CHART (2/3 Width) */}
-<div className="lg:col-span-2">
-    <StatusChart data={summary.statusBreakdown} />
-</div>
-
-</div>
+            {/* COLUMN 2: STATUS CHART (2/3 Width) */}
+            <div className="lg:col-span-2">
+                <StatusChart data={summary.statusBreakdown} />
+            </div>
+           </div>
 
             {/* Filter and Search Bar (Remains here) */}
             <div className="bg-white p-4 rounded-lg shadow-md mb-6 flex items-center space-x-4">

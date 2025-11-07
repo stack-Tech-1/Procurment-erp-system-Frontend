@@ -62,8 +62,7 @@ export default function ProjectExperienceTable({ projects = [], setProjects }) {
 
       {projects.length === 0 ? (
         <div className="text-center p-8 bg-gray-50 rounded-xl text-gray-500 border border-dashed border-gray-300">
-          Click &quot;Add Project&quot; to list your relevant experience.
-          
+          Click "Add Project" to list your relevant experience.
         </div>
       ) : (
         <div className="space-y-8">

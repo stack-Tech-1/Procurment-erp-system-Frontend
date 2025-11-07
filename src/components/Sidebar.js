@@ -10,6 +10,8 @@ import {
   CheckSquare,
   LogOut,
   RefreshCw,
+  Briefcase,
+  Receipt,
 } from "lucide-react";
 import Link from "next/link";
 import { toast } from "react-hot-toast";
@@ -59,31 +61,58 @@ export default function Sidebar() {
     }
   }, [user]);
 
-  // 📋 Nav Items
-  const navItems = [
-    { name: "Dashboard", icon: <Home size={18} />, href: "/dashboard" },
-    { name: "Vendors", icon: <Users size={18} />, href: "/dashboard/procurement/vendors" },
-    { name: "RFQs", icon: <ClipboardList size={18} />, href: "/rfqs" },
-    { name: "Contracts", icon: <FileText size={18} />, href: "/contracts" },
-    { name: "IPCs", icon: <FileSignature size={18} />, href: "/ipcs" },
-    { name: "Cost Control", icon: <BarChart3 size={18} />, href: "/cost-control" },
+  // 📋 Base Navigation Items - Common for all users
+  const baseNavItems = [
+    { 
+      name: "Dashboard", 
+      icon: <Home size={18} />, 
+      href: "/dashboard/procurement" 
+    },
+    { 
+      name: "Vendors", 
+      icon: <Users size={18} />, 
+      href: "/dashboard/procurement/vendors" 
+    },
+    { 
+      name: "RFOs", 
+      icon: <ClipboardList size={18} />, 
+      href: "/dashboard/procurement/rfos" 
+    },
+    { 
+      name: "Contracts", 
+      icon: <Briefcase size={18} />, 
+      href: "/dashboard/procurement/contracts" 
+    },
+    { 
+      name: "IPCs", 
+      icon: <Receipt size={18} />, 
+      href: "/dashboard/procurement/ipcs" 
+    },
+    { 
+      name: "Cost Control", 
+      icon: <BarChart3 size={18} />, 
+      href: "/dashboard/procurement/cost-control" 
+    },
   ];
 
-  // ✅ Add Approvals only for Admins
-  if (user?.roleId === 1) {
-    navItems.push({
+  // 📋 Admin Only Navigation Items
+  const adminNavItems = [
+    {
       name: "Approvals",
       icon: <CheckSquare size={18} />,
       href: "/dashboard/admin/approvals",
-    });
-  }
-
-  if (user?.roleId === 1) {
-    navItems.push({
+    },
+    {
       name: "User Management",
       icon: <Users size={18} />,
       href: "/dashboard/admin/users",
-    });
+    }
+  ];
+
+  // Combine navigation items based on user role
+  const navItems = [...baseNavItems];
+  if (user?.roleId === 1) {
+    navItems.push(...adminNavItems);
   }
 
   return (
@@ -138,14 +167,23 @@ export default function Sidebar() {
         </nav>
       </div>
 
-      {/* --- Logout --- */}
-      <div className="px-6 py-4 border-t border-slate-700">
+      {/* --- User Info & Logout --- */}
+      <div className="p-4 border-t border-slate-700">
+        {/* User Info */}
+        {user && (
+          <div className="mb-3 px-2 py-1 text-xs text-gray-400">
+            <div className="font-medium truncate">{user.name || user.email}</div>
+            <div className="capitalize">{user.role?.toLowerCase() || 'user'}</div>
+          </div>
+        )}
+        
+        {/* Logout Button */}
         <button
           onClick={() => {
             localStorage.clear();
             window.location.href = "/login";
           }}
-          className="flex items-center gap-3 text-sm text-gray-400 hover:text-red-400 transition"
+          className="flex items-center gap-3 text-sm text-gray-400 hover:text-red-400 transition w-full px-2 py-2"
         >
           <LogOut size={18} /> Logout
         </button>

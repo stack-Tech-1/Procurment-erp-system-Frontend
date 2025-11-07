@@ -25,7 +25,7 @@ const ReviewModal = ({ submission, onClose, onReviewComplete }) => {
         setError(null);
         setLoading(true);
         const endpoint = action === 'APPROVED' ? 'approve' : 'reject';
-        const apiUrl = `${process.env.NEXT_PUBLIC_API_URL}/api/admin/submissions/${submission.id}/${endpoint}`;
+        const apiUrl = `/api/admin/submissions/${submission.id}/${endpoint}`;
         
         try {
             const response = await fetch(apiUrl, {
@@ -141,7 +141,7 @@ const App = () => {
         try {
             console.log("[FRONTEND] Fetching pending submissions from /api/admin/submissions/pending...");
             
-            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/admin/submissions/pending`, {
+            const response = await fetch('/api/admin/submissions/pending', {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json',
@@ -210,9 +210,8 @@ const App = () => {
     };
 
     return (
-        <div className="min-h-screen bg-gray-50 p-6 font-sans">            
-            <script async src="https://cdn.tailwindcss.com"></script>
-
+        <div className="min-h-screen bg-gray-50 p-6 font-sans">
+            <script src="https://cdn.tailwindcss.com"></script>
             {/* Header */}
             <header className="mb-8">
                 <h1 className="text-3xl font-extrabold text-gray-900">Admin Qualification Review</h1>
