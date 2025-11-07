@@ -7,7 +7,7 @@ import { Save, Send, Clock, ArrowLeft, Plus, X, Search, Calculator } from 'lucid
 import Sidebar from '@/components/Sidebar';
 import Topbar from '@/components/Topbar';
 
-const API_BASE_URL = 'http://localhost:4000/api';
+const API_BASE_URL = `${process.env.NEXT_PUBLIC_API_URL}/api`;
 
 const IPCCreationPage = () => {
   const router = useRouter();

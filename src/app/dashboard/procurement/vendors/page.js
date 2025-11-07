@@ -11,7 +11,7 @@ import VendorChart from '@/components/VendorChart';
 import StatusChart from '@/components/StatusChart';
 import ExpiryRiskCard from '@/components/ExpiryRiskCard';
 
-const API_BASE_URL = 'http://localhost:4000/api/vendor'; // Your backend URL
+const API_BASE_URL = `${process.env.NEXT_PUBLIC_API_URL}/api/vendor`; // Your backend URL
 
 // MOCK DATA for Filter Options (Match your backend enums/data)
 const STATUS_OPTIONS = ['NEW', 'UNDER_REVIEW', 'APPROVED', 'REJECTED', 'NEEDS_RENEWAL'];

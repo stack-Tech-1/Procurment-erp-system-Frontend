@@ -7,7 +7,7 @@ import { Save, Send, Clock, ArrowLeft } from 'lucide-react';
 import Sidebar from '@/components/Sidebar';
 import Topbar from '@/components/Topbar';
 
-const API_BASE_URL = 'http://localhost:4000/api/rfqs';
+const API_BASE_URL = `${process.env.NEXT_PUBLIC_API_URL}/api/rfqs`;
 
 const CreateRFOPage = () => {
   const router = useRouter();

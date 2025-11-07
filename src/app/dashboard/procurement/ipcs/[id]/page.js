@@ -14,7 +14,7 @@ import Sidebar from '@/components/Sidebar';
 import Topbar from '@/components/Topbar';
 import Link from 'next/link';
 
-const API_BASE_URL = 'http://localhost:4000/api';
+const API_BASE_URL = `${process.env.NEXT_PUBLIC_API_URL}/api`;
 
 const IPCDetailPage = () => {
   const params = useParams();

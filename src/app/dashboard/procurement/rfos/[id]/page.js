@@ -14,7 +14,7 @@ import Topbar from '@/components/Topbar';
 import Link from 'next/link';
 import VendorEvaluationModal from '@/components/VendorEvaluationModal';
 
-const API_BASE_URL = 'http://localhost:4000/api';
+const API_BASE_URL = `${process.env.NEXT_PUBLIC_API_URL}/api`;
 
 const RFODetailPage = () => {
     const params = useParams();
