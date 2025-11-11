@@ -5,6 +5,7 @@ import { z } from 'zod';
 import { Building2, FileText, CheckCircle, Send, Plus, Trash2, Calendar, Hash, Upload } from "lucide-react";
 import ProjectExperienceTable from "../components/ProjectExperienceTable.js";
 import { VendorQualificationSchema, DocumentEntrySchema, MANDATORY_DOCS } from '@/lib/validation/vendorQualificationSchema.js'; 
+import EnhancedQualificationDocumentManager from '@/components/EnhancedQualificationDocumentManager';
 import { useRouter } from 'next/navigation'; 
 
 // --- NEW: VENDOR DROPDOWN OPTIONS (Section A) ---
@@ -456,17 +457,49 @@ const handleSubmit = async (e) => {
           throw new Error(result.error || 'Server processing error occurred.');
       }
 
-      if (onSuccess) {
-                      onSuccess(); 
-                      setFormData({}); // Still clear the form if it was a fresh submission
-                      setDocumentData({});
-                      setProjectExperience([]);
-                  } else {
-                      // Fallback to original logic if used as initial submission page
-                      setTimeout(() => {
-                          router.push('/vendor/submission-tracker');
-                      }, 3000);
-                  }
+      // ✅ NEW CODE - Replace with this:
+if (result.success) {
+  setSubmissionSuccess(true);
+  
+  // Start approval workflow for the new vendor
+  try {
+    const token = localStorage.getItem('authToken');
+    const workflowResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/approvals/start`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        entityType: 'VENDOR',
+        entityId: result.data.id, // This should be the created vendor ID from your API response
+        workflowTemplateId: 'vendor-qualification-workflow'
+      })
+    });
+
+    const workflowResult = await workflowResponse.json();
+    if (workflowResult.success) {
+      console.log('✅ Approval workflow started successfully');
+    } else {
+      console.warn('⚠️ Approval workflow response:', workflowResult);
+    }
+  } catch (workflowError) {
+    console.error('⚠️ Could not start approval workflow:', workflowError);
+    // Don't fail the main submission if workflow fails
+  }
+
+  // Reset form or redirect as needed
+  if (onSuccess) {
+    onSuccess(); 
+    setFormData({});
+    setDocumentData({});
+    setProjectExperience([]);
+  } else {
+    setTimeout(() => {
+      router.push('/vendor/submission-tracker');
+    }, 3000);
+  }
+}
 
   } catch (error) {
       console.error("API Submission Error:", error);
@@ -801,28 +834,19 @@ const handleSubmit = async (e) => {
             </div>
           </section>
 
-          {/* C. Document Checklist - IMPROVED LAYOUT */}
+          {/* C. Advanced Document Management */}
           <section className="bg-gray-50 p-6 rounded-xl border border-gray-200">
-            <SectionHeader title="C. Document Checklist & Uploads" icon={CheckCircle} />
-            <div className="space-y-3">
-              {DOCUMENT_CHECKLIST.map((doc) => (
-                <DocumentRow
-                  key={doc.dbKey}
-                  doc={doc}
-                  onChange={handleChange}
-                  file={documentData[doc.dbKey]?.file} 
-                  expiryDate={documentData[doc.dbKey]?.expiry} 
-                  docNumber={documentData[doc.dbKey]?.number}
-                  isoType={documentData[doc.dbKey]?.isoType}
-                  isEditable={isEditable}
-                />
-              ))}
-            </div>
-            <p className="text-sm text-red-500 mt-4 font-medium">
-              * Mandatory documents must be uploaded. Documents with expiry dates must be future-dated.
-            </p>
+            <SectionHeader title="C. Advanced Document Management" icon={CheckCircle} />
+            
+            {/* Enhanced Document Manager for Qualification */}
+            <EnhancedQualificationDocumentManager 
+              documentData={documentData}
+              setDocumentData={setDocumentData}
+              isEditable={isEditable}
+              vendorType={formData.vendorType}
+            />
           </section>
-                          
+
           {/* D. Project Experience */}
           <section className="p-6 bg-white rounded-xl border border-gray-200">
             <SectionHeader title="D. Project Experience" icon={FileText} />

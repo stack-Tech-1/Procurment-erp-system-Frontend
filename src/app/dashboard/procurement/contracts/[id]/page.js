@@ -15,7 +15,6 @@ import Link from 'next/link';
 
 const API_BASE_URL = `${process.env.NEXT_PUBLIC_API_URL}/api`;
 
-
 const ContractDetailPage = () => {
   const params = useParams();
   const router = useRouter();

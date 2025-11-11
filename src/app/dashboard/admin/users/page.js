@@ -14,10 +14,7 @@ import { toast } from 'react-hot-toast';
 import Sidebar from "@/components/Sidebar";
 import Topbar from "@/components/Topbar";
 
-const API_BASE_URL = `${process.env.NEXT_PUBLIC_API_URL}/api/users`;
-
-
-
+const API_BASE_URL =  `${process.env.NEXT_PUBLIC_API_URL}/api/users`;
 
 // --- Notification Center Component ---
 const NotificationCenter = ({ isOpen, onClose, notifications, onMarkAsRead, onMarkAllAsRead }) => {

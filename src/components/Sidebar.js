@@ -15,24 +15,30 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { toast } from "react-hot-toast";
+import { getNavigationItems } from '@/utils/navigation';
+import { ROLES, ROLE_NAMES } from '@/constants/roles';
 
 export default function Sidebar() {
   const [user, setUser] = useState(null);
   const [pendingCount, setPendingCount] = useState(0);
   const [loading, setLoading] = useState(false);
 
+  
   // 🧠 Fetch pending user count (Admin only)
   const fetchPendingUsers = async (showToast = false) => {
-    if (!user?.roleId || user.roleId !== 1) return; // only admin
-
     try {
       setLoading(true);
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/pending`);
-      const data = await res.json();
-
-      if (Array.isArray(data)) {
-        setPendingCount(data.length);
-        if (showToast) toast.success("Pending list updated!");
+      const token = localStorage.getItem('authToken');
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/pending`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data)) {
+          setPendingCount(data.length);
+          if (showToast) toast.success("Pending list updated!");
+        }
       }
     } catch (err) {
       console.error("Error fetching pending users:", err);
@@ -48,10 +54,15 @@ export default function Sidebar() {
     if (storedUser) {
       const parsed = JSON.parse(storedUser);
       setUser(parsed);
-
-      if (parsed.roleId === 1) fetchPendingUsers();
+      
+      // Fetch pending users if executive
+      if (parsed.roleId === ROLES.EXECUTIVE) {
+        fetchPendingUsers();
+      }
     }
   }, []);
+
+
 
   // 🕒 Auto-refresh every 30 seconds
   useEffect(() => {
@@ -93,8 +104,13 @@ export default function Sidebar() {
       icon: <BarChart3 size={18} />, 
       href: "/dashboard/procurement/cost-control" 
     },
+    {
+      name: "Reports",
+      icon: <FileText size={18} />,
+      href: "/dashboard/admin/reports",
+    }
   ];
-
+  
   // 📋 Admin Only Navigation Items
   const adminNavItems = [
     {
@@ -110,20 +126,23 @@ export default function Sidebar() {
   ];
 
   // Combine navigation items based on user role
-  const navItems = [...baseNavItems];
-  if (user?.roleId === 1) {
-    navItems.push(...adminNavItems);
-  }
+  //const navItems = [...baseNavItems];
+  //if (user?.roleId === 1) {
+    //navItems.push(...adminNavItems);
+  //}
+
+  // Get navigation items based on user role
+  const navItems = user ? getNavigationItems(user.roleId) : [];
 
   return (
     <aside className="bg-slate-900 text-gray-100 w-64 min-h-screen flex flex-col justify-between">
-      {/* --- Brand Header --- */}
+      {/* Brand Header */}
       <div>
         <div className="p-6 text-2xl font-semibold border-b border-slate-700">
           <span className="text-indigo-400">Procure</span>Track
         </div>
 
-        {/* --- Navigation --- */}
+        {/* Navigation */}
         <nav className="mt-6 space-y-1">
           {navItems.map((item) => (
             <div key={item.name} className="relative">
@@ -136,8 +155,8 @@ export default function Sidebar() {
                   <span>{item.name}</span>
                 </div>
 
-                {/* 🧩 Approvals badge & refresh button */}
-                {item.name === "Approvals" && (
+                {/* Pending approvals badge for executives */}
+                {item.name === "User Management" && user?.roleId === ROLES.EXECUTIVE && pendingCount > 0 && (
                   <div className="flex items-center gap-2">
                     {loading ? (
                       <RefreshCw size={14} className="animate-spin text-gray-400" />
@@ -153,12 +172,9 @@ export default function Sidebar() {
                         <RefreshCw size={14} />
                       </button>
                     )}
-
-                    {pendingCount > 0 && (
-                      <span className="text-xs bg-red-500 text-white px-2 py-0.5 rounded-full">
-                        {pendingCount}
-                      </span>
-                    )}
+                    <span className="text-xs bg-red-500 text-white px-2 py-0.5 rounded-full">
+                      {pendingCount}
+                    </span>
                   </div>
                 )}
               </Link>
@@ -167,17 +183,16 @@ export default function Sidebar() {
         </nav>
       </div>
 
-      {/* --- User Info & Logout --- */}
+      {/* User Info & Logout */}
       <div className="p-4 border-t border-slate-700">
-        {/* User Info */}
         {user && (
           <div className="mb-3 px-2 py-1 text-xs text-gray-400">
             <div className="font-medium truncate">{user.name || user.email}</div>
-            <div className="capitalize">{user.role?.toLowerCase() || 'user'}</div>
+            <div className="capitalize">{ROLE_NAMES[user.roleId]?.toLowerCase() || 'user'}</div>
+            {user.department && <div className="text-gray-500">{user.department}</div>}
           </div>
         )}
         
-        {/* Logout Button */}
         <button
           onClick={() => {
             localStorage.clear();

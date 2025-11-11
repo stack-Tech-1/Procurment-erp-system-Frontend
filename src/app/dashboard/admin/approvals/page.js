@@ -12,7 +12,7 @@ export default function AdminApprovalsPage() {
   const [approving, setApproving] = useState(null);
   const [error, setError] = useState("");
 
-  const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL; 
+  const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;  
   
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
