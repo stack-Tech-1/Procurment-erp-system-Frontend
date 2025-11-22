@@ -1,4 +1,4 @@
-// src/app/dashboard/procurement/contracts/[id]/page.jsx
+// frontend/src/app/dashboard/procurement/contracts/[id]/page.js - MOBILE OPTIMIZED
 "use client";
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
@@ -9,9 +9,8 @@ import {
   User, Building, BarChart3, Receipt, TrendingUp, MapPin,
   Mail, Phone, Hash, Clock4
 } from 'lucide-react';
-import Sidebar from '@/components/Sidebar';
-import Topbar from '@/components/Topbar';
 import Link from 'next/link';
+import ResponsiveLayout from '@/components/layout/ResponsiveLayout';
 
 const API_BASE_URL = `${process.env.NEXT_PUBLIC_API_URL}/api`;
 
@@ -120,38 +119,33 @@ const ContractDetailPage = () => {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen bg-gray-50">
-        <Sidebar />
-        <div className="flex-1 flex flex-col">
-          <Topbar />
-          <div className="flex-1 flex items-center justify-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      <ResponsiveLayout>
+        <div className="flex items-center justify-center min-h-64 py-8">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <div className="text-lg text-gray-600">Loading contract details...</div>
           </div>
         </div>
-      </div>
+      </ResponsiveLayout>
     );
   }
 
   if (!contract) {
     return (
-      <div className="flex min-h-screen bg-gray-50">
-        <Sidebar />
-        <div className="flex-1 flex flex-col">
-          <Topbar />
-          <div className="flex-1 flex items-center justify-center">
-            <div className="text-center">
-              <h2 className="text-2xl font-bold text-gray-800 mb-2">Contract Not Found</h2>
-              <p className="text-gray-600 mb-4">The requested contract could not be found.</p>
-              <Link 
-                href="/dashboard/procurement/contracts"
-                className="text-blue-600 hover:text-blue-800"
-              >
-                Back to Contracts
-              </Link>
-            </div>
+      <ResponsiveLayout>
+        <div className="flex items-center justify-center min-h-64 py-8">
+          <div className="text-center max-w-md mx-auto">
+            <h2 className="text-2xl font-bold text-gray-800 mb-2">Contract Not Found</h2>
+            <p className="text-gray-600 mb-4">The requested contract could not be found.</p>
+            <Link 
+              href="/dashboard/procurement/contracts"
+              className="text-blue-600 hover:text-blue-800"
+            >
+              Back to Contracts
+            </Link>
           </div>
         </div>
-      </div>
+      </ResponsiveLayout>
     );
   }
 
@@ -161,166 +155,158 @@ const ContractDetailPage = () => {
   const completionPercentage = (totalPaid / contract.contractValue) * 100;
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
-      <Sidebar />
-      
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <Topbar />
+    <ResponsiveLayout>
+      {/* Header */}
+      <div className="mb-6">
+        <Link 
+          href="/dashboard/procurement/contracts"
+          className="flex items-center text-gray-600 hover:text-gray-900 mb-4 text-sm sm:text-base"
+        >
+          <ArrowLeft className="w-4 h-4 mr-2" />
+          Back to Contracts
+        </Link>
         
-        <main className="flex-1 overflow-y-auto p-6">
-          {/* Header */}
-          <div className="mb-6">
-            <Link 
-              href="/dashboard/procurement/contracts"
-              className="flex items-center text-gray-600 hover:text-gray-900 mb-4"
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4">
+          <div>
+            <div className="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-4 mb-2">
+              <h1 className="text-2xl sm:text-3xl font-bold text-gray-800">{contract.contractNumber}</h1>
+              <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${statusConfig.color} w-fit`}>
+                <statusConfig.icon className="w-4 h-4 mr-1" />
+                {statusConfig.label}
+              </span>
+            </div>
+            <p className="text-gray-600 text-sm sm:text-base">
+              {contract.rfq?.projectName || 'Standalone Contract'} • 
+              Vendor: {contract.vendor?.companyLegalName}
+            </p>
+          </div>
+          
+          <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
+            {contract.status === 'DRAFT' && (
+              <button 
+                onClick={() => updateContractStatus('ACTIVE')}
+                className="flex items-center justify-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm sm:text-base"
+              >
+                <CheckCircle className="w-4 h-4 mr-2" />
+                Activate Contract
+              </button>
+            )}
+            <Link
+              href={`/dashboard/procurement/contracts/${contractId}/edit`}
+              className="flex items-center justify-center px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 text-sm sm:text-base"
             >
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to Contracts
+              <Edit className="w-4 h-4 mr-2" />
+              Edit
             </Link>
-            
-            <div className="flex justify-between items-start">
-              <div>
-                <div className="flex items-center space-x-4 mb-2">
-                  <h1 className="text-2xl font-bold text-gray-800">{contract.contractNumber}</h1>
-                  <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${statusConfig.color}`}>
-                    <statusConfig.icon className="w-4 h-4 mr-1" />
-                    {statusConfig.label}
-                  </span>
-                </div>
-                <p className="text-gray-600">
-                  {contract.rfq?.projectName || 'Standalone Contract'} • 
-                  Vendor: {contract.vendor?.companyLegalName}
-                </p>
-              </div>
-              
-              <div className="flex space-x-2">
-                {contract.status === 'DRAFT' && (
-                  <button 
-                    onClick={() => updateContractStatus('ACTIVE')}
-                    className="flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
-                  >
-                    <CheckCircle className="w-4 h-4 mr-2" />
-                    Activate Contract
-                  </button>
-                )}
-                <Link
-                  href={`/dashboard/procurement/contracts/${contractId}/edit`}
-                  className="flex items-center px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
-                >
-                  <Edit className="w-4 h-4 mr-2" />
-                  Edit
-                </Link>
-              </div>
-            </div>
           </div>
-
-          {/* Quick Stats */}
-          <div className="grid grid-cols-4 gap-4 mb-6">
-            <div className="bg-white p-4 rounded-lg shadow">
-              <div className="flex justify-between items-center">
-                <span className="text-gray-600 text-sm">Contract Value</span>
-                <DollarSign className="text-green-500 w-5 h-5" />
-              </div>
-              <p className="text-2xl font-bold">${contract.contractValue?.toLocaleString()}</p>
-            </div>
-            
-            <div className="bg-white p-4 rounded-lg shadow">
-              <div className="flex justify-between items-center">
-                <span className="text-gray-600 text-sm">Total Paid</span>
-                <Receipt className="text-blue-500 w-5 h-5" />
-              </div>
-              <p className="text-2xl font-bold">${totalPaid.toLocaleString()}</p>
-            </div>
-            
-            <div className="bg-white p-4 rounded-lg shadow">
-              <div className="flex justify-between items-center">
-                <span className="text-gray-600 text-sm">Remaining</span>
-                <TrendingUp className="text-orange-500 w-5 h-5" />
-              </div>
-              <p className="text-2xl font-bold">${remainingValue.toLocaleString()}</p>
-            </div>
-            
-            <div className="bg-white p-4 rounded-lg shadow">
-              <div className="flex justify-between items-center">
-                <span className="text-gray-600 text-sm">Progress</span>
-                <BarChart3 className="text-purple-500 w-5 h-5" />
-              </div>
-              <p className="text-2xl font-bold">{completionPercentage.toFixed(1)}%</p>
-            </div>
-          </div>
-
-          {/* Progress Bar */}
-          <div className="bg-white p-4 rounded-lg shadow-md mb-6">
-            <div className="flex justify-between text-sm text-gray-600 mb-2">
-              <span>Payment Progress</span>
-              <span>{completionPercentage.toFixed(1)}% Complete</span>
-            </div>
-            <div className="w-full bg-gray-200 rounded-full h-2">
-              <div 
-                className="bg-green-600 h-2 rounded-full transition-all duration-300"
-                style={{ width: `${completionPercentage}%` }}
-              ></div>
-            </div>
-            <div className="flex justify-between text-xs text-gray-500 mt-2">
-              <span>Paid: ${totalPaid.toLocaleString()}</span>
-              <span>Remaining: ${remainingValue.toLocaleString()}</span>
-            </div>
-          </div>
-
-          {/* Tabs */}
-          <div className="bg-white rounded-lg shadow-md mb-6">
-            <div className="border-b border-gray-200">
-              <nav className="flex -mb-px">
-                {[
-                  { id: 'overview', label: 'Overview', icon: FileText },
-                  { id: 'ipcs', label: `IPCs (${contract.ipcs?.length || 0})`, icon: Receipt },
-                  { id: 'variations', label: `Variations (${contract.variationOrders?.length || 0})`, icon: TrendingUp },
-                  { id: 'documents', label: 'Documents', icon: Download }
-                ].map((tab) => {
-                  const IconComponent = tab.icon;
-                  return (
-                    <button
-                      key={tab.id}
-                      onClick={() => setActiveTab(tab.id)}
-                      className={`flex items-center px-6 py-3 border-b-2 font-medium text-sm ${
-                        activeTab === tab.id
-                          ? 'border-blue-500 text-blue-600'
-                          : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                      }`}
-                    >
-                      <IconComponent className="w-4 h-4 mr-2" />
-                      {tab.label}
-                    </button>
-                  );
-                })}
-              </nav>
-            </div>
-
-            {/* Tab Content */}
-            <div className="p-6">
-              {activeTab === 'overview' && <OverviewTab contract={contract} />}
-              {activeTab === 'ipcs' && (
-                <IPCSTab 
-                  ipcs={contract.ipcs || []} 
-                  onNewIPC={createIPC}
-                  ipcForm={ipcForm}
-                  setIpcForm={setIpcForm}
-                />
-              )}
-              {activeTab === 'variations' && <VariationsTab variations={contract.variationOrders || []} />}
-              {activeTab === 'documents' && <DocumentsTab documents={contract.documents || []} />}
-            </div>
-          </div>
-        </main>
+        </div>
       </div>
-    </div>
+
+      {/* Quick Stats */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6">
+        <div className="bg-white p-3 sm:p-4 rounded-lg shadow border border-gray-100">
+          <div className="flex justify-between items-center">
+            <span className="text-gray-600 text-xs sm:text-sm">Contract Value</span>
+            <DollarSign className="text-green-500 w-4 h-4 sm:w-5 sm:h-5" />
+          </div>
+          <p className="text-xl sm:text-2xl font-bold mt-1">${contract.contractValue?.toLocaleString()}</p>
+        </div>
+        
+        <div className="bg-white p-3 sm:p-4 rounded-lg shadow border border-gray-100">
+          <div className="flex justify-between items-center">
+            <span className="text-gray-600 text-xs sm:text-sm">Total Paid</span>
+            <Receipt className="text-blue-500 w-4 h-4 sm:w-5 sm:h-5" />
+          </div>
+          <p className="text-xl sm:text-2xl font-bold mt-1">${totalPaid.toLocaleString()}</p>
+        </div>
+        
+        <div className="bg-white p-3 sm:p-4 rounded-lg shadow border border-gray-100">
+          <div className="flex justify-between items-center">
+            <span className="text-gray-600 text-xs sm:text-sm">Remaining</span>
+            <TrendingUp className="text-orange-500 w-4 h-4 sm:w-5 sm:h-5" />
+          </div>
+          <p className="text-xl sm:text-2xl font-bold mt-1">${remainingValue.toLocaleString()}</p>
+        </div>
+        
+        <div className="bg-white p-3 sm:p-4 rounded-lg shadow border border-gray-100">
+          <div className="flex justify-between items-center">
+            <span className="text-gray-600 text-xs sm:text-sm">Progress</span>
+            <BarChart3 className="text-purple-500 w-4 h-4 sm:w-5 sm:h-5" />
+          </div>
+          <p className="text-xl sm:text-2xl font-bold mt-1">{completionPercentage.toFixed(1)}%</p>
+        </div>
+      </div>
+
+      {/* Progress Bar */}
+      <div className="bg-white p-4 rounded-lg shadow-md mb-6">
+        <div className="flex justify-between text-sm text-gray-600 mb-2">
+          <span>Payment Progress</span>
+          <span>{completionPercentage.toFixed(1)}% Complete</span>
+        </div>
+        <div className="w-full bg-gray-200 rounded-full h-2">
+          <div 
+            className="bg-green-600 h-2 rounded-full transition-all duration-300"
+            style={{ width: `${completionPercentage}%` }}
+          ></div>
+        </div>
+        <div className="flex justify-between text-xs text-gray-500 mt-2">
+          <span>Paid: ${totalPaid.toLocaleString()}</span>
+          <span>Remaining: ${remainingValue.toLocaleString()}</span>
+        </div>
+      </div>
+
+      {/* Tabs */}
+      <div className="bg-white rounded-lg shadow-md mb-6">
+        <div className="border-b border-gray-200 overflow-x-auto">
+          <nav className="flex -mb-px min-w-max">
+            {[
+              { id: 'overview', label: 'Overview', icon: FileText },
+              { id: 'ipcs', label: `IPCs (${contract.ipcs?.length || 0})`, icon: Receipt },
+              { id: 'variations', label: `Variations (${contract.variationOrders?.length || 0})`, icon: TrendingUp },
+              { id: 'documents', label: 'Documents', icon: Download }
+            ].map((tab) => {
+              const IconComponent = tab.icon;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`flex items-center px-4 sm:px-6 py-3 border-b-2 font-medium text-sm ${
+                    activeTab === tab.id
+                      ? 'border-blue-500 text-blue-600'
+                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  }`}
+                >
+                  <IconComponent className="w-4 h-4 mr-2" />
+                  {tab.label}
+                </button>
+              );
+            })}
+          </nav>
+        </div>
+
+        {/* Tab Content */}
+        <div className="p-4 sm:p-6">
+          {activeTab === 'overview' && <OverviewTab contract={contract} />}
+          {activeTab === 'ipcs' && (
+            <IPCSTab 
+              ipcs={contract.ipcs || []} 
+              onNewIPC={createIPC}
+              ipcForm={ipcForm}
+              setIpcForm={setIpcForm}
+            />
+          )}
+          {activeTab === 'variations' && <VariationsTab variations={contract.variationOrders || []} />}
+          {activeTab === 'documents' && <DocumentsTab documents={contract.documents || []} />}
+        </div>
+      </div>
+    </ResponsiveLayout>
   );
 };
 
-// Overview Tab Component
+// Overview Tab Component (Updated for mobile)
 const OverviewTab = ({ contract }) => (
   <div className="space-y-6">
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
       {/* Contract Details */}
       <div>
         <h3 className="text-lg font-semibold mb-4">Contract Details</h3>
@@ -422,7 +408,7 @@ const OverviewTab = ({ contract }) => (
   </div>
 );
 
-// IPCs Tab Component
+// IPCs Tab Component (Updated for mobile)
 const IPCSTab = ({ ipcs, onNewIPC, ipcForm, setIpcForm }) => {
   const getIPCStatusConfig = (status) => {
     const statusConfigs = {
@@ -442,14 +428,14 @@ const IPCSTab = ({ ipcs, onNewIPC, ipcForm, setIpcForm }) => {
       {/* New IPC Form */}
       <div className="bg-gray-50 p-4 rounded-lg">
         <h3 className="text-lg font-semibold mb-4">Create New IPC</h3>
-        <form onSubmit={onNewIPC} className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div>
+        <form onSubmit={onNewIPC} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="sm:col-span-2 lg:col-span-1">
             <label className="block text-sm font-medium text-gray-700 mb-1">IPC Number</label>
             <input
               type="text"
               value={ipcForm.ipcNumber}
               onChange={(e) => setIpcForm(prev => ({ ...prev, ipcNumber: e.target.value }))}
-              className="w-full p-2 border border-gray-300 rounded-md"
+              className="w-full p-2 border border-gray-300 rounded-md text-sm sm:text-base"
               required
             />
           </div>
@@ -459,7 +445,7 @@ const IPCSTab = ({ ipcs, onNewIPC, ipcForm, setIpcForm }) => {
               type="date"
               value={ipcForm.periodFrom}
               onChange={(e) => setIpcForm(prev => ({ ...prev, periodFrom: e.target.value }))}
-              className="w-full p-2 border border-gray-300 rounded-md"
+              className="w-full p-2 border border-gray-300 rounded-md text-sm sm:text-base"
               required
             />
           </div>
@@ -469,7 +455,7 @@ const IPCSTab = ({ ipcs, onNewIPC, ipcForm, setIpcForm }) => {
               type="date"
               value={ipcForm.periodTo}
               onChange={(e) => setIpcForm(prev => ({ ...prev, periodTo: e.target.value }))}
-              className="w-full p-2 border border-gray-300 rounded-md"
+              className="w-full p-2 border border-gray-300 rounded-md text-sm sm:text-base"
               required
             />
           </div>
@@ -479,7 +465,7 @@ const IPCSTab = ({ ipcs, onNewIPC, ipcForm, setIpcForm }) => {
               type="number"
               value={ipcForm.currentValue}
               onChange={(e) => setIpcForm(prev => ({ ...prev, currentValue: e.target.value }))}
-              className="w-full p-2 border border-gray-300 rounded-md"
+              className="w-full p-2 border border-gray-300 rounded-md text-sm sm:text-base"
               required
             />
           </div>
@@ -489,13 +475,13 @@ const IPCSTab = ({ ipcs, onNewIPC, ipcForm, setIpcForm }) => {
               type="number"
               value={ipcForm.deductions}
               onChange={(e) => setIpcForm(prev => ({ ...prev, deductions: e.target.value }))}
-              className="w-full p-2 border border-gray-300 rounded-md"
+              className="w-full p-2 border border-gray-300 rounded-md text-sm sm:text-base"
             />
           </div>
-          <div className="flex items-end">
+          <div className="sm:col-span-2 lg:col-span-1 flex items-end">
             <button
               type="submit"
-              className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700"
+              className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 text-sm sm:text-base"
             >
               <Plus className="w-4 h-4 mr-2 inline" />
               Create IPC
@@ -520,27 +506,27 @@ const IPCSTab = ({ ipcs, onNewIPC, ipcForm, setIpcForm }) => {
               
               return (
                 <div key={ipc.id} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition">
-                  <div className="flex justify-between items-start mb-3">
-                    <div>
+                  <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3 mb-3">
+                    <div className="flex-1">
                       <h4 className="font-semibold text-lg">{ipc.ipcNumber}</h4>
                       <p className="text-gray-600 text-sm">
                         Period: {ipc.periodFrom ? new Date(ipc.periodFrom).toLocaleDateString() : 'N/A'} - 
                         {ipc.periodTo ? new Date(ipc.periodTo).toLocaleDateString() : 'N/A'}
                       </p>
                     </div>
-                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${statusConfig.color}`}>
+                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${statusConfig.color} w-fit`}>
                       {statusConfig.label}
                     </span>
                   </div>
                   
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-3">
                     <DetailItem label="Current Value" value={`$${ipc.currentValue?.toLocaleString() || '0'}`} />
                     <DetailItem label="Deductions" value={`$${ipc.deductions?.toLocaleString() || '0'}`} />
                     <DetailItem label="Net Payable" value={`$${netPayable.toLocaleString()}`} />
                     <DetailItem label="Cumulative" value={`$${ipc.cumulativeValue?.toLocaleString() || '0'}`} />
                   </div>
                   
-                  <div className="flex justify-between items-center">
+                  <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
                     <div className="text-sm text-gray-500">
                       Submitted by: {ipc.submittedBy?.name} on {ipc.createdAt ? new Date(ipc.createdAt).toLocaleDateString() : 'N/A'}
                     </div>
@@ -563,12 +549,12 @@ const IPCSTab = ({ ipcs, onNewIPC, ipcForm, setIpcForm }) => {
   );
 };
 
-// Variations Tab Component
+// Variations Tab Component (Updated for mobile)
 const VariationsTab = ({ variations }) => (
   <div>
-    <div className="flex justify-between items-center mb-4">
+    <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-4">
       <h3 className="text-lg font-semibold">Variation Orders</h3>
-      <button className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+      <button className="flex items-center justify-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm sm:text-base w-full sm:w-auto">
         <Plus className="w-4 h-4 mr-2" />
         New Variation
       </button>
@@ -583,8 +569,8 @@ const VariationsTab = ({ variations }) => (
       <div className="space-y-4">
         {variations.map((vo) => (
           <div key={vo.id} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition">
-            <div className="flex justify-between items-start mb-3">
-              <div>
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3 mb-3">
+              <div className="flex-1">
                 <h4 className="font-semibold text-lg">{vo.voRef}</h4>
                 <p className="text-gray-600 text-sm">{vo.description}</p>
               </div>
@@ -592,12 +578,12 @@ const VariationsTab = ({ variations }) => (
                 vo.status === 'APPROVED' ? 'bg-green-100 text-green-800' :
                 vo.status === 'PENDING' ? 'bg-yellow-100 text-yellow-800' :
                 'bg-red-100 text-red-800'
-              }`}>
+              } w-fit`}>
                 {vo.status || 'PENDING'}
               </span>
             </div>
             
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               <DetailItem label="Cost Impact" value={`$${vo.costImpact?.toLocaleString() || '0'}`} />
               <DetailItem label="Time Impact" value={vo.timeImpact ? `${vo.timeImpact} days` : 'N/A'} />
               <DetailItem label="Created" value={vo.createdAt ? new Date(vo.createdAt).toLocaleDateString() : 'N/A'} />
@@ -609,7 +595,7 @@ const VariationsTab = ({ variations }) => (
   </div>
 );
 
-// Documents Tab Component
+// Documents Tab Component (Updated for mobile)
 const DocumentsTab = ({ documents }) => (
   <div>
     <h3 className="text-lg font-semibold mb-4">Contract Documents</h3>
@@ -622,7 +608,7 @@ const DocumentsTab = ({ documents }) => (
     ) : (
       <div className="space-y-3">
         {documents.map((doc) => (
-          <div key={doc.id} className="flex justify-between items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50">
+          <div key={doc.id} className="flex flex-col sm:flex-row sm:justify-between sm:items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 gap-3">
             <div className="flex items-center">
               <FileText className="w-5 h-5 text-blue-500 mr-3" />
               <div>
@@ -632,7 +618,7 @@ const DocumentsTab = ({ documents }) => (
                 </p>
               </div>
             </div>
-            <button className="text-blue-600 hover:text-blue-800">
+            <button className="text-blue-600 hover:text-blue-800 mt-2 sm:mt-0">
               <Download className="w-5 h-5" />
             </button>
           </div>
@@ -642,11 +628,11 @@ const DocumentsTab = ({ documents }) => (
   </div>
 );
 
-// Reusable Detail Item Component
+// Reusable Detail Item Component (Updated for mobile)
 const DetailItem = ({ label, value, icon: Icon }) => (
   <div className="flex justify-between items-center py-2">
-    <span className="text-gray-600">{label}</span>
-    <span className="font-medium text-gray-900 flex items-center">
+    <span className="text-gray-600 text-sm sm:text-base">{label}</span>
+    <span className="font-medium text-gray-900 flex items-center text-sm sm:text-base">
       {Icon && <Icon className="w-4 h-4 mr-2" />}
       {value}
     </span>

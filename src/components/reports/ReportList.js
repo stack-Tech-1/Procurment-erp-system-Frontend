@@ -52,7 +52,7 @@ const ReportList = ({
   return (
     <div>
       {/* Header */}
-      <div className="flex justify-between items-center mb-6">
+     {/* <div className="flex justify-between items-center mb-6">
         <div>
           <h1 className="text-2xl font-bold text-gray-800">Reports Dashboard</h1>
           <p className="text-gray-600">Create and manage custom reports</p>
@@ -64,10 +64,10 @@ const ReportList = ({
           <Plus className="w-4 h-4 mr-2" />
           Create Report
         </button>
-      </div>
+      </div>  */}
 
       {/* Statistics Cards */}
-      <div className="grid grid-cols-4 gap-4 mb-6">
+      {/*<div className="grid grid-cols-4 gap-4 mb-6">
         <div className="bg-white p-4 rounded-lg shadow">
           <div className="flex justify-between items-center">
             <span className="text-gray-600 text-sm">Total Reports</span>
@@ -105,10 +105,10 @@ const ReportList = ({
             {reports.filter(r => r.isFavorite).length}
           </p>
         </div>
-      </div>
+      </div> */}
 
       {/* Filter and Search Bar */}
-      <div className="bg-white p-4 rounded-lg shadow-md mb-6 flex items-center space-x-4">
+      {/*<div className="bg-white p-4 rounded-lg shadow-md mb-6 flex items-center space-x-4">
         <div className="relative flex-grow">
           <input
             type="text"
@@ -154,7 +154,7 @@ const ReportList = ({
         >
           Clear
         </button>
-      </div>
+      </div> */}
 
       {/* Reports Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

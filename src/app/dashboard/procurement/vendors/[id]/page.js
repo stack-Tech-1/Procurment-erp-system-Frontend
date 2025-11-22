@@ -17,7 +17,7 @@ import {
 } from 'lucide-react';
 
 // Use your actual API endpoints
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 
 // Helper Functions and Components
 const getStatusClass = (status) => {
@@ -362,126 +362,126 @@ const VendorDetailPage = () => {
 
     const handleSaveCategories = async (categoryCsiCodes) => {
         try {
-          const token = getAuthToken();
-          if (!token) throw new Error('Authentication required');
-      
-          console.log('🔄 Selected CSI codes from frontend:', categoryCsiCodes);
-      
-          // 1. Get all categories from the newly seeded database
-          const categoriesResponse = await axios.get(
+        const token = getAuthToken();
+        if (!token) throw new Error('Authentication required');
+    
+        console.log('🔄 Selected CSI codes from frontend:', categoryCsiCodes);
+    
+        // 1. Get all categories from the newly seeded database
+        const categoriesResponse = await axios.get(
             `${API_BASE_URL}/api/categories`,
             {
-              headers: { Authorization: `Bearer ${token}` }
+            headers: { Authorization: `Bearer ${token}` }
             }
-          );
-          
-          const allCategories = categoriesResponse.data;
-          console.log('📋 All categories from backend:', allCategories);
-          
-          // 2. Map CSI codes to category IDs
-          const categoryIds = categoryCsiCodes.map(csiCode => {
+        );
+        
+        const allCategories = categoriesResponse.data;
+        console.log('📋 All categories from backend:', allCategories);
+        
+        // 2. Map CSI codes to category IDs
+        const categoryIds = categoryCsiCodes.map(csiCode => {
             const category = allCategories.find(cat => {
-              console.log(`Comparing: Frontend "${csiCode}" vs Backend "${cat.csiCode}"`);
-              return cat.csiCode === csiCode;
+            console.log(`Comparing: Frontend "${csiCode}" vs Backend "${cat.csiCode}"`);
+            return cat.csiCode === csiCode;
             });
             
             if (category) {
-              console.log(`✅ Match found: ${csiCode} -> ${category.name} (ID: ${category.id})`);
+            console.log(`✅ Match found: ${csiCode} -> ${category.name} (ID: ${category.id})`);
             } else {
-              console.log(`❌ No match for CSI code: ${csiCode}`);
+            console.log(`❌ No match for CSI code: ${csiCode}`);
             }
             
             return category ? category.id : null;
-          }).filter(id => id !== null);
-      
-          console.log('📋 Final category IDs to save:', categoryIds);
-      
-          if (categoryIds.length === 0) {
+        }).filter(id => id !== null);
+    
+        console.log('📋 Final category IDs to save:', categoryIds);
+    
+        if (categoryIds.length === 0) {
             throw new Error('No matching categories found. Please check CSI codes.');
-          }
-      
-          // 3. Update vendor with category IDs
-          const response = await axios.put(
+        }
+    
+        // 3. Update vendor with category IDs
+        const response = await axios.put(
             `${API_BASE_URL}/api/vendors/${vendor.id}`,
             { 
-              categoryIds 
+            categoryIds 
             },
             {
-              headers: {
+            headers: {
                 Authorization: `Bearer ${token}`,
                 'Content-Type': 'application/json',
-              },
+            },
             }
-          );
-      
-          console.log('✅ Categories saved successfully!');
-          console.log('📦 Response:', response.data);
-          
-          // Refresh vendor data to show updated categories
-          fetchVendorDetails();
-          
-          return response.data;
+        );
+    
+        console.log('✅ Categories saved successfully!');
+        console.log('📦 Response:', response.data);
+        
+        // Refresh vendor data to show updated categories
+        fetchVendorDetails();
+        
+        return response.data;
         } catch (error) {
-          console.error('❌ Failed to save categories:', error);
-          
-          // Detailed error logging
-          if (error.response) {
+        console.error('❌ Failed to save categories:', error);
+        
+        // Detailed error logging
+        if (error.response) {
             console.error('Error response data:', error.response.data);
             console.error('Error status:', error.response.status);
-          }
-          
-          throw error;
         }
-      };
+        
+        throw error;
+        }
+    };
 
 
 
 
-      // In your VendorDetailPage component, add the evaluation save handler
+    // In your VendorDetailPage component, add the evaluation save handler
 const handleEvaluationSave = async (evaluationData) => {
     try {
-      const token = getAuthToken();
-      if (!token) throw new Error('Authentication required');
-  
-      console.log('💾 Saving evaluation:', evaluationData);
-  
-      // Update vendor with evaluation data
-      const response = await axios.put(
+    const token = getAuthToken();
+    if (!token) throw new Error('Authentication required');
+
+    console.log('💾 Saving evaluation:', evaluationData);
+
+    // Update vendor with evaluation data
+    const response = await axios.put(
         `${API_BASE_URL}/api/vendors/${vendor.id}`,
         { 
-          // Map evaluation data to your vendor fields
-          qualificationScore: evaluationData.totalScore,
-          vendorClass: evaluationData.vendorClass,
-          evaluationNotes: evaluationData.notes,
-          documentComplianceScore: evaluationData.documentCompliance,
-          technicalCapabilityScore: evaluationData.technicalCapability,
-          financialStrengthScore: evaluationData.financialStrength,
-          experienceScore: evaluationData.experience,
-          responsivenessScore: evaluationData.responsiveness,
-          lastEvaluatedAt: new Date().toISOString(),
-          evaluatedBy: evaluationData.evaluatedBy
+        // Map evaluation data to your vendor fields
+        qualificationScore: evaluationData.totalScore,
+        vendorClass: evaluationData.vendorClass,
+        evaluationNotes: evaluationData.notes,
+        documentComplianceScore: evaluationData.documentCompliance,
+        technicalCapabilityScore: evaluationData.technicalCapability,
+        financialStrengthScore: evaluationData.financialStrength,
+        experienceScore: evaluationData.experience,
+        responsivenessScore: evaluationData.responsiveness,
+        lastEvaluatedAt: new Date().toISOString(),
+        evaluatedBy: evaluationData.evaluatedBy
         },
         {
-          headers: {
+        headers: {
             Authorization: `Bearer ${token}`,
             'Content-Type': 'application/json',
-          },
+        },
         }
-      );
-  
-      console.log('✅ Evaluation saved successfully:', response.data);
-      
-      // Refresh vendor data
-      fetchVendorDetails();
-      
-      return response.data;
-    } catch (error) {
-      console.error('❌ Failed to save evaluation:', error);
-      throw error;
-    }
-  };
+    );
 
-      
+    console.log('✅ Evaluation saved successfully:', response.data);
+    
+    // Refresh vendor data
+    fetchVendorDetails();
+    
+    return response.data;
+    } catch (error) {
+    console.error('❌ Failed to save evaluation:', error);
+    throw error;
+    }
+};
+
+    
     
 
     useEffect(() => {
@@ -679,94 +679,94 @@ const handleEvaluationSave = async (evaluationData) => {
         <div className="min-h-screen bg-gray-100 p-4 sm:p-6 lg:p-8">
             {/* Header / Title Bar */}            
 <header className="bg-white shadow-xl p-6 rounded-xl mb-6">
-  {/* Breadcrumb Navigation */}
-  <nav className="mb-4">
+{/* Breadcrumb Navigation */}
+<nav className="mb-4">
     <div className="flex items-center space-x-2 text-sm text-gray-500">
-      <button 
+    <button 
         onClick={() => router.back()}
         className="flex items-center hover:text-blue-600 transition duration-150"
-      >
+    >
         <ArrowLeft className="w-4 h-4 mr-1" />
         Back to Dashboard
-      </button>
-      <span>/</span>
-      <Link href="/dashboard/procurement/vendors" className="hover:text-blue-600">
+    </button>
+    <span>/</span>
+    <Link href="/dashboard/procurement/vendors" className="hover:text-blue-600">
         Vendors
-      </Link>
-      <span>/</span>
-      <span className="text-gray-700 font-medium">{vendor.companyName || vendor.companyLegalName}</span>
+    </Link>
+    <span>/</span>
+    <span className="text-gray-700 font-medium">{vendor.companyName || vendor.companyLegalName}</span>
     </div>
-  </nav>
+</nav>
 
-  <div className="flex items-center justify-between flex-wrap gap-4">
+<div className="flex items-center justify-between flex-wrap gap-4">
     <div className="flex items-center space-x-4">
-      {/* Vendor Logo - Only show if logo exists */}
-      {vendor.logo && (
+    {/* Vendor Logo - Only show if logo exists */}
+    {vendor.logo && (
         <div className="w-16 h-16 rounded-lg border border-gray-200 overflow-hidden">
-          <img 
+        <img 
             src={vendor.logo} 
             alt={`${vendor.companyName} logo`}
             className="w-full h-full object-cover"
-          />
+        />
         </div>
-      )}
-      <div>
+    )}
+    <div>
         <h1 className="text-3xl font-extrabold text-gray-900 flex items-center">
-          <Briefcase className="w-7 h-7 mr-3 text-blue-600" />
-          {vendor.companyName || vendor.companyLegalName}
+        <Briefcase className="w-7 h-7 mr-3 text-blue-600" />
+        {vendor.companyName || vendor.companyLegalName}
         </h1>
         <p className="text-gray-500 mt-1">
-          Vendor ID: {vendor.vendorId} | CR No: {vendor.crNumber || vendor.licenseNumber}
+        Vendor ID: {vendor.vendorId} | CR No: {vendor.crNumber || vendor.licenseNumber}
         </p>
         {/* Activity Log Link */}
         <button className="text-blue-600 hover:text-blue-800 text-sm mt-1 flex items-center">
-          <History className="w-4 h-4 mr-1" />
-          View Activity Log
+        <History className="w-4 h-4 mr-1" />
+        View Activity Log
         </button>
-      </div>
+    </div>
     </div>
 
     <div className="flex items-center gap-3">
-      <span className={`px-4 py-2 text-sm font-bold rounded-full shadow-lg border ${getStatusClass(vendor.status)}`}>
+    <span className={`px-4 py-2 text-sm font-bold rounded-full shadow-lg border ${getStatusClass(vendor.status)}`}>
         {vendor.status?.replace(/_/g, ' ') || 'UNKNOWN'}
-      </span>
-      <span className={`px-4 py-2 text-white text-sm font-bold rounded-full shadow-lg ${vendor.vendorClass === 'A' ? 'bg-indigo-600' : 'bg-gray-600'}`}>
+    </span>
+    <span className={`px-4 py-2 text-white text-sm font-bold rounded-full shadow-lg ${vendor.vendorClass === 'A' ? 'bg-indigo-600' : 'bg-gray-600'}`}>
         Class {vendor.vendorClass || 'N/A'}
-      </span>
-      {/* Profile Validity */}
-      {vendor.profileValidityUntil && (
+    </span>
+    {/* Profile Validity */}
+    {vendor.profileValidityUntil && (
         <span className="px-3 py-1 bg-blue-100 text-blue-700 text-sm rounded-full border border-blue-200">
-          Valid until: {new Date(vendor.profileValidityUntil).toLocaleDateString()}
+        Valid until: {new Date(vendor.profileValidityUntil).toLocaleDateString()}
         </span>
-      )}
+    )}
     </div>
-  </div>
-  
-  {/* Key Metrics Row - Keep your existing one, it's good! */}
-  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6 border-t pt-4">
+</div>
+
+{/* Key Metrics Row - Keep your existing one, it's good! */}
+<div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6 border-t pt-4">
     <DetailItem 
-      label="Qualification Score" 
-      value={`${vendor.qualificationScore || 0}/100`} 
-      icon={Award}
-      className="bg-blue-50 border-blue-200"
+    label="Qualification Score" 
+    value={`${vendor.qualificationScore || 0}/100`} 
+    icon={Award}
+    className="bg-blue-50 border-blue-200"
     />
     <DetailItem 
-      label="Profile Validity Until" 
-      value={vendor.profileValidityUntil ? new Date(vendor.profileValidityUntil).toLocaleDateString() : 'N/A'} 
-      icon={Calendar}
-      className="bg-green-50 border-green-200"
+    label="Profile Validity Until" 
+    value={vendor.profileValidityUntil ? new Date(vendor.profileValidityUntil).toLocaleDateString() : 'N/A'} 
+    icon={Calendar}
+    className="bg-green-50 border-green-200"
     />
     <DetailItem 
-      label="Assigned Reviewer" 
-      value={vendor.assignedReviewer?.name || 'N/A'} 
-      icon={Users}
+    label="Assigned Reviewer" 
+    value={vendor.assignedReviewer?.name || 'N/A'} 
+    icon={Users}
     />
     <DetailItem 
-      label="Last Reviewed By" 
-      value={vendor.lastReviewedBy?.name || 'N/A'} 
-      icon={Clock}
+    label="Last Reviewed By" 
+    value={vendor.lastReviewedBy?.name || 'N/A'} 
+    icon={Clock}
     />
-  </div>
+</div>
 </header>
 
             {/* Main Content: Details + Review Panel */}

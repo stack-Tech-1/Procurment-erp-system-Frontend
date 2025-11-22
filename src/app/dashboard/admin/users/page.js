@@ -1,3 +1,4 @@
+// frontend/src/app/dashboard/admin/users/page.js - MOBILE OPTIMIZED
 "use client";
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
@@ -9,40 +10,38 @@ import {
     CheckSquare, AlertCircle, ArrowRight, Plus, MoreVertical, Inbox
 } from 'lucide-react';
 import { toast } from 'react-hot-toast'; 
-
-// Components for Layout
-import Sidebar from "@/components/Sidebar";
-import Topbar from "@/components/Topbar";
+import ResponsiveLayout from '@/components/layout/ResponsiveLayout';
 
 const API_BASE_URL =  `${process.env.NEXT_PUBLIC_API_URL}/api/users`;
 
+
 // --- Notification Center Component ---
 const NotificationCenter = ({ isOpen, onClose, notifications, onMarkAsRead, onMarkAllAsRead }) => {
-    if (!isOpen) return null;
-  
-    const getNotificationIcon = (type) => {
-      const icons = {
-        TASK_ASSIGNED: <ListTodo className="w-5 h-5 text-blue-500" />,
-        APPROVAL_REQUIRED: <CheckSquare className="w-5 h-5 text-orange-500" />,
-        APPROVAL_APPROVED: <CheckCircle className="w-5 h-5 text-green-500" />,
-        APPROVAL_REJECTED: <XCircle className="w-5 h-5 text-red-500" />,
-        ESCALATION: <AlertCircle className="w-5 h-5 text-red-500" />,
-        SYSTEM: <Bell className="w-5 h-5 text-purple-500" />
-      };
-      return icons[type] || <Bell className="w-5 h-5 text-gray-500" />;
+  if (!isOpen) return null;
+
+  const getNotificationIcon = (type) => {
+    const icons = {
+      TASK_ASSIGNED: <ListTodo className="w-5 h-5 text-blue-500" />,
+      APPROVAL_REQUIRED: <CheckSquare className="w-5 h-5 text-orange-500" />,
+      APPROVAL_APPROVED: <CheckCircle className="w-5 h-5 text-green-500" />,
+      APPROVAL_REJECTED: <XCircle className="w-5 h-5 text-red-500" />,
+      ESCALATION: <AlertCircle className="w-5 h-5 text-red-500" />,
+      SYSTEM: <Bell className="w-5 h-5 text-purple-500" />
     };
-  
-    const getNotificationColor = (type) => {
-      const colors = {
-        TASK_ASSIGNED: 'bg-blue-50 border-blue-200',
-        APPROVAL_REQUIRED: 'bg-orange-50 border-orange-200',
-        APPROVAL_APPROVED: 'bg-green-50 border-green-200',
-        APPROVAL_REJECTED: 'bg-red-50 border-red-200',
-        ESCALATION: 'bg-red-50 border-red-200',
-        SYSTEM: 'bg-purple-50 border-purple-200'
-      };
-      return colors[type] || 'bg-gray-50 border-gray-200';
+    return icons[type] || <Bell className="w-5 h-5 text-gray-500" />;
+  };
+
+  const getNotificationColor = (type) => {
+    const colors = {
+      TASK_ASSIGNED: 'bg-blue-50 border-blue-200',
+      APPROVAL_REQUIRED: 'bg-orange-50 border-orange-200',
+      APPROVAL_APPROVED: 'bg-green-50 border-green-200',
+      APPROVAL_REJECTED: 'bg-red-50 border-red-200',
+      ESCALATION: 'bg-red-50 border-red-200',
+      SYSTEM: 'bg-purple-50 border-purple-200'
     };
+    return colors[type] || 'bg-gray-50 border-gray-200';
+  };
   
     return (
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -1343,20 +1342,20 @@ const EnhancedSummaryCards = ({ activityStats }) => (
   );
 
 
-// --- Enhanced User Management Content ---
+// --- Enhanced User Management Content (Updated for Mobile) ---
 const UserManagementContent = ({ users, loading, error, fetchUsers, handleToggleStatus }) => {
-    const [selectedUser, setSelectedUser] = useState(null);
-    const [showProfile, setShowProfile] = useState(false);
-    const [showPermissions, setShowPermissions] = useState(false);
-    const [showTaskAssignment, setShowTaskAssignment] = useState(false);
-    const [showNotifications, setShowNotifications] = useState(false);
-    const [showApprovalWorkflow, setShowApprovalWorkflow] = useState(false);
-    const [selectedWorkflow, setSelectedWorkflow] = useState(null);
-    const [roles, setRoles] = useState([]);
-    const [permissions, setPermissions] = useState({});
-    const [activityStats, setActivityStats] = useState({});
-    const [workflowStats, setWorkflowStats] = useState({});
-    const [notifications, setNotifications] = useState([]);
+  const [selectedUser, setSelectedUser] = useState(null);
+  const [showProfile, setShowProfile] = useState(false);
+  const [showPermissions, setShowPermissions] = useState(false);
+  const [showTaskAssignment, setShowTaskAssignment] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [showApprovalWorkflow, setShowApprovalWorkflow] = useState(false);
+  const [selectedWorkflow, setSelectedWorkflow] = useState(null);
+  const [roles, setRoles] = useState([]);
+  const [permissions, setPermissions] = useState({});
+  const [activityStats, setActivityStats] = useState({});
+  const [workflowStats, setWorkflowStats] = useState({});
+  const [notifications, setNotifications] = useState([]);
 
     // Mock workflow data
     const mockWorkflows = [
@@ -1427,24 +1426,24 @@ const UserManagementContent = ({ users, loading, error, fetchUsers, handleToggle
 
     // Calculate activity statistics
     useEffect(() => {
-        if (users.length > 0) {
-            const stats = {
-                totalUsers: users.length,
-                activeToday: users.filter(u => {
-                    if (!u.lastLoginDate) return false;
-                    return new Date(u.lastLoginDate).toDateString() === new Date().toDateString();
-                }).length,
-                activeThisWeek: users.filter(u => {
-                    if (!u.lastLoginDate) return false;
-                    const daysAgo = Math.floor((new Date() - new Date(u.lastLoginDate)) / (1000 * 60 * 60 * 24));
-                    return daysAgo <= 7;
-                }).length,
-                neverLoggedIn: users.filter(u => !u.lastLoginDate).length,
-                mostActiveDepartment: getMostActiveDepartment(users)
-            };
-            setActivityStats(stats);
-        }
-    }, [users]);
+      if (users.length > 0) {
+          const stats = {
+              totalUsers: users.length,
+              activeToday: users.filter(u => {
+                  if (!u.lastLoginDate) return false;
+                  return new Date(u.lastLoginDate).toDateString() === new Date().toDateString();
+              }).length,
+              activeThisWeek: users.filter(u => {
+                  if (!u.lastLoginDate) return false;
+                  const daysAgo = Math.floor((new Date() - new Date(u.lastLoginDate)) / (1000 * 60 * 60 * 24));
+                  return daysAgo <= 7;
+              }).length,
+              neverLoggedIn: users.filter(u => !u.lastLoginDate).length,
+              mostActiveDepartment: getMostActiveDepartment(users)
+          };
+          setActivityStats(stats);
+      }
+  }, [users]);
 
     // Fetch roles and permissions
     const fetchRolesAndPermissions = async () => {
@@ -1796,51 +1795,57 @@ const UserManagementContent = ({ users, loading, error, fetchUsers, handleToggle
 
     // Main Return
     return (
-        <main className="flex-1 overflow-y-auto p-4 sm:p-8 bg-gray-50">
-            {/* Loading State */}
-            {loading && users.length === 0 && (
-                <div className="flex justify-center items-center h-full min-h-[50vh]">
-                    <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
-                    <p className="ml-3 text-lg text-gray-600">Loading user list...</p>
-                </div>
-            )}
-            
-            {/* Error State */}
-            {error && !users.length && (
-                <div className="p-8 text-center h-full min-h-[50vh]">
-                    <h1 className="text-3xl font-bold text-red-600 mb-4">Error</h1>
-                    <p className="text-gray-600">{error}</p>
-                    <button onClick={fetchUsers} className="mt-4 text-blue-600 hover:underline">Try Again</button>
-                </div>
-            )}
+      <div className="space-y-6">
+          {/* Loading State */}
+          {loading && users.length === 0 && (
+              <div className="flex justify-center items-center min-h-[50vh]">
+                  <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+                  <p className="ml-3 text-lg text-gray-600">Loading user list...</p>
+              </div>
+          )}
+          
+          {/* Error State */}
+          {error && !users.length && (
+              <div className="p-4 sm:p-8 text-center min-h-[50vh]">
+                  <h1 className="text-xl sm:text-3xl font-bold text-red-600 mb-4">Error</h1>
+                  <p className="text-gray-600 text-sm sm:text-base">{error}</p>
+                  <button onClick={fetchUsers} className="mt-4 text-blue-600 hover:underline text-sm sm:text-base">Try Again</button>
+              </div>
+          )}
             
             {/* Main Content */}
             <div className="max-w-7xl mx-auto">
-                <div className="flex justify-between items-center mb-6">
-                    <h1 className="text-3xl font-bold text-gray-900 flex items-center">
-                        <Users className="w-7 h-7 mr-3 text-blue-600" />
-                        System User Management ({users.length})
-                    </h1>
-                    <div className="flex items-center space-x-3">
+                {/* Header Section */}
+                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
+                    <div>
+                        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 flex items-center">
+                            <Users className="w-6 h-6 sm:w-7 sm:h-7 mr-2 sm:mr-3 text-blue-600" />
+                            System User Management ({users.length})
+                        </h1>
+                        <p className="text-gray-600 mt-2 text-sm sm:text-base">
+                            Manage user roles, permissions, and account statuses
+                        </p>
+                    </div>
+                    <div className="flex items-center space-x-2 sm:space-x-3">
                         <NotificationBell />
                         <button 
                             onClick={() => setShowPermissions(true)}
-                            className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 flex items-center"
+                            className="px-3 py-2 sm:px-4 sm:py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 flex items-center text-sm"
                         >
-                            <Shield className="w-4 h-4 mr-2" />
-                            Manage Permissions
+                            <Shield className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+                            <span className="hidden sm:inline">Permissions</span>
                         </button>
-                        <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center">
-                            <User className="w-4 h-4 mr-2" />
-                            Add User
+                        <button className="px-3 py-2 sm:px-4 sm:py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center text-sm">
+                            <User className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+                            <span className="hidden sm:inline">Add User</span>
                         </button>
                         <button 
                             onClick={fetchUsers} 
                             className="flex items-center text-sm font-medium text-blue-600 hover:text-blue-800 transition"
                             disabled={loading}
                         >
-                            <Loader2 className={`w-4 h-4 mr-1 ${loading ? 'animate-spin' : ''}`} />
-                            Refresh
+                            <Loader2 className={`w-3 h-3 sm:w-4 sm:h-4 mr-1 ${loading ? 'animate-spin' : ''}`} />
+                            <span className="hidden sm:inline">Refresh</span>
                         </button>
                     </div>
                 </div>
@@ -1853,108 +1858,127 @@ const UserManagementContent = ({ users, loading, error, fetchUsers, handleToggle
 
                 {/* Enhanced User Table */}
                 <div className="bg-white shadow-xl rounded-xl overflow-hidden border border-gray-200">
-                    <table className="min-w-full divide-y divide-gray-200">
-                        <thead className="bg-gray-50">
-                            <tr>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User Details</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role & Department</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Activity</th>
-                                <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody className="bg-white divide-y divide-gray-100">
-                            {users.map((user) => {
-                                const activity = getActivityStatus(user.lastLoginDate);
-                                
-                                return (
-                                <tr key={user.id} className="hover:bg-blue-50/50 transition duration-150">
-                                    {/* Enhanced User Details */}
-                                    <td className="px-6 py-4">
-                                    <div className="flex items-center">
-                                        <div className="flex-shrink-0 w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                                        <User className="w-5 h-5 text-blue-600" />
-                                        </div>
-                                        <div className="ml-4">
-                                        <div className="text-sm font-medium text-gray-900">{user.name || 'N/A'}</div>
-                                        <div className="text-sm text-gray-500 flex items-center">
-                                            <Mail className="w-3 h-3 mr-1" />
-                                            {user.email}
-                                        </div>
-                                        {user.employeeId && (
-                                            <div className="text-xs text-gray-400 flex items-center mt-1">
-                                            <IdCard className="w-3 h-3 mr-1" />
-                                            ID: {user.employeeId}
+                    <div className="overflow-x-auto">
+                        <table className="min-w-full divide-y divide-gray-200">
+                            <thead className="bg-gray-50">
+                                <tr>
+                                    <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User Details</th>
+                                    <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden sm:table-cell">Role & Department</th>
+                                    <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                    <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell">Activity</th>
+                                    <th className="px-4 sm:px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody className="bg-white divide-y divide-gray-100">
+                                {users.map((user) => {
+                                    const activity = getActivityStatus(user.lastLoginDate);
+                                    
+                                    return (
+                                    <tr key={user.id} className="hover:bg-blue-50/50 transition duration-150">
+                                        {/* Enhanced User Details */}
+                                        <td className="px-4 sm:px-6 py-4">
+                                        <div className="flex items-center">
+                                            <div className="flex-shrink-0 w-8 h-8 sm:w-10 sm:h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                                            <User className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" />
                                             </div>
-                                        )}
+                                            <div className="ml-3">
+                                            <div className="text-sm font-medium text-gray-900">{user.name || 'N/A'}</div>
+                                            <div className="text-xs text-gray-500 flex items-center">
+                                                <Mail className="w-3 h-3 mr-1" />
+                                                {user.email}
+                                            </div>
+                                            {user.employeeId && (
+                                                <div className="text-xs text-gray-400 flex items-center mt-1">
+                                                <IdCard className="w-3 h-3 mr-1" />
+                                                ID: {user.employeeId}
+                                                </div>
+                                            )}
+                                            {/* Mobile: Show role and department */}
+                                            <div className="sm:hidden mt-1">
+                                                <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                                                user.roleId === 1 ? 'bg-indigo-100 text-indigo-800' :
+                                                user.roleId === 2 ? 'bg-green-100 text-green-800' :
+                                                user.roleId === 3 ? 'bg-yellow-100 text-yellow-800' :
+                                                'bg-gray-100 text-gray-800'
+                                                }`}>
+                                                {user.role?.name || 'Unknown'}
+                                                </span>
+                                                {user.department && (
+                                                <div className="text-xs text-gray-600 mt-1">
+                                                    {user.department}
+                                                </div>
+                                                )}
+                                            </div>
+                                            </div>
                                         </div>
-                                    </div>
-                                    </td>
+                                        </td>
                                     
-                                    {/* Role & Department */}
-                                    <td className="px-6 py-4">
-                                    <div className="space-y-1">
+                                    {/* Role & Department - Desktop */}
+                                    <td className="px-4 sm:px-6 py-4 hidden sm:table-cell">
+                                        <div className="space-y-1">
+                                            <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                                            user.roleId === 1 ? 'bg-indigo-100 text-indigo-800' :
+                                            user.roleId === 2 ? 'bg-green-100 text-green-800' :
+                                            user.roleId === 3 ? 'bg-yellow-100 text-yellow-800' :
+                                            'bg-gray-100 text-gray-800'
+                                            }`}>
+                                            {user.role?.name || 'Unknown'}
+                                            </span>
+                                            {user.department && (
+                                            <div className="flex items-center text-xs text-gray-600">
+                                                <Building className="w-3 h-3 mr-1" />
+                                                {user.department}
+                                            </div>
+                                            )}
+                                            {user.jobTitle && (
+                                            <div className="flex items-center text-xs text-gray-600">
+                                                <Briefcase className="w-3 h-3 mr-1" />
+                                                {user.jobTitle}
+                                            </div>
+                                            )}
+                                        </div>
+                                        </td>
+                                        
+                                        {/* Status */}
+                                        <td className="px-4 sm:px-6 py-4">
                                         <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                                        user.roleId === 1 ? 'bg-indigo-100 text-indigo-800' :
-                                        user.roleId === 2 ? 'bg-green-100 text-green-800' :
-                                        user.roleId === 3 ? 'bg-yellow-100 text-yellow-800' :
-                                        'bg-gray-100 text-gray-800'
+                                            user.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
                                         }`}>
-                                        {user.role?.name || 'Unknown'}
+                                            <div className="flex items-center gap-1">
+                                            {user.isActive ? <CheckCircle className="w-3 h-3" /> : <XCircle className="w-3 h-3" />}
+                                            {user.isActive ? 'Active' : 'Inactive'}
+                                            </div>
                                         </span>
-                                        {user.department && (
-                                        <div className="flex items-center text-xs text-gray-600">
-                                            <Building className="w-3 h-3 mr-1" />
-                                            {user.department}
+                                        </td>
+                                        
+                                        {/* Activity - Desktop */}
+                                        <td className="px-4 sm:px-6 py-4 hidden md:table-cell">
+                                        <div className={`px-2 py-1 text-xs font-medium rounded-full ${activity.bg} ${activity.color}`}>
+                                            {activity.text}
                                         </div>
-                                        )}
-                                        {user.jobTitle && (
-                                        <div className="flex items-center text-xs text-gray-600">
-                                            <Briefcase className="w-3 h-3 mr-1" />
-                                            {user.jobTitle}
+                                        <div className="text-xs text-gray-500 mt-1">
+                                            {user.lastLoginDate 
+                                            ? new Date(user.lastLoginDate).toLocaleDateString()
+                                            : 'Never logged in'
+                                            }
                                         </div>
-                                        )}
-                                    </div>
-                                    </td>
-                                    
-                                    {/* Status */}
-                                    <td className="px-6 py-4">
-                                    <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                                        user.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                                    }`}>
-                                        <div className="flex items-center gap-1">
-                                        {user.isActive ? <CheckCircle className="w-3 h-3" /> : <XCircle className="w-3 h-3" />}
-                                        {user.isActive ? 'Active' : 'Inactive'}
-                                        </div>
-                                    </span>
-                                    </td>
-                                    
-                                    {/* Activity */}
-                                    <td className="px-6 py-4">
-                                    <div className={`px-2 py-1 text-xs font-medium rounded-full ${activity.bg} ${activity.color}`}>
-                                        {activity.text}
-                                    </div>
-                                    <div className="text-xs text-gray-500 mt-1">
-                                        {user.lastLoginDate 
-                                        ? new Date(user.lastLoginDate).toLocaleDateString()
-                                        : 'Never logged in'
-                                        }
-                                    </div>
-                                    </td>
+                                        </td>
 
                                     {/* Enhanced Actions */}
-                                    <td className="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
-                                    <EnhancedActions user={user} />
-                                    </td>
-                                </tr>
-                                );
-                            })}
-                            
-                            {!users.length && !loading && !error && <EmptyTableState />}
-                            </tbody>
-                    </table>
+                                    <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
+                                        <EnhancedActions user={user} />
+                                        </td>
+                                    </tr>
+                                    );
+                                })}
+                                
+                                {!users.length && !loading && !error && <EmptyTableState />}
+                                </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
+            
 
             {/* Modals */}
             <UserProfilePanel 
@@ -2003,94 +2027,90 @@ const UserManagementContent = ({ users, loading, error, fetchUsers, handleToggle
                     }}
                 />
             )}
-        </main>
+        </div>
     );
 };
 
 
 
-// --- Main Page Component ---
+// --- Main Page Component (Updated with ResponsiveLayout) ---
 const UserManagementPage = () => {
-    const [users, setUsers] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
+  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-    const fetchUsers = async () => {
-        setLoading(true);
-        setError(null);
-        try {
-            const token = localStorage.getItem('authToken');
-            if (!token) throw new Error("Authentication token missing.");
+  const fetchUsers = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+          const token = localStorage.getItem('authToken');
+          if (!token) throw new Error("Authentication token missing.");
 
-            const response = await axios.get(API_BASE_URL, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            
-            setUsers(response.data.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)));
-        } catch (err) {
-            console.error("Failed to fetch users:", err);
-            setError(err.response?.data?.error || err.message || 'Could not load user data.');
-            toast.error(err.response?.data?.error || 'Failed to load users.');
-        } finally {
-            setLoading(false);
-        }
-    };
+          const response = await axios.get(API_BASE_URL, {
+              headers: { Authorization: `Bearer ${token}` }
+          });
+          
+          setUsers(response.data.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)));
+      } catch (err) {
+          console.error("Failed to fetch users:", err);
+          setError(err.response?.data?.error || err.message || 'Could not load user data.');
+          toast.error(err.response?.data?.error || 'Failed to load users.');
+      } finally {
+          setLoading(false);
+      }
+  };
 
-    useEffect(() => {
-        fetchUsers();
-    }, []);
-    
-    const handleToggleStatus = async (userId, currentStatus) => {
-        const newStatus = !currentStatus;
-        const action = newStatus ? 'Activate' : 'Deactivate';
-        
-        if (!window.confirm(`Are you sure you want to ${action} this user?`)) {
-            return;
-        }
+  useEffect(() => {
+      fetchUsers();
+  }, []);
+  
+  const handleToggleStatus = async (userId, currentStatus) => {
+      const newStatus = !currentStatus;
+      const action = newStatus ? 'Activate' : 'Deactivate';
+      
+      if (!window.confirm(`Are you sure you want to ${action} this user?`)) {
+          return;
+      }
 
-        const userIndex = users.findIndex(u => u.id === userId);
-        if (userIndex === -1) return;
+      const userIndex = users.findIndex(u => u.id === userId);
+      if (userIndex === -1) return;
 
-        const updatedUsers = [...users];
-        updatedUsers[userIndex] = { ...updatedUsers[userIndex], isUpdating: true };
-        setUsers(updatedUsers);
+      const updatedUsers = [...users];
+      updatedUsers[userIndex] = { ...updatedUsers[userIndex], isUpdating: true };
+      setUsers(updatedUsers);
 
-        try {
-            const token = localStorage.getItem('authToken');
-            if (!token) throw new Error("Authentication token missing.");
+      try {
+          const token = localStorage.getItem('authToken');
+          if (!token) throw new Error("Authentication token missing.");
 
-            await axios.patch(`${API_BASE_URL}/${userId}/status`, 
-                { isActive: newStatus },
-                { headers: { Authorization: `Bearer ${token}` } }
-            );
+          await axios.patch(`${API_BASE_URL}/${userId}/status`, 
+              { isActive: newStatus },
+              { headers: { Authorization: `Bearer ${token}` } }
+          );
 
-            toast.success(`User successfully ${newStatus ? 'activated' : 'deactivated'}.`);
-            await fetchUsers();
+          toast.success(`User successfully ${newStatus ? 'activated' : 'deactivated'}.`);
+          await fetchUsers();
 
-        } catch (err) {
-            updatedUsers[userIndex] = { ...updatedUsers[userIndex], isUpdating: false };
-            setUsers(updatedUsers);
-            
-            console.error("Failed to toggle status:", err);
-            toast.error(err.response?.data?.error || `Failed to ${action} user.`);
-        }
-    };
-    
-    return (
-        <div className="flex h-screen bg-gray-100"> 
-            <Sidebar /> 
-            <div className="flex flex-col flex-1 overflow-hidden"> 
-                <Topbar /> 
-                <UserManagementContent 
-                    users={users} 
-                    loading={loading} 
-                    error={error} 
-                    fetchUsers={fetchUsers} 
-                    handleToggleStatus={handleToggleStatus} 
-                />
-            </div>
-        </div>
-    );
+      } catch (err) {
+          updatedUsers[userIndex] = { ...updatedUsers[userIndex], isUpdating: false };
+          setUsers(updatedUsers);
+          
+          console.error("Failed to toggle status:", err);
+          toast.error(err.response?.data?.error || `Failed to ${action} user.`);
+      }
+  };
+  
+  return (
+      <ResponsiveLayout>
+          <UserManagementContent 
+              users={users} 
+              loading={loading} 
+              error={error} 
+              fetchUsers={fetchUsers} 
+              handleToggleStatus={handleToggleStatus} 
+          />
+      </ResponsiveLayout>
+  );
 };
 
 export default UserManagementPage;

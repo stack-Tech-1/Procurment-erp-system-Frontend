@@ -1,14 +1,14 @@
-// src/app/dashboard/procurement/cost-control/page.jsx
+// frontend/src/app/dashboard/procurement/cost-control/page.js - MOBILE OPTIMIZED WITH BEAUTIFUL DESIGN
 "use client";
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { 
   TrendingUp, TrendingDown, DollarSign, PieChart, BarChart3,
   Calendar, Users, FileText, CheckCircle, AlertTriangle,
-  Building, Package, Eye, Download, Filter, Search
+  Building, Package, Eye, Download, Filter, Search,
+  ArrowRight, Sparkles, Target, Zap, Shield, Rocket
 } from 'lucide-react';
-import Sidebar from '@/components/Sidebar';
-import Topbar from '@/components/Topbar';
+import ResponsiveLayout from '@/components/layout/ResponsiveLayout';
 
 const API_BASE_URL = `${process.env.NEXT_PUBLIC_API_URL}/api`;
 
@@ -19,8 +19,7 @@ const CostControlPage = () => {
   const [activeView, setActiveView] = useState('overview');
 
   // Fetch cost control data
-  // src/app/dashboard/procurement/cost-control/page.jsx - Updated fetchCostData function
-const fetchCostData = async () => {
+  const fetchCostData = async () => {
     try {
       const token = localStorage.getItem('authToken');
       
@@ -38,25 +37,25 @@ const fetchCostData = async () => {
           headers: { Authorization: `Bearer ${token}` } 
         }).catch(error => {
           console.error('Failed to fetch contracts:', error.response?.status);
-          return { data: [] }; // Return empty array on error
+          return { data: [] };
         }),
         axios.get(`${API_BASE_URL}/ipcs`, { 
           headers: { Authorization: `Bearer ${token}` } 
         }).catch(error => {
           console.error('Failed to fetch IPCs:', error.response?.status);
-          return { data: [] }; // Return empty array on error
+          return { data: [] };
         }),
         axios.get(`${API_BASE_URL}/rfqs`, { 
           headers: { Authorization: `Bearer ${token}` } 
         }).catch(error => {
           console.error('Failed to fetch RFQs:', error.response?.status);
-          return { data: [] }; // Return empty array on error
+          return { data: [] };
         }),
         axios.get(`${API_BASE_URL}/vendors`, { 
           headers: { Authorization: `Bearer ${token}` } 
         }).catch(error => {
           console.error('Failed to fetch vendors:', error.response?.status);
-          return { data: [] }; // Return empty array on error
+          return { data: [] };
         })
       ];
   
@@ -98,7 +97,6 @@ const fetchCostData = async () => {
   
     } catch (error) {
       console.error("Failed to fetch cost data:", error);
-      // Set empty data structure to prevent rendering errors
       setCostData({
         contracts: [],
         ipcs: [],
@@ -127,7 +125,7 @@ const fetchCostData = async () => {
     fetchCostData();
   }, [timeRange]);
 
-  // Calculate monthly spend
+  // Helper functions (same as before)
   const calculateMonthlySpend = (ipcs) => {
     const now = new Date();
     const currentMonth = now.getMonth();
@@ -141,7 +139,6 @@ const fetchCostData = async () => {
       .reduce((sum, ipc) => sum + (ipc.currentValue || 0), 0);
   };
 
-  // Calculate savings (estimated vs actual)
   const calculateSavings = (contracts, rfqs) => {
     let totalSavings = 0;
     let totalEstimated = 0;
@@ -166,7 +163,6 @@ const fetchCostData = async () => {
     };
   };
 
-  // Calculate vendor performance
   const calculateVendorPerformance = (vendors, contracts, ipcs) => {
     return vendors.map(vendor => {
       const vendorContracts = contracts.filter(c => c.vendorId === vendor.id);
@@ -189,7 +185,6 @@ const fetchCostData = async () => {
     }).sort((a, b) => b.totalValue - a.totalValue);
   };
 
-  // Calculate project spend
   const calculateProjectSpend = (contracts, ipcs) => {
     const projectMap = {};
     
@@ -220,9 +215,7 @@ const fetchCostData = async () => {
     })).sort((a, b) => b.budget - a.budget);
   };
 
-  // Calculate category spend (simplified - you can enhance with your CSI categories)
   const calculateCategorySpend = (contracts) => {
-    // This is a simplified version - you can enhance with your actual CSI categories
     const categories = {
       'Construction': 0,
       'Services': 0,
@@ -232,8 +225,6 @@ const fetchCostData = async () => {
     };
 
     contracts.forEach(contract => {
-      // Simple categorization based on contract value ranges and names
-      // You can replace this with actual CSI category data from your database
       const value = contract.contractValue || 0;
       if (contract.rfq?.projectName?.toLowerCase().includes('construction') || value > 1000000) {
         categories.Construction += value;
@@ -255,265 +246,341 @@ const fetchCostData = async () => {
   };
 
   const isOnTime = (ipc) => {
-    // Simple on-time calculation - you can enhance this
     const submittedDate = new Date(ipc.createdAt);
-    const approvedDate = ipc.status === 'PAID' ? new Date() : null; // Simplified
-    return approvedDate && (approvedDate - submittedDate) <= (14 * 24 * 60 * 60 * 1000); // Within 14 days
+    const approvedDate = ipc.status === 'PAID' ? new Date() : null;
+    return approvedDate && (approvedDate - submittedDate) <= (14 * 24 * 60 * 60 * 1000);
   };
 
   if (loading) {
     return (
-      <div className="flex min-h-screen bg-gray-50">
-        <Sidebar />
-        <div className="flex-1 flex flex-col">
-          <Topbar />
-          <div className="flex-1 flex items-center justify-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      <ResponsiveLayout>
+        <div className="flex items-center justify-center min-h-64 py-8">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <div className="text-lg text-gray-600">Loading cost analytics...</div>
           </div>
         </div>
-      </div>
+      </ResponsiveLayout>
     );
   }
 
   const { metrics, vendorPerformance, projectSpend, categorySpend } = costData;
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
-      <Sidebar />
-      
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <Topbar />
-        
-        <main className="flex-1 overflow-y-auto p-6">
-          {/* Header */}
-          <div className="flex justify-between items-center mb-6">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-800">Cost Control & Analytics</h1>
-              <p className="text-gray-600">Monitor and analyze procurement spending</p>
-            </div>
-            
-            <div className="flex space-x-4">
-              <select
-                value={timeRange}
-                onChange={(e) => setTimeRange(e.target.value)}
-                className="p-2 border border-gray-300 rounded-lg"
-              >
-                <option value="current_month">Current Month</option>
-                <option value="last_month">Last Month</option>
-                <option value="quarter">This Quarter</option>
-                <option value="year">This Year</option>
-              </select>
-              
-              <button className="flex items-center px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50">
-                <Download className="w-4 h-4 mr-2" />
-                Export Report
-              </button>
-            </div>
+    <ResponsiveLayout>
+      {/* Header with Beautiful Gradient */}
+      <div className="mb-6">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+              Cost Control & Analytics
+            </h1>
+            <p className="text-gray-600 mt-1 text-sm sm:text-base">
+              Monitor and optimize procurement spending with real-time insights
+            </p>
           </div>
-
-          {/* Key Metrics */}
-          <div className="grid grid-cols-4 gap-6 mb-8">
-        <div className="bg-white p-6 rounded-lg shadow">
-            <div className="flex items-center justify-between">
-            <div>
-                <p className="text-sm text-gray-600">Total Spend</p>
-                <p className="text-2xl font-bold">
-                ${(costData.metrics?.totalPaid || 0).toLocaleString()}
-                </p>
-            </div>
-            <DollarSign className="text-green-500 w-8 h-8" />
-            </div>
-            <div className="flex items-center mt-2 text-green-600">
-            <TrendingUp className="w-4 h-4 mr-1" />
-            <span className="text-sm">
-                {(costData.metrics?.utilizationRate || 0).toFixed(1)}% utilized
-            </span>
-            </div>
+          
+          <div className="flex flex-col sm:flex-row gap-3">
+            <select
+              value={timeRange}
+              onChange={(e) => setTimeRange(e.target.value)}
+              className="p-2 border border-gray-300 rounded-lg bg-white text-sm sm:text-base shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            >
+              <option value="current_month">📊 Current Month</option>
+              <option value="last_month">📈 Last Month</option>
+              <option value="quarter">🎯 This Quarter</option>
+              <option value="year">📅 This Year</option>
+            </select>
+            
+            <button className="flex items-center justify-center px-4 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg hover:from-blue-600 hover:to-blue-700 transition-all shadow-lg hover:shadow-xl text-sm sm:text-base">
+              <Download className="w-4 h-4 mr-2" />
+              Export Report
+            </button>
+          </div>
         </div>
 
-            <div className="bg-white p-6 rounded-lg shadow">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600">Budget Utilization</p>
-                  <p className="text-2xl font-bold">{metrics.utilizationRate?.toFixed(1)}%</p>
-                </div>
-                <PieChart className="text-blue-500 w-8 h-8" />
+        {/* Quick Insights Banner */}
+        <div className="bg-gradient-to-r from-purple-500 to-blue-500 rounded-2xl p-4 sm:p-6 text-white mb-6 shadow-xl">
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="flex items-center mb-2">
+                <Sparkles className="w-5 h-5 mr-2" />
+                <h3 className="text-lg font-semibold">Quick Insights</h3>
               </div>
-              <div className="flex items-center mt-2 text-blue-600">
-                <span className="text-sm">${metrics.remainingBudget?.toLocaleString()} remaining</span>
-              </div>
+              <p className="text-sm opacity-90">
+                {metrics.savings?.total > 0 ? 
+                  `You've saved $${metrics.savings.total.toLocaleString()} this period! 🎉` :
+                  'Track your spending to identify savings opportunities'
+                }
+              </p>
             </div>
-
-            <div className="bg-white p-6 rounded-lg shadow">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600">Cost Savings</p>
-                  <p className="text-2xl font-bold">${metrics.savings?.total?.toLocaleString()}</p>
-                </div>
-                <TrendingDown className="text-green-500 w-8 h-8" />
-              </div>
-              <div className="flex items-center mt-2 text-green-600">
-                <TrendingDown className="w-4 h-4 mr-1" />
-                <span className="text-sm">{metrics.savings?.percentage?.toFixed(1)}% savings rate</span>
-              </div>
-            </div>
-
-            <div className="bg-white p-6 rounded-lg shadow">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600">Active Projects</p>
-                  <p className="text-2xl font-bold">{metrics.activeProjects}</p>
-                </div>
-                <Building className="text-purple-500 w-8 h-8" />
-              </div>
-              <div className="flex items-center mt-2 text-gray-600">
-                <span className="text-sm">{metrics.pendingIPCs} IPCs pending</span>
-              </div>
+            <div className="hidden sm:block">
+              <Rocket className="w-12 h-12 opacity-80" />
             </div>
           </div>
-
-          {/* Navigation Tabs */}
-          <div className="bg-white rounded-lg shadow-md mb-6">
-            <div className="border-b border-gray-200">
-              <nav className="flex -mb-px">
-                {[
-                  { id: 'overview', label: 'Overview', icon: BarChart3 },
-                  { id: 'projects', label: 'Projects', icon: Building },
-                  { id: 'vendors', label: 'Vendors', icon: Users },
-                  { id: 'categories', label: 'Categories', icon: PieChart },
-                  { id: 'savings', label: 'Savings Analysis', icon: TrendingDown }
-                ].map((tab) => {
-                  const IconComponent = tab.icon;
-                  return (
-                    <button
-                      key={tab.id}
-                      onClick={() => setActiveView(tab.id)}
-                      className={`flex items-center px-6 py-3 border-b-2 font-medium text-sm ${
-                        activeView === tab.id
-                          ? 'border-blue-500 text-blue-600'
-                          : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                      }`}
-                    >
-                      <IconComponent className="w-4 h-4 mr-2" />
-                      {tab.label}
-                    </button>
-                  );
-                })}
-              </nav>
-            </div>
-
-            <div className="p-6">
-              {activeView === 'overview' && <OverviewView data={costData} />}
-              {activeView === 'projects' && <ProjectsView projects={projectSpend} />}
-              {activeView === 'vendors' && <VendorsView vendors={vendorPerformance} />}
-              {activeView === 'categories' && <CategoriesView categories={categorySpend} />}
-              {activeView === 'savings' && <SavingsView data={costData} />}
-            </div>
-          </div>
-        </main>
+        </div>
       </div>
-    </div>
+
+      {/* Key Metrics with Beautiful Cards */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6">
+        {/* Total Spend Card */}
+        <div className="bg-gradient-to-br from-blue-500 to-blue-600 text-white p-4 rounded-2xl shadow-lg hover:shadow-xl transition-all transform hover:-translate-y-1">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs opacity-90">Total Spend</p>
+              <p className="text-xl sm:text-2xl font-bold">
+                ${(metrics.totalPaid || 0).toLocaleString()}
+              </p>
+            </div>
+            <div className="bg-white bg-opacity-20 p-2 rounded-xl">
+              <DollarSign className="w-6 h-6" />
+            </div>
+          </div>
+          <div className="flex items-center mt-3 text-blue-100">
+            <TrendingUp className="w-4 h-4 mr-1" />
+            <span className="text-xs">
+              {(metrics.utilizationRate || 0).toFixed(1)}% utilized
+            </span>
+          </div>
+        </div>
+
+        {/* Budget Utilization Card */}
+        <div className="bg-gradient-to-br from-green-500 to-green-600 text-white p-4 rounded-2xl shadow-lg hover:shadow-xl transition-all transform hover:-translate-y-1">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs opacity-90">Budget Utilization</p>
+              <p className="text-xl sm:text-2xl font-bold">{metrics.utilizationRate?.toFixed(1)}%</p>
+            </div>
+            <div className="bg-white bg-opacity-20 p-2 rounded-xl">
+              <PieChart className="w-6 h-6" />
+            </div>
+          </div>
+          <div className="text-xs text-green-100 mt-3">
+            ${metrics.remainingBudget?.toLocaleString()} remaining
+          </div>
+        </div>
+
+        {/* Cost Savings Card */}
+        <div className="bg-gradient-to-br from-emerald-500 to-emerald-600 text-white p-4 rounded-2xl shadow-lg hover:shadow-xl transition-all transform hover:-translate-y-1">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs opacity-90">Cost Savings</p>
+              <p className="text-xl sm:text-2xl font-bold">${metrics.savings?.total?.toLocaleString()}</p>
+            </div>
+            <div className="bg-white bg-opacity-20 p-2 rounded-xl">
+              <TrendingDown className="w-6 h-6" />
+            </div>
+          </div>
+          <div className="flex items-center mt-3 text-emerald-100">
+            <Target className="w-4 h-4 mr-1" />
+            <span className="text-xs">{metrics.savings?.percentage?.toFixed(1)}% savings rate</span>
+          </div>
+        </div>
+
+        {/* Active Projects Card */}
+        <div className="bg-gradient-to-br from-purple-500 to-purple-600 text-white p-4 rounded-2xl shadow-lg hover:shadow-xl transition-all transform hover:-translate-y-1">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs opacity-90">Active Projects</p>
+              <p className="text-xl sm:text-2xl font-bold">{metrics.activeProjects}</p>
+            </div>
+            <div className="bg-white bg-opacity-20 p-2 rounded-xl">
+              <Building className="w-6 h-6" />
+            </div>
+          </div>
+          <div className="text-xs text-purple-100 mt-3">
+            {metrics.pendingIPCs} IPCs pending
+          </div>
+        </div>
+      </div>
+
+      {/* Navigation Tabs with Modern Design */}
+      <div className="bg-white rounded-2xl shadow-lg mb-6 overflow-hidden border border-gray-100">
+        <div className="border-b border-gray-200 bg-gradient-to-r from-gray-50 to-white">
+          <nav className="flex overflow-x-auto -mb-px scrollbar-hide">
+            {[
+              { id: 'overview', label: 'Overview', icon: BarChart3, color: 'blue' },
+              { id: 'projects', label: 'Projects', icon: Building, color: 'green' },
+              { id: 'vendors', label: 'Vendors', icon: Users, color: 'purple' },
+              { id: 'categories', label: 'Categories', icon: PieChart, color: 'orange' },
+              { id: 'savings', label: 'Savings', icon: TrendingDown, color: 'emerald' }
+            ].map((tab) => {
+              const IconComponent = tab.icon;
+              const colorClasses = {
+                blue: 'border-blue-500 text-blue-600 bg-blue-50',
+                green: 'border-green-500 text-green-600 bg-green-50',
+                purple: 'border-purple-500 text-purple-600 bg-purple-50',
+                orange: 'border-orange-500 text-orange-600 bg-orange-50',
+                emerald: 'border-emerald-500 text-emerald-600 bg-emerald-50'
+              };
+              
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveView(tab.id)}
+                  className={`flex items-center px-4 sm:px-6 py-4 border-b-2 font-medium text-sm whitespace-nowrap transition-all ${
+                    activeView === tab.id
+                      ? `${colorClasses[tab.color]} border-b-2`
+                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  }`}
+                >
+                  <IconComponent className={`w-4 h-4 mr-2 ${activeView === tab.id ? 'scale-110' : ''}`} />
+                  {tab.label}
+                  {activeView === tab.id && (
+                    <div className="ml-2 w-2 h-2 rounded-full bg-current animate-pulse"></div>
+                  )}
+                </button>
+              );
+            })}
+          </nav>
+        </div>
+
+        {/* Tab Content with Beautiful Animations */}
+        <div className="p-4 sm:p-6">
+          {activeView === 'overview' && <OverviewView data={costData} />}
+          {activeView === 'projects' && <ProjectsView projects={projectSpend} />}
+          {activeView === 'vendors' && <VendorsView vendors={vendorPerformance} />}
+          {activeView === 'categories' && <CategoriesView categories={categorySpend} />}
+          {activeView === 'savings' && <SavingsView data={costData} />}
+        </div>
+      </div>
+
+      {/* Quick Actions Footer */}
+      <div className="bg-gradient-to-r from-gray-50 to-white rounded-2xl p-4 border border-gray-200">
+        <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
+          <div className="flex items-center">
+            <Zap className="w-5 h-5 text-yellow-500 mr-2" />
+            <span className="text-sm font-medium text-gray-700">Need help with cost optimization?</span>
+          </div>
+          <button className="flex items-center justify-center px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-all text-sm font-medium w-full sm:w-auto">
+            <Shield className="w-4 h-4 mr-2" />
+            Schedule Consultation
+          </button>
+        </div>
+      </div>
+    </ResponsiveLayout>
   );
 };
 
-// Overview View Component
+// Enhanced Overview View with Beautiful Design
 const OverviewView = ({ data }) => (
   <div className="space-y-6">
-    <div className="grid grid-cols-2 gap-6">
-      {/* Monthly Spend Trend */}
-      <div className="bg-white p-6 rounded-lg border border-gray-200">
-        <h3 className="text-lg font-semibold mb-4">Monthly Spend Trend</h3>
-        <div className="h-64 bg-gray-100 rounded flex items-center justify-center">
-          <BarChart3 className="text-gray-400 w-12 h-12" />
-          <span className="text-gray-500 ml-2">Spend trend chart would appear here</span>
+    {/* Animated Charts Placeholder */}
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-6 rounded-2xl border border-blue-200">
+        <h3 className="text-lg font-semibold mb-4 flex items-center">
+          <BarChart3 className="w-5 h-5 mr-2 text-blue-600" />
+          Monthly Spend Trend
+        </h3>
+        <div className="h-48 bg-white rounded-xl border border-blue-200 flex items-center justify-center relative overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-blue-50 to-transparent animate-pulse"></div>
+          <div className="text-center z-10">
+            <BarChart3 className="text-blue-300 w-12 h-12 mx-auto mb-2" />
+            <span className="text-blue-500 font-medium">Interactive Chart</span>
+            <p className="text-blue-400 text-sm">Real-time spending visualization</p>
+          </div>
         </div>
       </div>
 
-      {/* Budget Utilization */}
-      <div className="bg-white p-6 rounded-lg border border-gray-200">
-        <h3 className="text-lg font-semibold mb-4">Budget Utilization</h3>
-        <div className="h-64 bg-gray-100 rounded flex items-center justify-center">
-          <PieChart className="text-gray-400 w-12 h-12" />
-          <span className="text-gray-500 ml-2">Budget utilization chart would appear here</span>
+      <div className="bg-gradient-to-br from-green-50 to-green-100 p-6 rounded-2xl border border-green-200">
+        <h3 className="text-lg font-semibold mb-4 flex items-center">
+          <PieChart className="w-5 h-5 mr-2 text-green-600" />
+          Budget Utilization
+        </h3>
+        <div className="h-48 bg-white rounded-xl border border-green-200 flex items-center justify-center relative overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-green-50 to-transparent animate-pulse"></div>
+          <div className="text-center z-10">
+            <PieChart className="text-green-300 w-12 h-12 mx-auto mb-2" />
+            <span className="text-green-500 font-medium">Budget Dashboard</span>
+            <p className="text-green-400 text-sm">Visual budget tracking</p>
+          </div>
         </div>
       </div>
     </div>
 
-    {/* Quick Stats */}
-    <div className="grid grid-cols-3 gap-4">
-      <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+    {/* Quick Stats with Icons */}
+    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="bg-white p-4 rounded-xl border border-gray-200 hover:shadow-md transition-all">
         <div className="flex items-center justify-between">
-          <span className="text-blue-700 font-medium">Total Contracts</span>
+          <span className="text-gray-700 font-medium">Total Contracts</span>
           <FileText className="text-blue-500 w-5 h-5" />
         </div>
-        <p className="text-2xl font-bold text-blue-800">{data.contracts?.length || 0}</p>
+        <p className="text-2xl font-bold text-gray-900 mt-2">{data.contracts?.length || 0}</p>
       </div>
       
-      <div className="bg-green-50 p-4 rounded-lg border border-green-200">
+      <div className="bg-white p-4 rounded-xl border border-gray-200 hover:shadow-md transition-all">
         <div className="flex items-center justify-between">
-          <span className="text-green-700 font-medium">Active IPCs</span>
+          <span className="text-gray-700 font-medium">Active IPCs</span>
           <CheckCircle className="text-green-500 w-5 h-5" />
         </div>
-        <p className="text-2xl font-bold text-green-800">{data.ipcs?.length || 0}</p>
+        <p className="text-2xl font-bold text-gray-900 mt-2">{data.ipcs?.length || 0}</p>
       </div>
       
-      <div className="bg-orange-50 p-4 rounded-lg border border-orange-200">
+      <div className="bg-white p-4 rounded-xl border border-gray-200 hover:shadow-md transition-all">
         <div className="flex items-center justify-between">
-          <span className="text-orange-700 font-medium">Vendor Partners</span>
-          <Users className="text-orange-500 w-5 h-5" />
+          <span className="text-gray-700 font-medium">Vendor Partners</span>
+          <Users className="text-purple-500 w-5 h-5" />
         </div>
-        <p className="text-2xl font-bold text-orange-800">{data.vendors?.length || 0}</p>
+        <p className="text-2xl font-bold text-gray-900 mt-2">{data.vendors?.length || 0}</p>
       </div>
     </div>
   </div>
 );
 
-// Projects View Component
+// Enhanced Projects View
 const ProjectsView = ({ projects }) => (
   <div>
-    <h3 className="text-lg font-semibold mb-4">Project Spending Analysis</h3>
+    <h3 className="text-lg font-semibold mb-4 flex items-center">
+      <Building className="w-5 h-5 mr-2 text-green-600" />
+      Project Spending Analysis
+    </h3>
     
     {projects.length === 0 ? (
-      <div className="text-center py-8 text-gray-500">
-        <Building className="w-12 h-12 text-gray-300 mx-auto mb-2" />
-        <p>No project data available.</p>
+      <div className="text-center py-12">
+        <div className="bg-gradient-to-br from-green-50 to-green-100 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4">
+          <Building className="text-green-400 w-8 h-8" />
+        </div>
+        <p className="text-gray-500 text-lg">No project data available</p>
+        <p className="text-gray-400 text-sm mt-2">Projects will appear here as they're created</p>
       </div>
     ) : (
       <div className="space-y-4">
         {projects.map((project, index) => (
-          <div key={index} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition">
-            <div className="flex justify-between items-start mb-3">
-              <div>
-                <h4 className="font-semibold text-lg">{project.project}</h4>
-                <p className="text-sm text-gray-600">{project.contracts} contracts</p>
+          <div key={index} className="bg-white border border-gray-200 rounded-2xl p-4 hover:shadow-lg transition-all duration-300 hover:border-blue-200">
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3 mb-4">
+              <div className="flex-1">
+                <h4 className="font-semibold text-lg text-gray-800">{project.project}</h4>
+                <p className="text-sm text-gray-600">{project.contracts} active contracts</p>
               </div>
               <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                project.utilization > 90 ? 'bg-red-100 text-red-800' :
-                project.utilization > 75 ? 'bg-orange-100 text-orange-800' :
-                'bg-green-100 text-green-800'
+                project.utilization > 90 ? 'bg-red-100 text-red-800 border border-red-200' :
+                project.utilization > 75 ? 'bg-orange-100 text-orange-800 border border-orange-200' :
+                'bg-green-100 text-green-800 border border-green-200'
               }`}>
                 {project.utilization.toFixed(1)}% utilized
               </span>
             </div>
             
-            <div className="space-y-2">
+            <div className="space-y-3">
               <div className="flex justify-between text-sm">
-                <span>Budget: ${project.budget.toLocaleString()}</span>
-                <span>Spent: ${project.spent.toLocaleString()}</span>
+                <span className="text-gray-600">Budget</span>
+                <span className="font-semibold">${project.budget.toLocaleString()}</span>
               </div>
-              <div className="w-full bg-gray-200 rounded-full h-2">
+              
+              <div className="w-full bg-gray-100 rounded-full h-3 overflow-hidden">
                 <div 
-                  className={`h-2 rounded-full ${
-                    project.utilization > 90 ? 'bg-red-500' :
-                    project.utilization > 75 ? 'bg-orange-500' :
-                    'bg-green-500'
+                  className={`h-3 rounded-full transition-all duration-1000 ${
+                    project.utilization > 90 ? 'bg-gradient-to-r from-red-500 to-red-600' :
+                    project.utilization > 75 ? 'bg-gradient-to-r from-orange-500 to-orange-600' :
+                    'bg-gradient-to-r from-green-500 to-green-600'
                   }`}
                   style={{ width: `${Math.min(project.utilization, 100)}%` }}
                 ></div>
               </div>
+              
               <div className="flex justify-between text-xs text-gray-500">
+                <span>Spent: ${project.spent.toLocaleString()}</span>
                 <span>Remaining: ${(project.budget - project.spent).toLocaleString()}</span>
-                <span>{project.utilization.toFixed(1)}% spent</span>
               </div>
             </div>
           </div>
@@ -523,55 +590,54 @@ const ProjectsView = ({ projects }) => (
   </div>
 );
 
-// Vendors View Component
+// Enhanced Vendors View
 const VendorsView = ({ vendors }) => (
   <div>
-    <h3 className="text-lg font-semibold mb-4">Vendor Performance</h3>
+    <h3 className="text-lg font-semibold mb-4 flex items-center">
+      <Users className="w-5 h-5 mr-2 text-purple-600" />
+      Vendor Performance
+    </h3>
     
     {vendors.length === 0 ? (
-      <div className="text-center py-8 text-gray-500">
-        <Users className="w-12 h-12 text-gray-300 mx-auto mb-2" />
-        <p>No vendor performance data available.</p>
+      <div className="text-center py-12">
+        <div className="bg-gradient-to-br from-purple-50 to-purple-100 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4">
+          <Users className="text-purple-400 w-8 h-8" />
+        </div>
+        <p className="text-gray-500 text-lg">No vendor data available</p>
       </div>
     ) : (
       <div className="overflow-x-auto">
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Vendor</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Contracts</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Total Value</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Paid Amount</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Performance</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">IPCs</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Vendor</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contracts</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total Value</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Performance</th>
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
             {vendors.map((vendor, index) => (
-              <tr key={index} className="hover:bg-gray-50">
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                  {vendor.vendor}
+              <tr key={index} className="hover:bg-gray-50 transition-colors">
+                <td className="px-4 py-4 whitespace-nowrap">
+                  <div className="text-sm font-medium text-gray-900">{vendor.vendor}</div>
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
                   {vendor.totalContracts}
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                <td className="px-4 py-4 whitespace-nowrap text-sm font-semibold text-gray-900">
                   ${vendor.totalValue.toLocaleString()}
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  ${vendor.paidAmount.toLocaleString()}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                    vendor.performanceScore >= 90 ? 'bg-green-100 text-green-800' :
-                    vendor.performanceScore >= 75 ? 'bg-yellow-100 text-yellow-800' :
-                    'bg-red-100 text-red-800'
-                  }`}>
-                    {vendor.performanceScore.toFixed(1)}%
-                  </span>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {vendor.ipcCount}
+                <td className="px-4 py-4 whitespace-nowrap">
+                  <div className="flex items-center">
+                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                      vendor.performanceScore >= 90 ? 'bg-green-100 text-green-800 border border-green-200' :
+                      vendor.performanceScore >= 75 ? 'bg-yellow-100 text-yellow-800 border border-yellow-200' :
+                      'bg-red-100 text-red-800 border border-red-200'
+                    }`}>
+                      {vendor.performanceScore.toFixed(1)}%
+                    </span>
+                  </div>
                 </td>
               </tr>
             ))}
@@ -582,32 +648,37 @@ const VendorsView = ({ vendors }) => (
   </div>
 );
 
-// Categories View Component
+// Enhanced Categories View
 const CategoriesView = ({ categories }) => (
   <div>
-    <h3 className="text-lg font-semibold mb-4">Spending by Category</h3>
+    <h3 className="text-lg font-semibold mb-4 flex items-center">
+      <PieChart className="w-5 h-5 mr-2 text-orange-600" />
+      Spending by Category
+    </h3>
     
     {categories.length === 0 ? (
-      <div className="text-center py-8 text-gray-500">
-        <PieChart className="w-12 h-12 text-gray-300 mx-auto mb-2" />
-        <p>No category data available.</p>
+      <div className="text-center py-12">
+        <div className="bg-gradient-to-br from-orange-50 to-orange-100 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4">
+          <PieChart className="text-orange-400 w-8 h-8" />
+        </div>
+        <p className="text-gray-500 text-lg">No category data available</p>
       </div>
     ) : (
       <div className="space-y-4">
         {categories.map((category, index) => (
-          <div key={index} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
+          <div key={index} className="flex items-center justify-between p-4 bg-white border border-gray-200 rounded-2xl hover:shadow-md transition-all">
             <div className="flex items-center">
-              <div className={`w-4 h-4 rounded mr-3 ${
+              <div className={`w-3 h-3 rounded-full mr-3 ${
                 index === 0 ? 'bg-blue-500' :
                 index === 1 ? 'bg-green-500' :
                 index === 2 ? 'bg-yellow-500' :
                 index === 3 ? 'bg-purple-500' :
                 'bg-gray-500'
               }`}></div>
-              <span className="font-medium">{category.name}</span>
+              <span className="font-medium text-gray-800">{category.name}</span>
             </div>
             <div className="text-right">
-              <div className="font-semibold text-lg">${category.value.toLocaleString()}</div>
+              <div className="font-semibold text-lg text-gray-900">${category.value.toLocaleString()}</div>
               <div className="text-sm text-gray-500">
                 {((category.value / categories.reduce((sum, c) => sum + c.value, 0)) * 100).toFixed(1)}% of total
               </div>
@@ -615,12 +686,18 @@ const CategoriesView = ({ categories }) => (
           </div>
         ))}
         
-        {/* Simple pie chart visualization */}
-        <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-          <h4 className="font-semibold mb-3">Spending Distribution</h4>
-          <div className="h-48 bg-gray-100 rounded flex items-center justify-center">
-            <PieChart className="text-gray-400 w-12 h-12" />
-            <span className="text-gray-500 ml-2">Category pie chart would appear here</span>
+        {/* Enhanced Visualization */}
+        <div className="mt-6 p-6 bg-gradient-to-br from-orange-50 to-orange-100 rounded-2xl border border-orange-200">
+          <h4 className="font-semibold mb-4 flex items-center">
+            <PieChart className="w-5 h-5 mr-2 text-orange-600" />
+            Spending Distribution
+          </h4>
+          <div className="h-48 bg-white rounded-xl border border-orange-200 flex items-center justify-center">
+            <div className="text-center">
+              <PieChart className="text-orange-300 w-12 h-12 mx-auto mb-2" />
+              <span className="text-orange-500 font-medium">Category Breakdown</span>
+              <p className="text-orange-400 text-sm">Visual spending analysis</p>
+            </div>
           </div>
         </div>
       </div>
@@ -628,55 +705,61 @@ const CategoriesView = ({ categories }) => (
   </div>
 );
 
-// Savings View Component
+// Enhanced Savings View
 const SavingsView = ({ data }) => (
   <div>
-    <h3 className="text-lg font-semibold mb-4">Savings Analysis</h3>
+    <h3 className="text-lg font-semibold mb-4 flex items-center">
+      <TrendingDown className="w-5 h-5 mr-2 text-emerald-600" />
+      Savings Analysis
+    </h3>
     
-    <div className="grid grid-cols-2 gap-6 mb-6">
-      <div className="bg-green-50 p-6 rounded-lg border border-green-200">
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+      <div className="bg-gradient-to-br from-emerald-500 to-emerald-600 text-white p-6 rounded-2xl shadow-lg">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-sm text-green-600">Total Savings Achieved</p>
-            <p className="text-3xl font-bold text-green-800">
+            <p className="text-sm opacity-90">Total Savings Achieved</p>
+            <p className="text-3xl font-bold">
               ${data.metrics?.savings?.total?.toLocaleString() || '0'}
             </p>
           </div>
-          <TrendingDown className="text-green-500 w-8 h-8" />
+          <TrendingDown className="w-8 h-8 opacity-80" />
         </div>
-        <p className="text-sm text-green-700 mt-2">
+        <p className="text-sm opacity-90 mt-2">
           {data.metrics?.savings?.percentage?.toFixed(1) || '0'}% savings rate
         </p>
       </div>
       
-      <div className="bg-blue-50 p-6 rounded-lg border border-blue-200">
+      <div className="bg-gradient-to-br from-blue-500 to-blue-600 text-white p-6 rounded-2xl shadow-lg">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-sm text-blue-600">Potential Savings</p>
-            <p className="text-3xl font-bold text-blue-800">
+            <p className="text-sm opacity-90">Potential Savings</p>
+            <p className="text-3xl font-bold">
               ${(data.metrics?.savings?.total * 1.2)?.toLocaleString() || '0'}
             </p>
           </div>
-          <AlertTriangle className="text-blue-500 w-8 h-8" />
+          <Target className="w-8 h-8 opacity-80" />
         </div>
-        <p className="text-sm text-blue-700 mt-2">Based on market analysis</p>
+        <p className="text-sm opacity-90 mt-2">Based on market analysis</p>
       </div>
     </div>
 
-    <div className="bg-white p-6 rounded-lg border border-gray-200">
-      <h4 className="font-semibold mb-4">Savings Opportunities</h4>
+    <div className="bg-white p-6 rounded-2xl border border-gray-200">
+      <h4 className="font-semibold mb-4 flex items-center">
+        <Zap className="w-5 h-5 mr-2 text-yellow-500" />
+        Savings Opportunities
+      </h4>
       <div className="space-y-3">
-        <div className="flex justify-between items-center p-3 bg-yellow-50 rounded border border-yellow-200">
-          <span className="text-yellow-800">Consolidate vendor contracts</span>
-          <span className="font-semibold text-yellow-800">Potential: $50,000</span>
+        <div className="flex justify-between items-center p-4 bg-yellow-50 rounded-xl border border-yellow-200 hover:shadow-md transition-all">
+          <span className="text-yellow-800 font-medium">Consolidate vendor contracts</span>
+          <span className="font-semibold text-yellow-800">$50K</span>
         </div>
-        <div className="flex justify-between items-center p-3 bg-green-50 rounded border border-green-200">
-          <span className="text-green-800">Bulk material purchasing</span>
-          <span className="font-semibold text-green-800">Potential: $25,000</span>
+        <div className="flex justify-between items-center p-4 bg-green-50 rounded-xl border border-green-200 hover:shadow-md transition-all">
+          <span className="text-green-800 font-medium">Bulk material purchasing</span>
+          <span className="font-semibold text-green-800">$25K</span>
         </div>
-        <div className="flex justify-between items-center p-3 bg-blue-50 rounded border border-blue-200">
-          <span className="text-blue-800">Early payment discounts</span>
-          <span className="font-semibold text-blue-800">Potential: $15,000</span>
+        <div className="flex justify-between items-center p-4 bg-blue-50 rounded-xl border border-blue-200 hover:shadow-md transition-all">
+          <span className="text-blue-800 font-medium">Early payment discounts</span>
+          <span className="font-semibold text-blue-800">$15K</span>
         </div>
       </div>
     </div>
@@ -684,4 +767,3 @@ const SavingsView = ({ data }) => (
 );
 
 export default CostControlPage;
-

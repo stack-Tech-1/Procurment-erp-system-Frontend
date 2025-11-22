@@ -1,4 +1,4 @@
-// src/app/dashboard/procurement/rfos/[id]/page.jsx (Updated)
+// frontend/src/app/dashboard/procurement/rfos/[id]/page.js - MOBILE OPTIMIZED
 "use client";
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
@@ -7,10 +7,9 @@ import {
     ArrowLeft, Calendar, DollarSign, Package, User, FileText, 
     CheckCircle, Clock, Send, Users, Download, Edit, Trash2,
     MessageSquare, Award, BarChart3, Mail, Phone, MapPin,
-    Plus, AlertTriangle 
+    Plus, AlertTriangle, ChevronDown, ChevronUp
   } from 'lucide-react';
-import Sidebar from '@/components/Sidebar';
-import Topbar from '@/components/Topbar';
+import ResponsiveLayout from '@/components/layout/ResponsiveLayout';
 import Link from 'next/link';
 import VendorEvaluationModal from '@/components/VendorEvaluationModal';
 
@@ -25,6 +24,7 @@ const RFODetailPage = () => {
     const [submissions, setSubmissions] = useState([]);
     const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState('overview');
+    const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const [evaluationModal, setEvaluationModal] = useState({
       isOpen: false,
       submission: null
@@ -75,8 +75,6 @@ const getStatusConfig = (status) => {
     return statusConfigs[status] || statusConfigs.DRAFT;
   };
 
-  
-
   // Handle vendor evaluation
   const handleVendorEvaluation = async (submissionId, evaluationData) => {
     try {
@@ -112,8 +110,7 @@ const getStatusConfig = (status) => {
     });
   };
 
-  
-const updateRFOStatus = async (newStatus) => {
+  const updateRFOStatus = async (newStatus) => {
     try {
       const token = localStorage.getItem('authToken');
       const user = JSON.parse(localStorage.getItem('user'));
@@ -195,199 +192,271 @@ const updateRFOStatus = async (newStatus) => {
     }
   };
 
+  // Mobile Tab Navigation
+  const MobileTabNavigation = () => (
+    <div className="lg:hidden mb-6">
+      <div className="bg-white rounded-lg border border-gray-200">
+        <button
+          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+          className="w-full flex justify-between items-center p-4 text-left"
+        >
+          <span className="font-semibold text-gray-800">
+            {(() => {
+              const tabs = {
+                overview: 'Overview',
+                submissions: `Submissions (${submissions.length})`,
+                evaluation: 'Evaluation',
+                documents: 'Documents'
+              };
+              return tabs[activeTab] || 'Overview';
+            })()}
+          </span>
+          {mobileMenuOpen ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
+        </button>
+        
+        {mobileMenuOpen && (
+          <div className="border-t border-gray-200">
+            {[
+              { id: 'overview', label: 'Overview', icon: FileText },
+              { id: 'submissions', label: `Submissions (${submissions.length})`, icon: Users },
+              { id: 'evaluation', label: 'Evaluation', icon: BarChart3 },
+              { id: 'documents', label: 'Documents', icon: Download }
+            ].map((tab) => {
+              const IconComponent = tab.icon;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => {
+                    setActiveTab(tab.id);
+                    setMobileMenuOpen(false);
+                  }}
+                  className={`w-full flex items-center p-4 text-left border-b border-gray-100 last:border-b-0 ${
+                    activeTab === tab.id ? 'bg-blue-50 text-blue-700' : 'text-gray-700 hover:bg-gray-50'
+                  }`}
+                >
+                  <IconComponent className="w-4 h-4 mr-3" />
+                  {tab.label}
+                </button>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+
   if (loading) {
     return (
-      <div className="flex min-h-screen bg-gray-50">
-        <Sidebar />
-        <div className="flex-1 flex flex-col">
-          <Topbar />
-          <div className="flex-1 flex items-center justify-center">
+      <ResponsiveLayout>
+        <div className="max-w-7xl mx-auto w-full">
+          <div className="flex items-center justify-center min-h-96">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
           </div>
         </div>
-      </div>
+      </ResponsiveLayout>
     );
   }
 
   if (!rfo) {
     return (
-      <div className="flex min-h-screen bg-gray-50">
-        <Sidebar />
-        <div className="flex-1 flex flex-col">
-          <Topbar />
-          <div className="flex-1 flex items-center justify-center">
-            <div className="text-center">
-              <h2 className="text-2xl font-bold text-gray-800 mb-2">RFO Not Found</h2>
-              <p className="text-gray-600 mb-4">The requested RFO could not be found.</p>
-              <Link 
-                href="/dashboard/procurement/rfos"
-                className="text-blue-600 hover:text-blue-800"
-              >
-                Back to RFOs
-              </Link>
-            </div>
+      <ResponsiveLayout>
+        <div className="max-w-7xl mx-auto w-full">
+          <div className="text-center py-12">
+            <h2 className="text-2xl font-bold text-gray-800 mb-2">RFO Not Found</h2>
+            <p className="text-gray-600 mb-4">The requested RFO could not be found.</p>
+            <Link 
+              href="/dashboard/procurement/rfos"
+              className="text-blue-600 hover:text-blue-800"
+            >
+              Back to RFOs
+            </Link>
           </div>
         </div>
-      </div>
+      </ResponsiveLayout>
     );
   }
 
   const statusConfig = getStatusConfig(rfo.status);
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
-      <Sidebar />
-      
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <Topbar />
-        
-        <main className="flex-1 overflow-y-auto p-6">
-          {/* Header */}
-          <div className="mb-6">
-            <Link 
-              href="/dashboard/procurement/rfos"
-              className="flex items-center text-gray-600 hover:text-gray-900 mb-4"
-            >
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to RFOs
-            </Link>
-            
-            <div className="flex justify-between items-start">
-              <div>
-                <div className="flex items-center space-x-4 mb-2">
-                  <h1 className="text-2xl font-bold text-gray-800">{rfo.title}</h1>
-                  <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${statusConfig.color}`}>
-                    <statusConfig.icon className="w-4 h-4 mr-1" />
-                    {statusConfig.label}
-                  </span>
-                </div>
-                <p className="text-gray-600">RFO Number: {rfo.rfqNumber} • Project: {rfo.projectName}</p>
+    <ResponsiveLayout>
+      <div className="max-w-7xl mx-auto w-full">
+        {/* Header */}
+        <div className="mb-6">
+          <Link 
+            href="/dashboard/procurement/rfos"
+            className="flex items-center text-gray-600 hover:text-gray-900 mb-4"
+          >
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            <span className="hidden sm:inline">Back to RFOs</span>
+          </Link>
+          
+          <div className="flex flex-col lg:flex-row lg:justify-between lg:items-start gap-4">
+            <div className="flex-1">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-4 mb-2">
+                <h1 className="text-xl sm:text-2xl font-bold text-gray-800 truncate">{rfo.title}</h1>
+                <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${statusConfig.color} mt-2 sm:mt-0`}>
+                  <statusConfig.icon className="w-4 h-4 mr-1" />
+                  {statusConfig.label}
+                </span>
               </div>
-              
-              <div className="flex space-x-2">
-                    {rfo.status === 'DRAFT' && (
-                        <button 
-                        onClick={() => updateRFOStatus('PUBLISHED')} // This will map to 'ISSUED'
-                        className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-                        >
-                        <Send className="w-4 h-4 mr-2" />
-                        Publish RFO
-                        </button>
-                    )}
-                    {rfo.status === 'ISSUED' && (
-                        <button 
-                        onClick={() => updateRFOStatus('UNDER_EVALUATION')} // This will map to 'OPEN'
-                        className="flex items-center px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700"
-                        >
-                        <BarChart3 className="w-4 h-4 mr-2" />
-                        Start Evaluation
-                        </button>
-                    )}
-                 <Link
-                    href={`/dashboard/procurement/rfos/${rfoId}/edit`}
-                    className="flex items-center px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50">
-                    <Edit className="w-4 h-4 mr-2" />
-                    Edit
-                </Link>
-                </div>
-            </div>
-          </div>
-
-          {/* Quick Stats */}
-          <div className="grid grid-cols-4 gap-4 mb-6">
-            <div className="bg-white p-4 rounded-lg shadow">
-              <div className="flex justify-between items-center">
-                <span className="text-gray-600 text-sm">Submissions</span>
-                <FileText className="text-blue-500 w-5 h-5" />
-              </div>
-              <p className="text-2xl font-bold">{submissions.length}</p>
-            </div>
-            
-            <div className="bg-white p-4 rounded-lg shadow">
-              <div className="flex justify-between items-center">
-                <span className="text-gray-600 text-sm">Budget</span>
-                <DollarSign className="text-green-500 w-5 h-5" />
-              </div>
-              <p className="text-2xl font-bold">
-                {rfo.estimatedUnitPrice ? `$${rfo.estimatedUnitPrice.toLocaleString()}` : 'N/A'}
+              <p className="text-gray-600 text-sm sm:text-base">
+                RFO Number: {rfo.rfqNumber} • Project: {rfo.projectName}
               </p>
             </div>
             
-            <div className="bg-white p-4 rounded-lg shadow">
-              <div className="flex justify-between items-center">
-                <span className="text-gray-600 text-sm">Due Date</span>
-                <Calendar className="text-orange-500 w-5 h-5" />
-              </div>
-              <p className="text-lg font-bold">
-                {rfo.dueDate ? new Date(rfo.dueDate).toLocaleDateString() : 'N/A'}
-              </p>
-            </div>
-            
-            <div className="bg-white p-4 rounded-lg shadow">
-              <div className="flex justify-between items-center">
-                <span className="text-gray-600 text-sm">CSI Code</span>
-                <Package className="text-purple-500 w-5 h-5" />
-              </div>
-              <p className="text-lg font-bold">{rfo.csiCode || 'N/A'}</p>
-            </div>
-          </div>
-
-          {/* Tabs */}
-          <div className="bg-white rounded-lg shadow-md mb-6">
-            <div className="border-b border-gray-200">
-              <nav className="flex -mb-px">
-                {[
-                  { id: 'overview', label: 'Overview', icon: FileText },
-                  { id: 'submissions', label: `Vendor Submissions (${submissions.length})`, icon: Users },
-                  { id: 'evaluation', label: 'Evaluation', icon: BarChart3 },
-                  { id: 'documents', label: 'Documents', icon: Download }
-                ].map((tab) => {
-                  const IconComponent = tab.icon;
-                  return (
-                    <button
-                      key={tab.id}
-                      onClick={() => setActiveTab(tab.id)}
-                      className={`flex items-center px-6 py-3 border-b-2 font-medium text-sm ${
-                        activeTab === tab.id
-                          ? 'border-blue-500 text-blue-600'
-                          : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                      }`}
-                    >
-                      <IconComponent className="w-4 h-4 mr-2" />
-                      {tab.label}
-                    </button>
-                  );
-                })}
-              </nav>
-            </div>
-
-            <div className="p-6">
-              {activeTab === 'overview' && <OverviewTab rfo={rfo} />}
-              {activeTab === 'submissions' && (
-                <SubmissionsTab 
-                  submissions={submissions}
-                  onEvaluate={openEvaluationModal}
-                  onAwardContract={awardContract}
-                  rfoStatus={rfo.status}
-                />
+            <div className="flex flex-wrap gap-2">
+              {rfo.status === 'DRAFT' && (
+                <button 
+                  onClick={() => updateRFOStatus('PUBLISHED')}
+                  className="flex items-center px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm"
+                >
+                  <Send className="w-4 h-4 mr-2" />
+                  <span className="hidden sm:inline">Publish RFO</span>
+                  <span className="sm:hidden">Publish</span>
+                </button>
               )}
-              {activeTab === 'evaluation' && <EvaluationTab rfo={rfo} submissions={submissions} />}
-              {activeTab === 'documents' && <DocumentsTab rfo={rfo} />}
+              {rfo.status === 'ISSUED' && (
+                <button 
+                  onClick={() => updateRFOStatus('UNDER_EVALUATION')}
+                  className="flex items-center px-3 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 text-sm"
+                >
+                  <BarChart3 className="w-4 h-4 mr-2" />
+                  <span className="hidden sm:inline">Start Evaluation</span>
+                  <span className="sm:hidden">Evaluate</span>
+                </button>
+              )}
+              <Link
+                href={`/dashboard/procurement/rfos/${rfoId}/edit`}
+                className="flex items-center px-3 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 text-sm"
+              >
+                <Edit className="w-4 h-4 mr-2" />
+                <span className="hidden sm:inline">Edit</span>
+              </Link>
             </div>
           </div>
+        </div>
 
-          {/* Evaluation Modal */}
-          <VendorEvaluationModal
-            submission={evaluationModal.submission}
-            isOpen={evaluationModal.isOpen}
-            onClose={() => setEvaluationModal({ isOpen: false, submission: null })}
-            onEvaluate={handleVendorEvaluation}
-          />
-        </main>
+        {/* Quick Stats - Mobile Optimized */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6">
+          <div className="bg-white p-3 sm:p-4 rounded-lg border border-gray-200 shadow-sm">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs sm:text-sm text-gray-500">Submissions</p>
+                <p className="text-lg sm:text-2xl font-bold text-blue-600">{submissions.length}</p>
+              </div>
+              <FileText className="w-5 h-5 sm:w-6 sm:h-6 text-blue-500" />
+            </div>
+          </div>
+          
+          <div className="bg-white p-3 sm:p-4 rounded-lg border border-gray-200 shadow-sm">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs sm:text-sm text-gray-500">Budget</p>
+                <p className="text-lg sm:text-2xl font-bold text-green-600">
+                  {rfo.estimatedUnitPrice ? `$${rfo.estimatedUnitPrice.toLocaleString()}` : 'N/A'}
+                </p>
+              </div>
+              <DollarSign className="w-5 h-5 sm:w-6 sm:h-6 text-green-500" />
+            </div>
+          </div>
+          
+          <div className="bg-white p-3 sm:p-4 rounded-lg border border-gray-200 shadow-sm">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs sm:text-sm text-gray-500">Due Date</p>
+                <p className="text-sm sm:text-lg font-bold text-orange-600">
+                  {rfo.dueDate ? new Date(rfo.dueDate).toLocaleDateString() : 'N/A'}
+                </p>
+              </div>
+              <Calendar className="w-5 h-5 sm:w-6 sm:h-6 text-orange-500" />
+            </div>
+          </div>
+          
+          <div className="bg-white p-3 sm:p-4 rounded-lg border border-gray-200 shadow-sm">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs sm:text-sm text-gray-500">CSI Code</p>
+                <p className="text-sm sm:text-lg font-bold text-purple-600">{rfo.csiCode || 'N/A'}</p>
+              </div>
+              <Package className="w-5 h-5 sm:w-6 sm:h-6 text-purple-500" />
+            </div>
+          </div>
+        </div>
+
+        <MobileTabNavigation />
+
+        {/* Desktop Tabs */}
+        <div className="hidden lg:block bg-white rounded-lg border border-gray-200 mb-6">
+          <div className="border-b border-gray-200">
+            <nav className="flex -mb-px">
+              {[
+                { id: 'overview', label: 'Overview', icon: FileText },
+                { id: 'submissions', label: `Vendor Submissions (${submissions.length})`, icon: Users },
+                { id: 'evaluation', label: 'Evaluation', icon: BarChart3 },
+                { id: 'documents', label: 'Documents', icon: Download }
+              ].map((tab) => {
+                const IconComponent = tab.icon;
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id)}
+                    className={`flex items-center px-6 py-3 border-b-2 font-medium text-sm ${
+                      activeTab === tab.id
+                        ? 'border-blue-500 text-blue-600'
+                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                    }`}
+                  >
+                    <IconComponent className="w-4 h-4 mr-2" />
+                    {tab.label}
+                  </button>
+                );
+              })}
+            </nav>
+          </div>
+
+          <div className="p-6">
+            {activeTab === 'overview' && <OverviewTab rfo={rfo} />}
+            {activeTab === 'submissions' && (
+              <SubmissionsTab 
+                submissions={submissions}
+                onEvaluate={openEvaluationModal}
+                onAwardContract={awardContract}
+                rfoStatus={rfo.status}
+              />
+            )}
+            {activeTab === 'evaluation' && <EvaluationTab rfo={rfo} submissions={submissions} />}
+            {activeTab === 'documents' && <DocumentsTab rfo={rfo} />}
+          </div>
+        </div>
+
+        {/* Mobile Content */}
+        <div className="lg:hidden">
+          {activeTab === 'overview' && <OverviewTab rfo={rfo} />}
+          {activeTab === 'submissions' && (
+            <SubmissionsTab 
+              submissions={submissions}
+              onEvaluate={openEvaluationModal}
+              onAwardContract={awardContract}
+              rfoStatus={rfo.status}
+            />
+          )}
+          {activeTab === 'evaluation' && <EvaluationTab rfo={rfo} submissions={submissions} />}
+          {activeTab === 'documents' && <DocumentsTab rfo={rfo} />}
+        </div>
+
+        {/* Evaluation Modal */}
+        <VendorEvaluationModal
+          submission={evaluationModal.submission}
+          isOpen={evaluationModal.isOpen}
+          onClose={() => setEvaluationModal({ isOpen: false, submission: null })}
+          onEvaluate={handleVendorEvaluation}
+        />
       </div>
-    </div>
+    </ResponsiveLayout>
   );
 };
+
 
 // Overview Tab Component
 const OverviewTab = ({ rfo }) => (

@@ -1,9 +1,8 @@
-// frontend/src/app/dashboard/officer/page.js
+// frontend/src/app/dashboard/officer/page.js - MOBILE OPTIMIZED
 "use client";
 import { useEffect, useState } from 'react';
 import OfficerDashboard from '@/components/dashboards/OfficerDashboard.js';
-import Sidebar from '@/components/Sidebar';
-import Topbar from '@/components/Topbar';
+import ResponsiveLayout from '@/components/layout/ResponsiveLayout';
 
 export default function OfficerPage() {
   const [dashboardData, setDashboardData] = useState(null);
@@ -44,7 +43,7 @@ export default function OfficerPage() {
   const renderContent = () => {
     if (loading) {
       return (
-        <div className="flex items-center justify-center h-64">
+        <div className="flex items-center justify-center min-h-64 py-8">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
             <div className="text-lg text-gray-600">Loading officer dashboard...</div>
@@ -55,13 +54,13 @@ export default function OfficerPage() {
 
     if (error) {
       return (
-        <div className="flex items-center justify-center h-64">
-          <div className="text-center">
+        <div className="flex items-center justify-center min-h-64 py-8">
+          <div className="text-center max-w-md mx-auto">
             <div className="text-red-600 text-lg mb-2">Error loading dashboard</div>
-            <div className="text-gray-600 mb-4">{error}</div>
+            <div className="text-gray-600 mb-4 text-sm">{error}</div>
             <button
               onClick={fetchDashboardData}
-              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+              className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors w-full sm:w-auto"
             >
               Retry
             </button>
@@ -74,14 +73,10 @@ export default function OfficerPage() {
   };
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
-      <Sidebar />
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <Topbar />
-        <main className="flex-1 overflow-y-auto p-6">
-          {renderContent()}
-        </main>
-      </div>
-    </div>
+    <ResponsiveLayout>
+     
+
+      {renderContent()}
+    </ResponsiveLayout>
   );
 }

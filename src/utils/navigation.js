@@ -27,7 +27,9 @@ export const getNavigationItems = (roleId) => {
         { name: "User Management", icon: <UserPlus size={18} />, href: "/dashboard/admin/users" },
         { name: "Reports", icon: <FileText size={18} />, href: "/dashboard/admin/reports" },
         { name: "System Settings", icon: <Settings size={18} />, href: "/dashboard/admin/settings" },
-        { name: "Account Approvals", icon: <CheckCircle size={18} />, href: "/dashboard/admin/approvals" }
+        { name: "Account Approvals", icon: <CheckCircle size={18} />, href: "/dashboard/admin/approvals" },
+        // Add this to each role that should have access to workflow builder
+        { name: "Workflow Builder", icon: <Settings size={18} />, href: "/dashboard/approvals/workflows"}
       ];
 
     case ROLES.PROCUREMENT_MANAGER:
@@ -41,7 +43,9 @@ export const getNavigationItems = (roleId) => {
         { name: "RFOs", icon: <ClipboardList size={18} />, href: "/dashboard/procurement/rfos" },
         { name: "Contracts", icon: <FileText size={18} />, href: "/dashboard/procurement/contracts" },
         { name: "Performance Metrics", icon: <BarChart3 size={18} />, href: "/dashboard/procurement/cost-control" },
-        { name: "Reports", icon: <FileText size={18} />, href: "/dashboard/admin/reports" }        
+        { name: "Reports", icon: <FileText size={18} />, href: "/dashboard/admin/reports" },
+        // Add this to each role that should have access to workflow builder
+        { name: "Workflow Builder", icon: <Settings size={18} />, href: "/dashboard/approvals/workflows"}        
       ];
 
     case ROLES.PROCUREMENT_OFFICER:
@@ -50,10 +54,10 @@ export const getNavigationItems = (roleId) => {
         { name: "My Tasks", icon: <CheckSquare size={18} />, href: "/dashboard/officer/tasks" },
         { name: "Approvals", icon: <CheckCircle size={18} />, href: "/dashboard/approvals" }, // ADDED HERE
         { name: "Vendors", icon: <Users size={18} />, href: "/dashboard/procurement/vendors" },
-        { name: "RFOs", icon: <Send size={18} />, href: "/dashboard/officer/rfos" },
-        { name: "Contracts", icon: <Briefcase size={18} />, href: "/dashboard/officer/contracts" },
-        { name: "IPCs", icon: <Receipt size={18} />, href: "/dashboard/officer/ipcs" },
-        { name: "Cost Control", icon: <BarChart3 size={18} />, href: "/dashboard/officer/cost-control" }
+        { name: "RFOs", icon: <Send size={18} />, href: "/dashboard/procurement/rfos" },
+        { name: "Contracts", icon: <Briefcase size={18} />, href: "/dashboard/procurement/contracts" },
+        { name: "IPCs", icon: <Receipt size={18} />, href: "/dashboard/procurement/ipcs" },
+        { name: "Cost Control", icon: <BarChart3 size={18} />, href: "/dashboard/procurement/cost-control" }
       ];
 
     case ROLES.VENDOR:

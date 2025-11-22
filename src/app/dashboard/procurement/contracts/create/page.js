@@ -1,11 +1,10 @@
-// src/app/dashboard/procurement/contracts/create/page.jsx
+// frontend/src/app/dashboard/procurement/contracts/create/page.js - MOBILE OPTIMIZED
 "use client";
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useRouter } from 'next/navigation';
 import { Save, Send, Clock, ArrowLeft, Plus, X, Search } from 'lucide-react';
-import Sidebar from '@/components/Sidebar';
-import Topbar from '@/components/Topbar';
+import ResponsiveLayout from '@/components/layout/ResponsiveLayout';
 
 const API_BASE_URL = `${process.env.NEXT_PUBLIC_API_URL}/api`;
 
@@ -162,394 +161,395 @@ const ContractCreationPage = () => {
   const selectedRfq = rfqs.find(r => r.id === parseInt(formData.rfqId));
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
-      <Sidebar />
-      
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <Topbar />
+    <ResponsiveLayout>
+      {/* Header Section */}
+      <div className="mb-6">
+        <button 
+          onClick={() => router.back()}
+          className="flex items-center text-gray-600 hover:text-gray-900 mb-4 text-sm sm:text-base"
+        >
+          <ArrowLeft className="w-4 h-4 mr-2" />
+          Back to Contracts
+        </button>
         
-        <main className="flex-1 overflow-y-auto p-6">
-          {/* Header */}
-          <div className="mb-6">
-            <button 
-              onClick={() => router.back()}
-              className="flex items-center text-gray-600 hover:text-gray-900 mb-4"
-            >
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to Contracts
-            </button>
-            <h1 className="text-2xl font-bold text-gray-800">Create New Contract</h1>
-            <p className="text-gray-600">Fill in the contract details below</p>
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4">
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-800">Create New Contract</h1>
+            <p className="text-gray-600 mt-1 text-sm sm:text-base">
+              Fill in the contract details below
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <form onSubmit={(e) => e.preventDefault()} className="max-w-6xl">
+        {/* Basic Information Section */}
+        <div className="bg-white rounded-lg shadow-md p-4 sm:p-6 mb-4 sm:mb-6">
+          <h2 className="text-lg font-semibold mb-4 border-b pb-2">Basic Information</h2>
+          
+          <div className="grid grid-cols-1 gap-4 mb-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Contract Number *
+              </label>
+              <input
+                type="text"
+                name="contractNumber"
+                value={formData.contractNumber}
+                onChange={handleChange}
+                className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-sm sm:text-base"
+                required
+              />
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Contract Type *
+              </label>
+              <select
+                name="contractType"
+                value={formData.contractType}
+                onChange={handleChange}
+                className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-sm sm:text-base"
+              >
+                <option value="FIXED_PRICE">Fixed Price</option>
+                <option value="TIME_AND_MATERIALS">Time & Materials</option>
+                <option value="MILESTONE_BASED">Milestone Based</option>
+                <option value="COST_PLUS">Cost Plus</option>
+                <option value="UNIT_PRICE">Unit Price</option>
+              </select>
+            </div>
           </div>
 
-          <form onSubmit={(e) => e.preventDefault()} className="max-w-6xl">
-            {/* Basic Information Section */}
-            <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-              <h2 className="text-lg font-semibold mb-4 border-b pb-2">Basic Information</h2>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Contract Number *
-                  </label>
-                  <input
-                    type="text"
-                    name="contractNumber"
-                    value={formData.contractNumber}
-                    onChange={handleChange}
-                    className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                    required
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Contract Type *
-                  </label>
-                  <select
-                    name="contractType"
-                    value={formData.contractType}
-                    onChange={handleChange}
-                    className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                  >
-                    <option value="FIXED_PRICE">Fixed Price</option>
-                    <option value="TIME_AND_MATERIALS">Time & Materials</option>
-                    <option value="MILESTONE_BASED">Milestone Based</option>
-                    <option value="COST_PLUS">Cost Plus</option>
-                    <option value="UNIT_PRICE">Unit Price</option>
-                  </select>
-                </div>
-              </div>
+          {/* Vendor Selection */}
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Vendor *
+            </label>
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setShowVendorSearch(true)}
+                className="w-full p-2 border border-gray-300 rounded-md text-left bg-white hover:bg-gray-50 focus:ring-blue-500 focus:border-blue-500 text-sm sm:text-base"
+              >
+                {selectedVendor ? (
+                  <div>
+                    <span className="font-medium">{selectedVendor.companyLegalName}</span>
+                    <span className="text-gray-500 text-sm ml-2">({selectedVendor.vendorId})</span>
+                  </div>
+                ) : (
+                  <span className="text-gray-500">Select a vendor...</span>
+                )}
+              </button>
 
-              {/* Vendor Selection */}
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Vendor *
-                </label>
-                <div className="relative">
-                  <button
-                    type="button"
-                    onClick={() => setShowVendorSearch(true)}
-                    className="w-full p-2 border border-gray-300 rounded-md text-left bg-white hover:bg-gray-50 focus:ring-blue-500 focus:border-blue-500"
-                  >
-                    {selectedVendor ? (
-                      <div>
-                        <span className="font-medium">{selectedVendor.companyLegalName}</span>
-                        <span className="text-gray-500 text-sm ml-2">({selectedVendor.vendorId})</span>
-                      </div>
-                    ) : (
-                      <span className="text-gray-500">Select a vendor...</span>
-                    )}
-                  </button>
-
-                  {showVendorSearch && (
-                    <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto">
-                      <div className="p-2 border-b">
-                        <div className="relative">
-                          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                          <input
-                            type="text"
-                            placeholder="Search vendors..."
-                            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                            value={vendorSearchTerm}
-                            onChange={(e) => setVendorSearchTerm(e.target.value)}
-                            autoFocus
-                          />
-                        </div>
-                      </div>
-                      <div className="max-h-48 overflow-y-auto">
-                        {filteredVendors.length === 0 ? (
-                          <div className="p-4 text-center text-gray-500">No vendors found</div>
-                        ) : (
-                          filteredVendors.map((vendor) => (
-                            <button
-                              key={vendor.id}
-                              type="button"
-                              onClick={() => handleVendorSelect(vendor)}
-                              className="w-full p-3 text-left hover:bg-gray-100 border-b border-gray-100 last:border-b-0"
-                            >
-                              <div className="font-medium">{vendor.companyLegalName}</div>
-                              <div className="text-sm text-gray-600">ID: {vendor.vendorId} • Type: {vendor.vendorType}</div>
-                              <div className="text-sm text-gray-500">{vendor.contactEmail}</div>
-                            </button>
-                          ))
-                        )}
-                      </div>
-                      <div className="p-2 border-t">
-                        <button
-                          type="button"
-                          onClick={() => setShowVendorSearch(false)}
-                          className="w-full p-2 text-gray-600 hover:text-gray-800"
-                        >
-                          <X className="w-4 h-4 inline mr-1" />
-                          Close
-                        </button>
-                      </div>
+              {showVendorSearch && (
+                <div className="fixed inset-0 sm:absolute sm:inset-auto z-50 sm:z-10 w-full sm:w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto">
+                  <div className="p-2 border-b sticky top-0 bg-white">
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                      <input
+                        type="text"
+                        placeholder="Search vendors..."
+                        className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-sm sm:text-base"
+                        value={vendorSearchTerm}
+                        onChange={(e) => setVendorSearchTerm(e.target.value)}
+                        autoFocus
+                      />
                     </div>
-                  )}
-                </div>
-              </div>
-
-              {/* RFQ Selection (Optional) */}
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Related RFQ (Optional)
-                </label>
-                <div className="relative">
-                  <button
-                    type="button"
-                    onClick={() => setShowRfqSearch(true)}
-                    className="w-full p-2 border border-gray-300 rounded-md text-left bg-white hover:bg-gray-50 focus:ring-blue-500 focus:border-blue-500"
-                  >
-                    {selectedRfq ? (
-                      <div>
-                        <span className="font-medium">{selectedRfq.rfqNumber}</span>
-                        <span className="text-gray-500 text-sm ml-2">- {selectedRfq.projectName}</span>
-                      </div>
+                  </div>
+                  <div className="max-h-48 overflow-y-auto">
+                    {filteredVendors.length === 0 ? (
+                      <div className="p-4 text-center text-gray-500">No vendors found</div>
                     ) : (
-                      <span className="text-gray-500">Select an RFQ (optional)...</span>
-                    )}
-                  </button>
-
-                  {showRfqSearch && (
-                    <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto">
-                      <div className="p-2 border-b">
-                        <div className="relative">
-                          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                          <input
-                            type="text"
-                            placeholder="Search RFQs..."
-                            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                            value={rfqSearchTerm}
-                            onChange={(e) => setRfqSearchTerm(e.target.value)}
-                            autoFocus
-                          />
-                        </div>
-                      </div>
-                      <div className="max-h-48 overflow-y-auto">
-                        {filteredRfqs.length === 0 ? (
-                          <div className="p-4 text-center text-gray-500">No RFQs found</div>
-                        ) : (
-                          filteredRfqs.map((rfq) => (
-                            <button
-                              key={rfq.id}
-                              type="button"
-                              onClick={() => handleRfqSelect(rfq)}
-                              className="w-full p-3 text-left hover:bg-gray-100 border-b border-gray-100 last:border-b-0"
-                            >
-                              <div className="font-medium">{rfq.rfqNumber}</div>
-                              <div className="text-sm text-gray-600">{rfq.projectName}</div>
-                              <div className="text-sm text-gray-500">{rfq.title}</div>
-                            </button>
-                          ))
-                        )}
-                      </div>
-                      <div className="p-2 border-t">
+                      filteredVendors.map((vendor) => (
                         <button
+                          key={vendor.id}
                           type="button"
-                          onClick={() => setShowRfqSearch(false)}
-                          className="w-full p-2 text-gray-600 hover:text-gray-800"
+                          onClick={() => handleVendorSelect(vendor)}
+                          className="w-full p-3 text-left hover:bg-gray-100 border-b border-gray-100 last:border-b-0 text-sm sm:text-base"
                         >
-                          <X className="w-4 h-4 inline mr-1" />
-                          Close
+                          <div className="font-medium">{vendor.companyLegalName}</div>
+                          <div className="text-sm text-gray-600">ID: {vendor.vendorId} • Type: {vendor.vendorType}</div>
+                          <div className="text-sm text-gray-500">{vendor.contactEmail}</div>
                         </button>
-                      </div>
+                      ))
+                    )}
+                  </div>
+                  <div className="p-2 border-t sticky bottom-0 bg-white">
+                    <button
+                      type="button"
+                      onClick={() => setShowVendorSearch(false)}
+                      className="w-full p-2 text-gray-600 hover:text-gray-800 text-sm sm:text-base"
+                    >
+                      <X className="w-4 h-4 inline mr-1" />
+                      Close
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* RFQ Selection (Optional) */}
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Related RFQ (Optional)
+            </label>
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setShowRfqSearch(true)}
+                className="w-full p-2 border border-gray-300 rounded-md text-left bg-white hover:bg-gray-50 focus:ring-blue-500 focus:border-blue-500 text-sm sm:text-base"
+              >
+                {selectedRfq ? (
+                  <div>
+                    <span className="font-medium">{selectedRfq.rfqNumber}</span>
+                    <span className="text-gray-500 text-sm ml-2">- {selectedRfq.projectName}</span>
+                  </div>
+                ) : (
+                  <span className="text-gray-500">Select an RFQ (optional)...</span>
+                )}
+              </button>
+
+              {showRfqSearch && (
+                <div className="fixed inset-0 sm:absolute sm:inset-auto z-50 sm:z-10 w-full sm:w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto">
+                  <div className="p-2 border-b sticky top-0 bg-white">
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                      <input
+                        type="text"
+                        placeholder="Search RFQs..."
+                        className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-sm sm:text-base"
+                        value={rfqSearchTerm}
+                        onChange={(e) => setRfqSearchTerm(e.target.value)}
+                        autoFocus
+                      />
                     </div>
-                  )}
+                  </div>
+                  <div className="max-h-48 overflow-y-auto">
+                    {filteredRfqs.length === 0 ? (
+                      <div className="p-4 text-center text-gray-500">No RFQs found</div>
+                    ) : (
+                      filteredRfqs.map((rfq) => (
+                        <button
+                          key={rfq.id}
+                          type="button"
+                          onClick={() => handleRfqSelect(rfq)}
+                          className="w-full p-3 text-left hover:bg-gray-100 border-b border-gray-100 last:border-b-0 text-sm sm:text-base"
+                        >
+                          <div className="font-medium">{rfq.rfqNumber}</div>
+                          <div className="text-sm text-gray-600">{rfq.projectName}</div>
+                          <div className="text-sm text-gray-500">{rfq.title}</div>
+                        </button>
+                      ))
+                    )}
+                  </div>
+                  <div className="p-2 border-t sticky bottom-0 bg-white">
+                    <button
+                      type="button"
+                      onClick={() => setShowRfqSearch(false)}
+                      className="w-full p-2 text-gray-600 hover:text-gray-800 text-sm sm:text-base"
+                    >
+                      <X className="w-4 h-4 inline mr-1" />
+                      Close
+                    </button>
+                  </div>
                 </div>
-              </div>
-
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Contract Description
-                </label>
-                <textarea
-                  name="description"
-                  value={formData.description}
-                  onChange={handleChange}
-                  rows="3"
-                  className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="Describe the scope of work and contract purpose..."
-                />
-              </div>
+              )}
             </div>
+          </div>
 
-            {/* Financial Information Section */}
-            <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-              <h2 className="text-lg font-semibold mb-4 border-b pb-2">Financial Information</h2>
-              
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Contract Value *
-                  </label>
-                  <input
-                    type="number"
-                    name="contractValue"
-                    value={formData.contractValue}
-                    onChange={handleChange}
-                    className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="0.00"
-                    step="0.01"
-                    required
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Currency *
-                  </label>
-                  <select
-                    name="currency"
-                    value={formData.currency}
-                    onChange={handleChange}
-                    className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                  >
-                    <option value="SAR">SAR (Saudi Riyal)</option>
-                    <option value="USD">USD (US Dollar)</option>
-                    <option value="EUR">EUR (Euro)</option>
-                    <option value="GBP">GBP (British Pound)</option>
-                  </select>
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Payment Terms *
-                  </label>
-                  <select
-                    name="paymentTerms"
-                    value={formData.paymentTerms}
-                    onChange={handleChange}
-                    className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                  >
-                    <option value="15_DAYS">15 Days</option>
-                    <option value="30_DAYS">30 Days</option>
-                    <option value="45_DAYS">45 Days</option>
-                    <option value="60_DAYS">60 Days</option>
-                    <option value="ADVANCE_PAYMENT">Advance Payment</option>
-                    <option value="MILESTONE_PAYMENT">Milestone Payment</option>
-                  </select>
-                </div>
-              </div>
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Contract Description
+            </label>
+            <textarea
+              name="description"
+              value={formData.description}
+              onChange={handleChange}
+              rows="3"
+              className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-sm sm:text-base"
+              placeholder="Describe the scope of work and contract purpose..."
+            />
+          </div>
+        </div>
+
+        {/* Financial Information Section */}
+        <div className="bg-white rounded-lg shadow-md p-4 sm:p-6 mb-4 sm:mb-6">
+          <h2 className="text-lg font-semibold mb-4 border-b pb-2">Financial Information</h2>
+          
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Contract Value *
+              </label>
+              <input
+                type="number"
+                name="contractValue"
+                value={formData.contractValue}
+                onChange={handleChange}
+                className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-sm sm:text-base"
+                placeholder="0.00"
+                step="0.01"
+                required
+              />
             </div>
-
-            {/* Timeline Section */}
-            <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-              <h2 className="text-lg font-semibold mb-4 border-b pb-2">Timeline</h2>
-              
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Start Date
-                  </label>
-                  <input
-                    type="date"
-                    name="startDate"
-                    value={formData.startDate}
-                    onChange={handleChange}
-                    className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    End Date
-                  </label>
-                  <input
-                    type="date"
-                    name="endDate"
-                    value={formData.endDate}
-                    onChange={handleChange}
-                    className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Warranty Period (Months)
-                  </label>
-                  <input
-                    type="number"
-                    name="warrantyPeriod"
-                    value={formData.warrantyPeriod}
-                    onChange={handleChange}
-                    className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="12"
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Terms & Conditions Section */}
-            <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-              <h2 className="text-lg font-semibold mb-4 border-b pb-2">Terms & Conditions</h2>
-              
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Termination Clause
-                  </label>
-                  <textarea
-                    name="terminationClause"
-                    value={formData.terminationClause}
-                    onChange={handleChange}
-                    rows="3"
-                    className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="Specify conditions for contract termination..."
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Special Conditions
-                  </label>
-                  <textarea
-                    name="specialConditions"
-                    value={formData.specialConditions}
-                    onChange={handleChange}
-                    rows="3"
-                    className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="Any special conditions or additional terms..."
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Action Buttons */}
-            <div className="flex justify-end space-x-4">
-              <button
-                type="button"
-                onClick={() => router.back()}
-                className="px-6 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 disabled:opacity-50"
-                disabled={loading}
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Currency *
+              </label>
+              <select
+                name="currency"
+                value={formData.currency}
+                onChange={handleChange}
+                className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-sm sm:text-base"
               >
-                Cancel
-              </button>
-              
-              <button
-                type="button"
-                onClick={(e) => handleSubmit(e, 'DRAFT')}
-                disabled={loading}
-                className="flex items-center px-6 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 disabled:opacity-50"
-              >
-                <Save className="w-4 h-4 mr-2" />
-                {loading ? 'Saving...' : 'Save as Draft'}
-              </button>
-              
-              <button
-                type="button"
-                onClick={(e) => handleSubmit(e, 'ACTIVE')}
-                disabled={loading || !formData.vendorId || !formData.contractValue}
-                className="flex items-center px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
-              >
-                <Send className="w-4 h-4 mr-2" />
-                {loading ? 'Creating...' : 'Create & Activate Contract'}
-              </button>
+                <option value="SAR">SAR (Saudi Riyal)</option>
+                <option value="USD">USD (US Dollar)</option>
+                <option value="EUR">EUR (Euro)</option>
+                <option value="GBP">GBP (British Pound)</option>
+              </select>
             </div>
-          </form>
-        </main>
-      </div>
-    </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Payment Terms *
+              </label>
+              <select
+                name="paymentTerms"
+                value={formData.paymentTerms}
+                onChange={handleChange}
+                className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-sm sm:text-base"
+              >
+                <option value="15_DAYS">15 Days</option>
+                <option value="30_DAYS">30 Days</option>
+                <option value="45_DAYS">45 Days</option>
+                <option value="60_DAYS">60 Days</option>
+                <option value="ADVANCE_PAYMENT">Advance Payment</option>
+                <option value="MILESTONE_PAYMENT">Milestone Payment</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        {/* Timeline Section */}
+        <div className="bg-white rounded-lg shadow-md p-4 sm:p-6 mb-4 sm:mb-6">
+          <h2 className="text-lg font-semibold mb-4 border-b pb-2">Timeline</h2>
+          
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Start Date
+              </label>
+              <input
+                type="date"
+                name="startDate"
+                value={formData.startDate}
+                onChange={handleChange}
+                className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-sm sm:text-base"
+              />
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                End Date
+              </label>
+              <input
+                type="date"
+                name="endDate"
+                value={formData.endDate}
+                onChange={handleChange}
+                className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-sm sm:text-base"
+              />
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Warranty Period (Months)
+              </label>
+              <input
+                type="number"
+                name="warrantyPeriod"
+                value={formData.warrantyPeriod}
+                onChange={handleChange}
+                className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-sm sm:text-base"
+                placeholder="12"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Terms & Conditions Section */}
+        <div className="bg-white rounded-lg shadow-md p-4 sm:p-6 mb-4 sm:mb-6">
+          <h2 className="text-lg font-semibold mb-4 border-b pb-2">Terms & Conditions</h2>
+          
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Termination Clause
+              </label>
+              <textarea
+                name="terminationClause"
+                value={formData.terminationClause}
+                onChange={handleChange}
+                rows="3"
+                className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-sm sm:text-base"
+                placeholder="Specify conditions for contract termination..."
+              />
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Special Conditions
+              </label>
+              <textarea
+                name="specialConditions"
+                value={formData.specialConditions}
+                onChange={handleChange}
+                rows="3"
+                className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-sm sm:text-base"
+                placeholder="Any special conditions or additional terms..."
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Action Buttons */}
+        <div className="flex flex-col sm:flex-row justify-end space-y-3 sm:space-y-0 sm:space-x-4">
+          <button
+            type="button"
+            onClick={() => router.back()}
+            className="px-6 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 disabled:opacity-50 text-sm sm:text-base order-2 sm:order-1"
+            disabled={loading}
+          >
+            Cancel
+          </button>
+          
+          <div className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-4 order-1 sm:order-2">
+            <button
+              type="button"
+              onClick={(e) => handleSubmit(e, 'DRAFT')}
+              disabled={loading}
+              className="flex items-center justify-center px-6 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 disabled:opacity-50 text-sm sm:text-base"
+            >
+              <Save className="w-4 h-4 mr-2" />
+              {loading ? 'Saving...' : 'Save as Draft'}
+            </button>
+            
+            <button
+              type="button"
+              onClick={(e) => handleSubmit(e, 'ACTIVE')}
+              disabled={loading || !formData.vendorId || !formData.contractValue}
+              className="flex items-center justify-center px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 text-sm sm:text-base"
+            >
+              <Send className="w-4 h-4 mr-2" />
+              {loading ? 'Creating...' : 'Create & Activate Contract'}
+            </button>
+          </div>
+        </div>
+      </form>
+    </ResponsiveLayout>
   );
 };
 

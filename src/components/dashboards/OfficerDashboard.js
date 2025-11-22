@@ -32,7 +32,9 @@ import {
   PlayArrow as PlayArrowIcon,
   Refresh as RefreshIcon,
   Download as DownloadIcon,
-  Notifications as NotificationsIcon
+  Notifications as NotificationsIcon,
+  Storage as DatabaseIcon,
+  WifiOff as WifiOffIcon
 } from '@mui/icons-material';
 import {
   BarChart,
@@ -50,41 +52,11 @@ const OfficerDashboard = ({ data }) => {
   const [dashboardData, setDashboardData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [dataSource, setDataSource] = useState('unknown');
   const theme = useTheme();
 
-  useEffect(() => {
-    if (data) {
-      setDashboardData(data);
-      setLoading(false);
-    } else {
-      fetchDashboardData();
-    }
-  }, [data]);
-
-  const fetchDashboardData = async () => {
-    try {
-      const token = localStorage.getItem('authToken');
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/dashboard`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      if (!response.ok) throw new Error('Failed to fetch dashboard data');
-      
-      const result = await response.json();
-      setDashboardData(result.data);
-    } catch (err) {
-      setError(err.message);
-      console.error('Dashboard error:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Enhanced mock data for officer dashboard
-  const mockData = {
+  // Enhanced mock data for officer dashboard matching specifications
+  const generateFallbackData = () => ({
     personalMetrics: {
       myTasks: 8,
       upcomingDeadlines: 3,
@@ -148,8 +120,64 @@ const OfficerDashboard = ({ data }) => {
       contractsReviewed: 6,
       savingsIdentified: 450000
     }
+  });
+
+  const fetchDashboardData = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const token = localStorage.getItem('authToken');
+      if (!token) {
+        throw new Error('No authentication token found');
+      }
+
+      console.log('🔄 Fetching officer dashboard data from API...');
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/dashboard/officer`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const result = await response.json();
+      
+      if (result.success) {
+        console.log('✅ Successfully loaded real officer data from API');
+        setDashboardData(result.data);
+        setDataSource('api');
+      } else {
+        throw new Error(result.message || 'Failed to fetch dashboard data');
+      }
+    } catch (error) {
+      console.log('⚠️ API unavailable, using fallback data:', error.message);
+      setError('Database temporarily unavailable. Showing sample data.');
+      setDashboardData(generateFallbackData());
+      setDataSource('fallback');
+    } finally {
+      setLoading(false);
+    }
   };
 
+  useEffect(() => {
+    if (data) {
+      setDashboardData(data);
+      setDataSource('api');
+      setLoading(false);
+    } else {
+      fetchDashboardData();
+    }
+  }, [data]);
+
+  const handleRetry = () => {
+    fetchDashboardData();
+  };
+
+  // Weekly activity data - consistent across data sources
   const weeklyData = [
     { day: 'Mon', completed: 3, assigned: 4 },
     { day: 'Tue', completed: 2, assigned: 3 },
@@ -160,7 +188,33 @@ const OfficerDashboard = ({ data }) => {
     { day: 'Sun', completed: 0, assigned: 1 }
   ];
 
-  const dataToUse = dashboardData || mockData;
+  const dataToUse = dashboardData || generateFallbackData();
+
+  // Data Source Indicator Component
+  const DataSourceIndicator = () => {
+    if (dataSource === 'api') {
+      return (
+        <Chip 
+          icon={<DatabaseIcon />}
+          label="Live Data"
+          color="success"
+          variant="outlined"
+          size="small"
+        />
+      );
+    } else if (dataSource === 'fallback') {
+      return (
+        <Chip 
+          icon={<WifiOffIcon />}
+          label="Sample Data (DB Offline)"
+          color="warning"
+          variant="outlined"
+          size="small"
+        />
+      );
+    }
+    return null;
+  };
 
   // KPI Card Component
   const KPICard = ({ title, value, subtitle, icon, color = 'primary', trend, onClick }) => (
@@ -251,58 +305,67 @@ const OfficerDashboard = ({ data }) => {
     );
   }
 
-  if (error) {
+  if (error && !dashboardData) {
     return (
-      <Alert 
-        severity="error" 
-        sx={{ mb: 2, borderRadius: 2 }}
-        action={
-          <Button color="inherit" size="small" onClick={fetchDashboardData}>
-            RETRY
+      <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
+        <Box textAlign="center" maxWidth="400px">
+          <WifiOffIcon sx={{ fontSize: 48, color: 'error.main', mb: 2 }} />
+          <Typography variant="h6" color="textPrimary" gutterBottom>
+            Connection Issue
+          </Typography>
+          <Typography variant="body2" color="textSecondary" gutterBottom>
+            {error}
+          </Typography>
+          <Button 
+            variant="contained" 
+            onClick={handleRetry}
+            sx={{ mt: 2 }}
+          >
+            Retry Connection
           </Button>
-        }
-      >
-        Error loading dashboard: {error}
-      </Alert>
+        </Box>
+      </Box>
     );
   }
 
   return (
     <Box sx={{ p: 3, background: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)', minHeight: '100vh' }}>
-      {/* Header Section */}
-      <Card sx={{ 
-        mb: 4, 
-        background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${alpha(theme.palette.primary.dark, 0.8)} 100%)`,
-        color: 'white',
-        borderRadius: 3,
-        boxShadow: '0 8px 32px rgba(0,0,0,0.1)'
-      }}>
-        <CardContent sx={{ p: 4, '&:last-child': { pb: 4 } }}>
-          <Box display="flex" justifyContent="space-between" alignItems="flex-start">
-            <Box>
-              <Typography variant="h3" gutterBottom fontWeight="bold" sx={{ textShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
-                Procurement Officer Dashboard
-              </Typography>
-              <Typography variant="h6" sx={{ opacity: 0.9, fontWeight: 300 }}>
-                Your tasks, deadlines, and performance metrics at a glance
-              </Typography>
-            </Box>
-            
-            <Box display="flex" gap={1}>
-              <Tooltip title="Refresh Data">
-                <IconButton onClick={fetchDashboardData} sx={{ color: 'white', background: 'rgba(255,255,255,0.2)' }}>
-                  <RefreshIcon />
-                </IconButton>
-              </Tooltip>
-              <Tooltip title="Export Report">
-                <IconButton sx={{ color: 'white', background: 'rgba(255,255,255,0.2)' }}>
-                  <DownloadIcon />
-                </IconButton>
-              </Tooltip>
-            </Box>
+      {/* Header with Data Source Indicator */}
+      <Box sx={{ mb: 3 }}>
+        <Box display="flex" justifyContent="space-between" alignItems="flex-start" sx={{ mb: 2 }}>
+          <Box>
+            <Typography variant="h4" fontWeight="bold" gutterBottom>
+              Procurement Officer Dashboard
+            </Typography>
+            <Typography variant="body1" color="textSecondary" gutterBottom>
+              Your tasks, deadlines, and performance metrics
+            </Typography>
+            <DataSourceIndicator />
           </Box>
-        </CardContent>
-      </Card>
+          <Button
+            startIcon={<RefreshIcon />}
+            onClick={fetchDashboardData}
+            variant="outlined"
+          >
+            Refresh
+          </Button>
+        </Box>
+
+        {/* Data Status Alert */}
+        {dataSource === 'fallback' && (
+          <Alert 
+            severity="warning" 
+            sx={{ mb: 2, borderRadius: 2 }}
+            action={
+              <Button color="inherit" size="small" onClick={handleRetry}>
+                RETRY
+              </Button>
+            }
+          >
+            Database connection issue. Showing sample data for demonstration.
+          </Alert>
+        )}
+      </Box>
 
       {/* Personal Metrics KPIs */}
       <Grid container spacing={3} mb={4}>

@@ -1,364 +1,409 @@
-"use client";
+// frontend/src/components/ApprovalDashboard.js
 import React, { useState, useEffect } from 'react';
-import { 
-  CheckCircle, 
-  Clock, 
-  XCircle, 
-  FileText, 
-  Users, 
-  Filter,
-  Search,
-  Download,
-  Eye,
-  Send,
-  Calendar,
-  User
-} from 'lucide-react';
+import {
+  Card,
+  CardContent,
+  Typography,
+  Box,
+  Button,
+  Grid,
+  Chip,
+  LinearProgress,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  TextField,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  Alert,
+  Tabs,
+  Tab
+} from '@mui/material';
+import {
+  CheckCircle as CheckCircleIcon,
+  Cancel as CancelIcon,
+  Schedule as ScheduleIcon,
+  Warning as WarningIcon,
+  Refresh as RefreshIcon
+} from '@mui/icons-material';
 
-const ApprovalDashboard = () => {
-  const [pendingApprovals, setPendingApprovals] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [selectedApproval, setSelectedApproval] = useState(null);
-  const [showApprovalModal, setShowApprovalModal] = useState(false);
+const ApprovalDashboard = ({ pendingApprovals: initialPendingApprovals, onRefresh, loading: externalLoading }) => {
+  const [pendingApprovals, setPendingApprovals] = useState(initialPendingApprovals || []);
+  const [selectedTab, setSelectedTab] = useState(0);
+  const [openDialog, setOpenDialog] = useState(false);
+  const [selectedStep, setSelectedStep] = useState(null);
+  const [decision, setDecision] = useState('APPROVED');
   const [comments, setComments] = useState('');
+  const [internalLoading, setInternalLoading] = useState(false);
 
-  // Fetch pending approvals
-  const fetchPendingApprovals = async () => {
+  const loading = externalLoading || internalLoading;
+
+  // Update local state when props change
+  useEffect(() => {
+    if (initialPendingApprovals) {
+      setPendingApprovals(initialPendingApprovals);
+    }
+  }, [initialPendingApprovals]);
+
+  // Load pending approvals (if not provided via props)
+  const loadPendingApprovals = async () => {
+    if (onRefresh) {
+      onRefresh();
+      return;
+    }
+
     try {
+      setInternalLoading(true);
       const token = localStorage.getItem('authToken');
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/approvals/pending`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/advanced-approvals/my-pending`, {
         headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
+          'Authorization': `Bearer ${token}`
         }
       });
-      
-      const result = await response.json();
-      if (result.success) {
+
+      if (response.ok) {
+        const result = await response.json();
         setPendingApprovals(result.data);
       }
     } catch (error) {
-      console.error('Error fetching approvals:', error);
+      console.error('Error loading pending approvals:', error);
     } finally {
-      setLoading(false);
+      setInternalLoading(false);
     }
   };
 
-  useEffect(() => {
-    fetchPendingApprovals();
-  }, []);
+  // Process step decision
+  const processStepDecision = async () => {
+    if (!selectedStep) return;
 
-  // Handle approval action
-  const handleApprove = async (approvalId, stepId, action) => {
     try {
+      setInternalLoading(true);
       const token = localStorage.getItem('authToken');
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/approvals/${approvalId}/steps/${stepId}/${action}`,
-        {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({ comments })
-        }
-      );
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/advanced-approvals/steps/${selectedStep.id}/decision`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          decision,
+          comments
+        })
+      });
 
-      const result = await response.json();
-      if (result.success) {
-        setShowApprovalModal(false);
-        setSelectedApproval(null);
+      if (response.ok) {
+        const result = await response.json();
+        console.log('Step decision processed:', result);
+        
+        // Reload pending approvals
+        await loadPendingApprovals();
+        setOpenDialog(false);
+        setSelectedStep(null);
         setComments('');
-        fetchPendingApprovals(); // Refresh the list
+      } else {
+        console.error('Failed to process step decision');
       }
     } catch (error) {
-      console.error('Error processing approval:', error);
+      console.error('Error processing step decision:', error);
+    } finally {
+      setInternalLoading(false);
     }
   };
 
-  const getStatusBadge = (status) => {
-    const statusConfig = {
-      PENDING: { color: 'bg-yellow-100 text-yellow-800', icon: Clock },
-      APPROVED: { color: 'bg-green-100 text-green-800', icon: CheckCircle },
-      REJECTED: { color: 'bg-red-100 text-red-800', icon: XCircle },
-      IN_PROGRESS: { color: 'bg-blue-100 text-blue-800', icon: Clock }
-    };
-    
-    const config = statusConfig[status] || statusConfig.PENDING;
-    const Icon = config.icon;
-    
-    return (
-      <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${config.color}`}>
-        <Icon className="w-3 h-3 mr-1" />
-        {status.replace(/_/g, ' ')}
-      </span>
-    );
+  // Open approval dialog
+  const handleApproveStep = (step) => {
+    setSelectedStep(step);
+    setDecision('APPROVED');
+    setComments('');
+    setOpenDialog(true);
   };
 
-  const getEntityIcon = (entityType) => {
-    switch (entityType) {
-      case 'VENDOR': return <Users className="w-5 h-5 text-blue-600" />;
-      case 'CONTRACT': return <FileText className="w-5 h-5 text-green-600" />;
-      case 'PO': return <FileText className="w-5 h-5 text-purple-600" />;
-      case 'IPC': return <FileText className="w-5 h-5 text-orange-600" />;
-      default: return <FileText className="w-5 h-5 text-gray-600" />;
+  // Get status color
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'APPROVED': return 'success';
+      case 'REJECTED': return 'error';
+      case 'PENDING': return 'warning';
+      case 'ESCALATED': return 'info';
+      default: return 'default';
     }
   };
 
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-      </div>
-    );
-  }
+  // Get status icon
+  const getStatusIcon = (status) => {
+    switch (status) {
+      case 'APPROVED': return <CheckCircleIcon />;
+      case 'REJECTED': return <CancelIcon />;
+      case 'PENDING': return <ScheduleIcon />;
+      case 'ESCALATED': return <WarningIcon />;
+      default: return <ScheduleIcon />;
+    }
+  };
+
+  // Check if step is overdue
+  const isStepOverdue = (slaDeadline) => {
+    return new Date(slaDeadline) < new Date();
+  };
+
+  // Format date
+  const formatDate = (dateString) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
+  // Load data on component mount (only if no props provided)
+  useEffect(() => {
+    if (!initialPendingApprovals) {
+      loadPendingApprovals();
+    }
+  }, []);
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-        <div className="flex justify-between items-center">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900 flex items-center">
-              <CheckCircle className="w-7 h-7 mr-3 text-blue-600" />
-              Approval Dashboard
-            </h1>
-            <p className="text-gray-600 mt-1">
-              Review and approve pending requests
-            </p>
-          </div>
-          <div className="flex items-center space-x-4">
-            <div className="bg-blue-50 px-4 py-2 rounded-lg">
-              <p className="text-sm text-blue-600 font-medium">
-                {pendingApprovals.length} Pending Approvals
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
+    <Box sx={{ p: 3 }}>
+      {/*<Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+        <Typography variant="h4" fontWeight="bold">
+          Approval Dashboard
+        </Typography>
+        <Button
+          variant="outlined"
+          startIcon={<RefreshIcon />}
+          onClick={loadPendingApprovals}
+          disabled={loading}
+        >
+          Refresh
+        </Button>
+      </Box> */}
 
-      {/* Filters */}
-      <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
-        <div className="flex flex-wrap gap-4 items-center">
-          <div className="flex items-center space-x-2">
-            <Search className="w-4 h-4 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Search approvals..."
-              className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-          
-          <select className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
-            <option value="">All Types</option>
-            <option value="VENDOR">Vendor Qualification</option>
-            <option value="CONTRACT">Contract</option>
-            <option value="PO">Purchase Order</option>
-            <option value="IPC">IPC</option>
-          </select>
+      {/* Tabs */}
+      <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
+        <Tabs value={selectedTab} onChange={(e, newValue) => setSelectedTab(newValue)}>
+          <Tab 
+            label={
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Typography>Pending Approvals</Typography>
+                {pendingApprovals.length > 0 && (
+                  <Chip 
+                    label={pendingApprovals.length} 
+                    size="small" 
+                    color="warning" 
+                  />
+                )}
+              </Box>
+            } 
+          />
+          <Tab label="Approval History" />
+        </Tabs>
+      </Box>
 
-          <select className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
-            <option value="">All Status</option>
-            <option value="PENDING">Pending</option>
-            <option value="IN_PROGRESS">In Progress</option>
-          </select>
-        </div>
-      </div>
+      {/* Pending Approvals Tab */}
+      {selectedTab === 0 && (
+        <Grid container spacing={3}>
+          {pendingApprovals.length === 0 ? (
+            <Grid item xs={12}>
+              <Card>
+                <CardContent sx={{ textAlign: 'center', py: 4 }}>
+                  <CheckCircleIcon sx={{ fontSize: 48, color: 'success.main', mb: 2 }} />
+                  <Typography variant="h6" color="textSecondary">
+                    No pending approvals
+                  </Typography>
+                  <Typography variant="body2" color="textSecondary">
+                    You're all caught up! There are no approvals waiting for your review.
+                  </Typography>
+                </CardContent>
+              </Card>
+            </Grid>
+          ) : (
+            pendingApprovals.map((step) => (
+              <Grid item xs={12} key={step.id}>
+                <Card>
+                  <CardContent>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', mb: 2 }}>
+                      <Box sx={{ flex: 1 }}>
+                        <Typography variant="h6" fontWeight="bold" gutterBottom>
+                          {step.approval.entityType} - {step.approval.entityId}
+                        </Typography>
+                        <Typography variant="body2" color="textSecondary" gutterBottom>
+                          {step.approval.workflow?.description}
+                        </Typography>
+                        
+                        <Box sx={{ display: 'flex', gap: 1, mb: 2, flexWrap: 'wrap' }}>
+                          <Chip 
+                            icon={getStatusIcon(step.status)}
+                            label={`Step ${step.stepNumber}: ${step.stepName}`}
+                            color={getStatusColor(step.status)}
+                            variant="outlined"
+                          />
+                          <Chip 
+                            label={`SLA: ${formatDate(step.slaDeadline)}`}
+                            color={isStepOverdue(step.slaDeadline) ? 'error' : 'default'}
+                            variant="outlined"
+                            size="small"
+                          />
+                          <Chip 
+                            label={`Requested by: ${step.approval.requestedBy?.name}`}
+                            variant="outlined"
+                            size="small"
+                          />
+                        </Box>
 
-      {/* Approvals Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-        {pendingApprovals.map((approval) => (
-          <div
-            key={approval.id}
-            className="bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow duration-200"
+                        {/* Progress Bar */}
+                        <Box sx={{ mb: 2 }}>
+                          <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+                            <Typography variant="body2" color="textSecondary">
+                              Approval Progress
+                            </Typography>
+                            <Typography variant="body2" fontWeight="bold">
+                              {step.approval.currentStep} of {step.approval.totalSteps} steps
+                            </Typography>
+                          </Box>
+                          <LinearProgress 
+                            variant="determinate" 
+                            value={(step.approval.currentStep / step.approval.totalSteps) * 100}
+                            sx={{ height: 8, borderRadius: 4 }}
+                          />
+                        </Box>
+                      </Box>
+
+                      <Box sx={{ display: 'flex', gap: 1, flexDirection: 'column' }}>
+                        <Button
+                          variant="contained"
+                          color="success"
+                          startIcon={<CheckCircleIcon />}
+                          onClick={() => handleApproveStep(step)}
+                          disabled={loading}
+                        >
+                          Approve
+                        </Button>
+                        <Button
+                          variant="outlined"
+                          color="error"
+                          startIcon={<CancelIcon />}
+                          onClick={() => {
+                            setSelectedStep(step);
+                            setDecision('REJECTED');
+                            setComments('');
+                            setOpenDialog(true);
+                          }}
+                          disabled={loading}
+                        >
+                          Reject
+                        </Button>
+                      </Box>
+                    </Box>
+
+                    {/* Workflow Steps Overview */}
+                    <Box sx={{ mt: 2 }}>
+                      <Typography variant="subtitle2" gutterBottom>
+                        Workflow Steps:
+                      </Typography>
+                      <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                        {step.approval.workflow?.steps.map((workflowStep, index) => (
+                          <Chip
+                            key={index}
+                            label={`${workflowStep.stepNumber}. ${workflowStep.stepName}`}
+                            color={
+                              workflowStep.stepNumber < step.approval.currentStep ? 'success' :
+                              workflowFlow.stepNumber === step.approval.currentStep ? 'primary' : 'default'
+                            }
+                            variant={
+                              workflowStep.stepNumber === step.stepNumber ? 'filled' : 'outlined'
+                            }
+                            size="small"
+                          />
+                        ))}
+                      </Box>
+                    </Box>
+                  </CardContent>
+                </Card>
+              </Grid>
+            ))
+          )}
+        </Grid>
+      )}
+
+      {/* Approval History Tab */}
+      {selectedTab === 1 && (
+        <Card>
+          <CardContent>
+            <Typography variant="h6" gutterBottom>
+              Approval History
+            </Typography>
+            <Typography variant="body2" color="textSecondary">
+              Your recent approval activities will appear here.
+            </Typography>
+            {/* TODO: Implement approval history table */}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Approval Dialog */}
+      <Dialog open={openDialog} onClose={() => setOpenDialog(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>
+          {decision === 'APPROVED' ? 'Approve Step' : 'Reject Step'}
+        </DialogTitle>
+        <DialogContent>
+          {selectedStep && (
+            <Box sx={{ mt: 2 }}>
+              <Typography variant="subtitle1" gutterBottom>
+                {selectedStep.stepName}
+              </Typography>
+              <Typography variant="body2" color="textSecondary" gutterBottom>
+                Step {selectedStep.stepNumber} of {selectedStep.approval?.totalSteps}
+              </Typography>
+              
+              <FormControl fullWidth sx={{ mt: 2 }}>
+                <InputLabel>Decision</InputLabel>
+                <Select
+                  value={decision}
+                  label="Decision"
+                  onChange={(e) => setDecision(e.target.value)}
+                >
+                  <MenuItem value="APPROVED">Approve</MenuItem>
+                  <MenuItem value="REJECTED">Reject</MenuItem>
+                </Select>
+              </FormControl>
+
+              <TextField
+                fullWidth
+                multiline
+                rows={3}
+                label="Comments"
+                value={comments}
+                onChange={(e) => setComments(e.target.value)}
+                sx={{ mt: 2 }}
+                placeholder="Add any comments or notes about your decision..."
+              />
+
+              {decision === 'REJECTED' && (
+                <Alert severity="warning" sx={{ mt: 2 }}>
+                  Rejecting this step will stop the entire approval process and mark it as rejected.
+                </Alert>
+              )}
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setOpenDialog(false)}>Cancel</Button>
+          <Button
+            variant="contained"
+            color={decision === 'APPROVED' ? 'success' : 'error'}
+            onClick={processStepDecision}
+            disabled={loading}
+            startIcon={decision === 'APPROVED' ? <CheckCircleIcon /> : <CancelIcon />}
           >
-            <div className="p-6">
-              {/* Header */}
-              <div className="flex items-start justify-between mb-4">
-                <div className="flex items-center space-x-3">
-                  {getEntityIcon(approval.instance.entityType)}
-                  <div>
-                    <h3 className="font-semibold text-gray-900">
-                      {approval.instance.entityType.replace(/_/g, ' ')} Approval
-                    </h3>
-                    <p className="text-sm text-gray-500">
-                      ID: {approval.instance.entityId}
-                    </p>
-                  </div>
-                </div>
-                {getStatusBadge(approval.status)}
-              </div>
-
-              {/* Workflow Info */}
-              <div className="space-y-3 mb-4">
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">Workflow:</span>
-                  <span className="font-medium">{approval.instance.workflow.name}</span>
-                </div>
-                
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">Current Step:</span>
-                  <span className="font-medium">{approval.step.sequence}. {approval.step.role.name}</span>
-                </div>
-
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">Submitted:</span>
-                  <span className="font-medium">
-                    {new Date(approval.instance.createdAt).toLocaleDateString()}
-                  </span>
-                </div>
-              </div>
-
-              {/* Progress Bar */}
-              <div className="mb-4">
-                <div className="flex justify-between text-xs text-gray-500 mb-1">
-                  <span>Progress</span>
-                  <span>Step {approval.step.sequence} of {approval.instance.workflow.steps.length}</span>
-                </div>
-                <div className="w-full bg-gray-200 rounded-full h-2">
-                  <div 
-                    className="bg-blue-600 h-2 rounded-full transition-all duration-300"
-                    style={{ 
-                      width: `${(approval.step.sequence / approval.instance.workflow.steps.length) * 100}%` 
-                    }}
-                  ></div>
-                </div>
-              </div>
-
-              {/* Action Buttons */}
-              <div className="flex space-x-2">
-                <button
-                  onClick={() => {
-                    setSelectedApproval(approval);
-                    setShowApprovalModal(true);
-                  }}
-                  className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center space-x-2"
-                >
-                  <Eye className="w-4 h-4" />
-                  <span>Review</span>
-                </button>
-                
-                <button
-                  onClick={() => {
-                    setSelectedApproval(approval);
-                    setShowApprovalModal(true);
-                  }}
-                  className="flex-1 bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center space-x-2"
-                >
-                  <CheckCircle className="w-4 h-4" />
-                  <span>Approve</span>
-                </button>
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* Empty State */}
-      {pendingApprovals.length === 0 && (
-        <div className="text-center py-12">
-          <CheckCircle className="w-16 h-16 text-green-400 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">No Pending Approvals</h3>
-          <p className="text-gray-500">You're all caught up! There are no approvals waiting for your review.</p>
-        </div>
-      )}
-
-      {/* Approval Modal */}
-      {showApprovalModal && selectedApproval && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between p-6 border-b border-gray-200">
-              <h2 className="text-xl font-bold text-gray-900">
-                Review Approval - {selectedApproval.instance.entityType.replace(/_/g, ' ')}
-              </h2>
-              <button
-                onClick={() => setShowApprovalModal(false)}
-                className="text-gray-400 hover:text-gray-600"
-              >
-                <XCircle className="w-6 h-6" />
-              </button>
-            </div>
-
-            <div className="p-6 space-y-6">
-              {/* Approval Details */}
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Entity Type
-                  </label>
-                  <p className="text-gray-900">{selectedApproval.instance.entityType}</p>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Entity ID
-                  </label>
-                  <p className="text-gray-900">{selectedApproval.instance.entityId}</p>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Current Step
-                  </label>
-                  <p className="text-gray-900">
-                    {selectedApproval.step.sequence}. {selectedApproval.step.role.name}
-                  </p>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Workflow
-                  </label>
-                  <p className="text-gray-900">{selectedApproval.instance.workflow.name}</p>
-                </div>
-              </div>
-
-              {/* Comments */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Comments
-                </label>
-                <textarea
-                  value={comments}
-                  onChange={(e) => setComments(e.target.value)}
-                  rows={4}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Add your comments or notes..."
-                />
-              </div>
-
-              {/* Action Buttons */}
-              <div className="flex justify-end space-x-3 pt-4 border-t">
-                <button
-                  onClick={() => setShowApprovalModal(false)}
-                  className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={() => handleApprove(
-                    selectedApproval.instance.id, 
-                    selectedApproval.stepId, 
-                    'reject'
-                  )}
-                  className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
-                >
-                  Reject
-                </button>
-                <button
-                  onClick={() => handleApprove(
-                    selectedApproval.instance.id, 
-                    selectedApproval.stepId, 
-                    'approve'
-                  )}
-                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center space-x-2"
-                >
-                  <CheckCircle className="w-4 h-4" />
-                  <span>Approve</span>
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
+            {decision === 'APPROVED' ? 'Approve' : 'Reject'} Step
+          </Button>
+        </DialogActions>
+      </Dialog>
+    </Box>
   );
 };
 

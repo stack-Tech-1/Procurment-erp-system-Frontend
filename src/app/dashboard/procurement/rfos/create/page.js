@@ -1,17 +1,20 @@
-// src/app/dashboard/procurement/rfos/create/page.jsx
+// frontend/src/app/dashboard/procurement/rfos/create/page.js - MOBILE OPTIMIZED
 "use client";
 import React, { useState } from 'react';
 import axios from 'axios';
 import { useRouter } from 'next/navigation';
-import { Save, Send, Clock, ArrowLeft } from 'lucide-react';
-import Sidebar from '@/components/Sidebar';
-import Topbar from '@/components/Topbar';
+import { 
+  Save, Send, Clock, ArrowLeft, FileText, 
+  Settings, Package, Calendar, DollarSign
+} from 'lucide-react';
+import ResponsiveLayout from '@/components/layout/ResponsiveLayout';
 
 const API_BASE_URL = `${process.env.NEXT_PUBLIC_API_URL}/api/rfqs`;
 
 const CreateRFOPage = () => {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [activeSection, setActiveSection] = useState('basic');
   const [formData, setFormData] = useState({
     rfqNumber: `RFO-${Date.now()}`,
     title: '',
@@ -76,203 +79,96 @@ const CreateRFOPage = () => {
     }
   };
 
-  return (
-    <div className="flex min-h-screen bg-gray-50">
-      <Sidebar />
-      
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <Topbar />
-        
-        <main className="flex-1 overflow-y-auto p-6">
-          {/* Header */}
-          <div className="mb-6">
-            <button 
-              onClick={() => router.back()}
-              className="flex items-center text-gray-600 hover:text-gray-900 mb-4"
+  // Mobile Navigation Component
+  const MobileNavigation = () => (
+    <div className="lg:hidden mb-6">
+      <div className="bg-white rounded-lg border border-gray-200 p-4">
+        <h3 className="font-semibold text-gray-800 mb-3">Create RFO</h3>
+        <div className="flex space-x-2 overflow-x-auto">
+          {[
+            { id: 'basic', label: 'Basic', icon: FileText },
+            { id: 'technical', label: 'Technical', icon: Settings },
+            { id: 'timeline', label: 'Timeline', icon: Calendar }
+          ].map((section) => (
+            <button
+              key={section.id}
+              onClick={() => setActiveSection(section.id)}
+              className={`flex items-center px-3 py-2 rounded-lg text-sm font-medium whitespace-nowrap ${
+                activeSection === section.id
+                  ? 'bg-blue-100 text-blue-700'
+                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              }`}
             >
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to RFOs
+              <section.icon className="w-4 h-4 mr-1" />
+              {section.label}
             </button>
-            <h1 className="text-2xl font-bold text-gray-800">Create New Request for Offer</h1>
-            <p className="text-gray-600">Fill in the details below to create a new RFO</p>
-          </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
 
-          <form onSubmit={(e) => e.preventDefault()} className="max-w-4xl">
-            <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-              <h2 className="text-lg font-semibold mb-4">Basic Information</h2>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    RFO Number *
-                  </label>
-                  <input
-                    type="text"
-                    name="rfqNumber"
-                    value={formData.rfqNumber}
-                    onChange={handleChange}
-                    className="w-full p-2 border border-gray-300 rounded-md"
-                    required
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Project Name *
-                  </label>
-                  <input
-                    type="text"
-                    name="projectName"
-                    value={formData.projectName}
-                    onChange={handleChange}
-                    className="w-full p-2 border border-gray-300 rounded-md"
-                    required
-                  />
-                </div>
-              </div>
+  // Quick Actions for Mobile
+  const MobileQuickActions = () => (
+    <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 z-10">
+      <div className="flex space-x-2">
+        <button
+          type="button"
+          onClick={() => router.back()}
+          className="flex-1 px-4 py-3 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 text-sm font-medium"
+          disabled={loading}
+        >
+          Cancel
+        </button>
+        
+        <button
+          type="button"
+          onClick={(e) => handleSubmit(e, 'DRAFT')}
+          disabled={loading}
+          className="flex-1 flex items-center justify-center px-4 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 disabled:opacity-50 text-sm font-medium"
+        >
+          <Save className="w-4 h-4 mr-2" />
+          {loading ? 'Saving...' : 'Draft'}
+        </button>
+        
+        <button
+          type="button"
+          onClick={(e) => handleSubmit(e, 'PUBLISHED')}
+          disabled={loading}
+          className="flex-1 flex items-center justify-center px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 text-sm font-medium"
+        >
+          <Send className="w-4 h-4 mr-2" />
+          {loading ? '...' : 'Publish'}
+        </button>
+      </div>
+    </div>
+  );
 
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Title *
-                </label>
-                <input
-                  type="text"
-                  name="title"
-                  value={formData.title}
-                  onChange={handleChange}
-                  className="w-full p-2 border border-gray-300 rounded-md"
-                  required
-                />
-              </div>
-
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Description
-                </label>
-                <textarea
-                  name="description"
-                  value={formData.description}
-                  onChange={handleChange}
-                  rows="3"
-                  className="w-full p-2 border border-gray-300 rounded-md"
-                  placeholder="Describe the scope and requirements..."
-                />
-              </div>
-
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Package Scope
-                </label>
-                <textarea
-                  name="packageScope"
-                  value={formData.packageScope}
-                  onChange={handleChange}
-                  rows="2"
-                  className="w-full p-2 border border-gray-300 rounded-md"
-                  placeholder="Detailed scope of work..."
-                />
-              </div>
+  return (
+    <ResponsiveLayout>
+      <div className="max-w-4xl mx-auto w-full pb-20 lg:pb-6"> {/* Extra padding for mobile actions */}
+        {/* Header */}
+        <div className="mb-6">
+          <button 
+            onClick={() => router.back()}
+            className="flex items-center text-gray-600 hover:text-gray-900 mb-4"
+          >
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            <span className="hidden sm:inline">Back to RFOs</span>
+          </button>
+          
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4">
+            <div>
+              <h1 className="text-2xl font-bold text-gray-800">Create New RFO</h1>
+              <p className="text-gray-600 text-sm sm:text-base">Fill in the details below to create a new Request for Offer</p>
             </div>
-
-            <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-              <h2 className="text-lg font-semibold mb-4">Technical Details</h2>
-              
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    CSI Code
-                  </label>
-                  <input
-                    type="text"
-                    name="csiCode"
-                    value={formData.csiCode}
-                    onChange={handleChange}
-                    className="w-full p-2 border border-gray-300 rounded-md"
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Estimated Budget
-                  </label>
-                  <input
-                    type="number"
-                    name="estimatedUnitPrice"
-                    value={formData.estimatedUnitPrice}
-                    onChange={handleChange}
-                    className="w-full p-2 border border-gray-300 rounded-md"
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Currency
-                  </label>
-                  <select
-                    name="currency"
-                    value={formData.currency}
-                    onChange={handleChange}
-                    className="w-full p-2 border border-gray-300 rounded-md"
-                  >
-                    <option value="USD">USD</option>
-                    <option value="SAR">SAR</option>
-                    <option value="EUR">EUR</option>
-                  </select>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-              <h2 className="text-lg font-semibold mb-4">Timeline</h2>
-              
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Required Date
-                  </label>
-                  <input
-                    type="date"
-                    name="requiredDate"
-                    value={formData.requiredDate}
-                    onChange={handleChange}
-                    className="w-full p-2 border border-gray-300 rounded-md"
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Target Submission Date
-                  </label>
-                  <input
-                    type="date"
-                    name="targetSubmissionDate"
-                    value={formData.targetSubmissionDate}
-                    onChange={handleChange}
-                    className="w-full p-2 border border-gray-300 rounded-md"
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Due Date
-                  </label>
-                  <input
-                    type="date"
-                    name="dueDate"
-                    value={formData.dueDate}
-                    onChange={handleChange}
-                    className="w-full p-2 border border-gray-300 rounded-md"
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Action Buttons */}
-            <div className="flex justify-end space-x-4">
+            
+            {/* Desktop Action Buttons */}
+            <div className="hidden lg:flex space-x-3">
               <button
                 type="button"
                 onClick={() => router.back()}
-                className="px-6 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
+                className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 text-sm"
                 disabled={loading}
               >
                 Cancel
@@ -282,7 +178,7 @@ const CreateRFOPage = () => {
                 type="button"
                 onClick={(e) => handleSubmit(e, 'DRAFT')}
                 disabled={loading}
-                className="flex items-center px-6 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 disabled:opacity-50"
+                className="flex items-center px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 disabled:opacity-50 text-sm"
               >
                 <Save className="w-4 h-4 mr-2" />
                 {loading ? 'Saving...' : 'Save as Draft'}
@@ -292,16 +188,235 @@ const CreateRFOPage = () => {
                 type="button"
                 onClick={(e) => handleSubmit(e, 'PUBLISHED')}
                 disabled={loading}
-                className="flex items-center px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
+                className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 text-sm"
               >
                 <Send className="w-4 h-4 mr-2" />
                 {loading ? 'Publishing...' : 'Publish RFO'}
               </button>
             </div>
-          </form>
-        </main>
+          </div>
+        </div>
+
+        <MobileNavigation />
+
+        <form onSubmit={(e) => e.preventDefault()} className="space-y-6">
+          {/* Basic Information - Always visible on desktop, conditionally on mobile */}
+          <div className={`${activeSection === 'basic' ? 'block' : 'hidden lg:block'} bg-white rounded-lg border border-gray-200 p-4 sm:p-6`}>
+            <h2 className="text-lg font-semibold mb-4 flex items-center">
+              <FileText className="w-5 h-5 mr-2 text-blue-600" />
+              Basic Information
+            </h2>
+            
+            <div className="grid grid-cols-1 gap-4 mb-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  RFO Number *
+                </label>
+                <input
+                  type="text"
+                  name="rfqNumber"
+                  value={formData.rfqNumber}
+                  onChange={handleChange}
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  required
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Project Name *
+                </label>
+                <input
+                  type="text"
+                  name="projectName"
+                  value={formData.projectName}
+                  onChange={handleChange}
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Title *
+              </label>
+              <input
+                type="text"
+                name="title"
+                value={formData.title}
+                onChange={handleChange}
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                required
+              />
+            </div>
+
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Description
+              </label>
+              <textarea
+                name="description"
+                value={formData.description}
+                onChange={handleChange}
+                rows="3"
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                placeholder="Describe the scope and requirements..."
+              />
+            </div>
+
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Package Scope
+              </label>
+              <textarea
+                name="packageScope"
+                value={formData.packageScope}
+                onChange={handleChange}
+                rows="2"
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                placeholder="Detailed scope of work..."
+              />
+            </div>
+          </div>
+
+          {/* Technical Details */}
+          <div className={`${activeSection === 'technical' ? 'block' : 'hidden lg:block'} bg-white rounded-lg border border-gray-200 p-4 sm:p-6`}>
+            <h2 className="text-lg font-semibold mb-4 flex items-center">
+              <Settings className="w-5 h-5 mr-2 text-green-600" />
+              Technical Details
+            </h2>
+            
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  CSI Code
+                </label>
+                <input
+                  type="text"
+                  name="csiCode"
+                  value={formData.csiCode}
+                  onChange={handleChange}
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Estimated Budget
+                </label>
+                <input
+                  type="number"
+                  name="estimatedUnitPrice"
+                  value={formData.estimatedUnitPrice}
+                  onChange={handleChange}
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Currency
+                </label>
+                <select
+                  name="currency"
+                  value={formData.currency}
+                  onChange={handleChange}
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                >
+                  <option value="USD">USD</option>
+                  <option value="SAR">SAR</option>
+                  <option value="EUR">EUR</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          {/* Timeline */}
+          <div className={`${activeSection === 'timeline' ? 'block' : 'hidden lg:block'} bg-white rounded-lg border border-gray-200 p-4 sm:p-6`}>
+            <h2 className="text-lg font-semibold mb-4 flex items-center">
+              <Calendar className="w-5 h-5 mr-2 text-orange-600" />
+              Timeline
+            </h2>
+            
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Required Date
+                </label>
+                <input
+                  type="date"
+                  name="requiredDate"
+                  value={formData.requiredDate}
+                  onChange={handleChange}
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Target Submission Date
+                </label>
+                <input
+                  type="date"
+                  name="targetSubmissionDate"
+                  value={formData.targetSubmissionDate}
+                  onChange={handleChange}
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Due Date
+                </label>
+                <input
+                  type="date"
+                  name="dueDate"
+                  value={formData.dueDate}
+                  onChange={handleChange}
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Desktop Action Buttons */}
+          <div className="hidden lg:flex justify-end space-x-4 pt-6">
+            <button
+              type="button"
+              onClick={() => router.back()}
+              className="px-6 py-3 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 font-medium"
+              disabled={loading}
+            >
+              Cancel
+            </button>
+            
+            <button
+              type="button"
+              onClick={(e) => handleSubmit(e, 'DRAFT')}
+              disabled={loading}
+              className="flex items-center px-6 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 disabled:opacity-50 font-medium"
+            >
+              <Save className="w-4 h-4 mr-2" />
+              {loading ? 'Saving...' : 'Save as Draft'}
+            </button>
+            
+            <button
+              type="button"
+              onClick={(e) => handleSubmit(e, 'PUBLISHED')}
+              disabled={loading}
+              className="flex items-center px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 font-medium"
+            >
+              <Send className="w-4 h-4 mr-2" />
+              {loading ? 'Publishing...' : 'Publish RFO'}
+            </button>
+          </div>
+        </form>
+
+        <MobileQuickActions />
       </div>
-    </div>
+    </ResponsiveLayout>
   );
 };
 

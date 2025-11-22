@@ -119,7 +119,7 @@ const handleExport = async (format) => {
       // Convert report.id to number
       const numericReportId = parseInt(report.id, 10);
       
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/dashboard/reports/${numericReportId}/export`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/reports/${numericReportId}/export`, {
         method: 'POST',
         headers: { 
           'Authorization': `Bearer ${token}`,

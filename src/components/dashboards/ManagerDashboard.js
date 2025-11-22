@@ -21,7 +21,8 @@ import {
   IconButton,
   Tooltip,
   alpha,
-  useTheme
+  useTheme,
+  Button
 } from '@mui/material';
 import {
   People as PeopleIcon,
@@ -32,9 +33,10 @@ import {
   TrendingUp as TrendingUpIcon,
   Group as GroupIcon,
   Refresh as RefreshIcon,
-  Notifications as NotificationsIcon,
   Download as DownloadIcon,
-  MoreVert as MoreIcon
+  MoreVert as MoreIcon,
+  Storage as DatabaseIcon,
+  WifiOff as WifiOffIcon
 } from '@mui/icons-material';
 import {
   BarChart,
@@ -56,41 +58,11 @@ const ManagerDashboard = ({ data }) => {
   const [dashboardData, setDashboardData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [dataSource, setDataSource] = useState('unknown');
   const theme = useTheme();
 
-  useEffect(() => {
-    if (data) {
-      setDashboardData(data);
-      setLoading(false);
-    } else {
-      fetchDashboardData();
-    }
-  }, [data]);
-
-  const fetchDashboardData = async () => {
-    try {
-      const token = localStorage.getItem('authToken');
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/dashboard`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      if (!response.ok) throw new Error('Failed to fetch dashboard data');
-      
-      const result = await response.json();
-      setDashboardData(result.data);
-    } catch (err) {
-      setError(err.message);
-      console.error('Dashboard error:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Enhanced mock data with more realistic structure
-  const mockData = {
+  // Enhanced mock data matching specification documents
+  const generateFallbackData = () => ({
     teamOverview: {
       teamMembers: 12,
       pendingApprovals: 8,
@@ -119,9 +91,9 @@ const ManagerDashboard = ({ data }) => {
       { id: 4, entityType: 'Purchase Order', entityId: 'PO-2024-0342', entityName: 'Office Furniture Procurement', approver: { name: 'Mohammed Zaiton' }, createdAt: new Date('2024-01-12'), priority: 'LOW' }
     ],
     deadlineTracking: [
-      { id: 1, title: 'Vendor Qualification - TechBuild Co.', dueIn: 2, priority: 'HIGH', assignedTo: 'Ahmed Zaid', status: 'IN_PROGRESS', project: 'Tower A' },
-      { id: 2, title: 'RFQ Evaluation - Project Alpha HVAC', dueIn: 5, priority: 'MEDIUM', assignedTo: 'Sarah Mohammed', status: 'NOT_STARTED', project: 'Project Alpha' },
-      { id: 3, title: 'Contract Renewal - Gulf Materials', dueIn: 1, priority: 'URGENT', assignedTo: 'Khalid Al-Rashid', status: 'IN_PROGRESS', project: 'All Projects' },
+      { id: 1, title: 'Vendor Qualification - SteelTech Industries', dueIn: 2, priority: 'HIGH', assignedTo: 'Ahmed Zaid', status: 'IN_PROGRESS', project: 'Tower B Construction' },
+      { id: 2, title: 'RFQ Evaluation - Project Alpha HVAC', dueIn: 5, priority: 'MEDIUM', assignedTo: 'Sarah Mohammed', status: 'NOT_STARTED', project: 'Commercial Complex' },
+      { id: 3, title: 'Contract Renewal - Gulf Materials', dueIn: 1, priority: 'URGENT', assignedTo: 'Khalid Al-Rashid', status: 'IN_PROGRESS', project: 'All Buildings' },
       { id: 4, title: 'Budget Review Q1 2024', dueIn: 7, priority: 'HIGH', assignedTo: 'Fatima Al-Mansoor', status: 'NOT_STARTED', project: 'Finance' }
     ],
     performanceMetrics: {
@@ -137,8 +109,64 @@ const ManagerDashboard = ({ data }) => {
       remainingBudget: 1800000,
       savings: 2700000
     }
+  });
+
+  const fetchDashboardData = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const token = localStorage.getItem('authToken');
+      if (!token) {
+        throw new Error('No authentication token found');
+      }
+
+      console.log('🔄 Fetching manager dashboard data from API...');
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/dashboard/manager`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const result = await response.json();
+      
+      if (result.success) {
+        console.log('✅ Successfully loaded real manager data from API');
+        setDashboardData(result.data);
+        setDataSource('api');
+      } else {
+        throw new Error(result.message || 'Failed to fetch dashboard data');
+      }
+    } catch (error) {
+      console.log('⚠️ API unavailable, using fallback data:', error.message);
+      setError('Database temporarily unavailable. Showing sample data.');
+      setDashboardData(generateFallbackData());
+      setDataSource('fallback');
+    } finally {
+      setLoading(false);
+    }
   };
 
+  useEffect(() => {
+    if (data) {
+      setDashboardData(data);
+      setDataSource('api');
+      setLoading(false);
+    } else {
+      fetchDashboardData();
+    }
+  }, [data]);
+
+  const handleRetry = () => {
+    fetchDashboardData();
+  };
+
+  // Chart data - consistent across data sources
   const chartData = [
     { name: 'Jan', tasks: 45, completed: 38 },
     { name: 'Feb', tasks: 52, completed: 45 },
@@ -156,7 +184,33 @@ const ManagerDashboard = ({ data }) => {
 
   const COLORS = ['#ff6b6b', '#ffd93d', '#6bcf7f'];
 
-  const dataToUse = dashboardData || mockData;
+  const dataToUse = dashboardData || generateFallbackData();
+
+  // Data Source Indicator Component
+  const DataSourceIndicator = () => {
+    if (dataSource === 'api') {
+      return (
+        <Chip 
+          icon={<DatabaseIcon />}
+          label="Live Data"
+          color="success"
+          variant="outlined"
+          size="small"
+        />
+      );
+    } else if (dataSource === 'fallback') {
+      return (
+        <Chip 
+          icon={<WifiOffIcon />}
+          label="Sample Data (DB Offline)"
+          color="warning"
+          variant="outlined"
+          size="small"
+        />
+      );
+    }
+    return null;
+  };
 
   // KPI Card Component
   const KPICard = ({ title, value, subtitle, icon, color = 'primary', trend, onClick }) => (
@@ -229,58 +283,67 @@ const ManagerDashboard = ({ data }) => {
     );
   }
 
-  if (error) {
+  if (error && !dashboardData) {
     return (
-      <Alert 
-        severity="error" 
-        sx={{ mb: 2, borderRadius: 2 }}
-        action={
-          <Button color="inherit" size="small" onClick={fetchDashboardData}>
-            RETRY
+      <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
+        <Box textAlign="center" maxWidth="400px">
+          <WifiOffIcon sx={{ fontSize: 48, color: 'error.main', mb: 2 }} />
+          <Typography variant="h6" color="textPrimary" gutterBottom>
+            Connection Issue
+          </Typography>
+          <Typography variant="body2" color="textSecondary" gutterBottom>
+            {error}
+          </Typography>
+          <Button 
+            variant="contained" 
+            onClick={handleRetry}
+            sx={{ mt: 2 }}
+          >
+            Retry Connection
           </Button>
-        }
-      >
-        Error loading dashboard: {error}
-      </Alert>
+        </Box>
+      </Box>
     );
   }
 
   return (
     <Box sx={{ p: 3, background: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)', minHeight: '100vh' }}>
-      {/* Header Section */}
-      <Card sx={{ 
-        mb: 4, 
-        background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${alpha(theme.palette.primary.dark, 0.8)} 100%)`,
-        color: 'white',
-        borderRadius: 3,
-        boxShadow: '0 8px 32px rgba(0,0,0,0.1)'
-      }}>
-        <CardContent sx={{ p: 4, '&:last-child': { pb: 4 } }}>
-          <Box display="flex" justifyContent="space-between" alignItems="flex-start">
-            <Box>
-              <Typography variant="h3" gutterBottom fontWeight="bold" sx={{ textShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
-                Procurement Manager Dashboard
-              </Typography>
-              <Typography variant="h6" sx={{ opacity: 0.9, fontWeight: 300 }}>
-                Strategic oversight, team performance monitoring, and workflow optimization
-              </Typography>
-            </Box>
-            
-            <Box display="flex" gap={1}>
-              <Tooltip title="Refresh Data">
-                <IconButton onClick={fetchDashboardData} sx={{ color: 'white', background: 'rgba(255,255,255,0.2)' }}>
-                  <RefreshIcon />
-                </IconButton>
-              </Tooltip>
-              <Tooltip title="Export Report">
-                <IconButton sx={{ color: 'white', background: 'rgba(255,255,255,0.2)' }}>
-                  <DownloadIcon />
-                </IconButton>
-              </Tooltip>
-            </Box>
+      {/* Header with Data Source Indicator */}
+      <Box sx={{ mb: 3 }}>
+        <Box display="flex" justifyContent="space-between" alignItems="flex-start" sx={{ mb: 2 }}>
+          <Box>
+            <Typography variant="h4" fontWeight="bold" gutterBottom>
+              Procurement Manager Dashboard
+            </Typography>
+            <Typography variant="body1" color="textSecondary" gutterBottom>
+              Team oversight, approval workflow, and performance monitoring
+            </Typography>
+            <DataSourceIndicator />
           </Box>
-        </CardContent>
-      </Card>
+          <Button
+            startIcon={<RefreshIcon />}
+            onClick={fetchDashboardData}
+            variant="outlined"
+          >
+            Refresh
+          </Button>
+        </Box>
+
+        {/* Data Status Alert */}
+        {dataSource === 'fallback' && (
+          <Alert 
+            severity="warning" 
+            sx={{ mb: 2, borderRadius: 2 }}
+            action={
+              <Button color="inherit" size="small" onClick={handleRetry}>
+                RETRY
+              </Button>
+            }
+          >
+            Database connection issue. Showing sample data for demonstration.
+          </Alert>
+        )}
+      </Box>
 
       {/* Team Overview KPIs */}
       <Grid container spacing={3} mb={4}>
