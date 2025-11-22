@@ -46,7 +46,7 @@ export default function LoginPage() {
       else if (data.user.roleId === 3)
         router.push("/dashboard/officer");
       else if (data.user.roleId === 4)
-        router.push("/dashboard/vendor-dashboard");
+        router.push("/vendor-dashboard");
       else 
         router.push("/");
 
