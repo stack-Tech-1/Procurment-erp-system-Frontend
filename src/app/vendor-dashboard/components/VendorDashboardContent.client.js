@@ -1,17 +1,88 @@
 // frontend/src/app/vendor-dashboard/components/VendorDashboardContent.client.js
 "use client";
 import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { 
   Briefcase, FileText, Loader2, CheckCircle2, X, ChevronRight, 
   AlertTriangle, Clock, DollarSign, Users, BarChart3, TrendingUp,
-  Calendar, Shield, Download, Eye, Send, FileCheck, RefreshCw, Database, WifiOff
+  Calendar, Shield, Download, Eye, Send, FileCheck, RefreshCw, Database, WifiOff,Upload
 } from 'lucide-react';
 
 const VendorDashboardContent = () => {
+  const router = useRouter();
+  const [isNavigating, setIsNavigating] = useState(false);
+  const [navigationModal, setNavigationModal] = useState({ show: false, page: '' });
   const [dashboardData, setDashboardData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [dataSource, setDataSource] = useState('unknown');
+
+
+  const checkPermission = (actionId) => {
+    if (actionId === 'submit-proposal' && data.vendorInfo.status === 'BLOCKED') {
+      alert('Your vendor account is blocked. Cannot submit proposals.');
+      return false;
+    }
+    if (actionId === 'update-profile' && data.vendorInfo.status === 'UNDER_REVIEW') {
+      alert('Profile is under review. Updates are currently disabled.');
+      return false;
+    }
+    return true;
+  };
+
+  const navigateToPage = async (pageName, pagePath) => {
+    setIsNavigating(true);
+    setNavigationModal({ 
+      show: true, 
+      page: pageName,
+      path: pagePath 
+    });
+    
+    // Show modal for 800ms for better UX
+    await new Promise(resolve => setTimeout(resolve, 800));
+    
+    // Navigate to the actual page
+    router.push(pagePath);
+    
+    setIsNavigating(false);
+    setNavigationModal({ show: false, page: '', path: '' });
+  };
+  
+  // Navigation configuration
+  const quickActionsConfig = [
+    {
+      id: 'submit-proposal',
+      icon: <FileText size={20} />,
+      label: 'Submit New Proposal',
+      description: 'Respond to RFQs',
+      path: '/vendor-dashboard/proposal',
+      tooltip: 'Respond to RFQs or submit a new bid'
+    },
+    {
+      id: 'view-performance',
+      icon: <BarChart3 size={20} />,
+      label: 'View Performance',
+      description: 'Analytics & Reports',
+      path: '/vendor-dashboard/performance', // We'll create this
+      tooltip: 'View performance analytics and vendor rating'
+    },
+    {
+      id: 'update-profile',
+      icon: <Users size={20} />,
+      label: 'Update Profile',
+      description: 'Company information',
+      path: '/dashboard/vendors/profile',
+      tooltip: 'Update company details and compliance documents'
+    },
+    {
+      id: 'download-reports',
+      icon: <Download size={20} />,
+      label: 'Download Reports',
+      description: 'Export data',
+      path: '/vendor-dashboard/reports', // We'll create this
+      tooltip: 'Export vendor performance reports'
+    }
+  ];
 
   // Enhanced mock data matching specification documents
   const generateFallbackData = () => ({
@@ -21,8 +92,14 @@ const VendorDashboardContent = () => {
       qualificationScore: 78,
       vendorClass: 'B',
       profileCompletion: 85,
-      lastUpdated: '2024-01-15'
+      lastUpdated: '2024-01-15',
+      vendorId: 'VEND-2024-001',
+      reviewDate: '2024-12-15',
+      validityUntil: '2025-12-15',
+      healthScore: 82
     },
+    newRFQs: 3,
+    documentsExpiring: 2,
     proposals: [
       { 
         id: 'P001', 
@@ -83,7 +160,20 @@ const VendorDashboardContent = () => {
       { type: 'warning', message: 'Commercial Registration expires in 45 days', action: 'Renew' },
       { type: 'info', message: 'New RFQ available in your category', action: 'View' },
       { type: 'success', message: 'Your profile is 85% complete', action: 'Complete' }
-    ]
+    ],
+    timeline: [
+      { date: '2024-01-10', event: 'Initial Registration', status: 'completed' },
+      { date: '2024-02-15', event: 'Document Submission', status: 'completed' },
+      { date: '2024-03-01', event: 'Technical Evaluation', status: 'in-progress' },
+      { date: '2024-04-15', event: 'Final Approval', status: 'pending' }
+    ],
+    // Add advanced KPIs
+  advancedKPIs: {
+    deliveryCompliance: 94.7,
+    technicalScore: 8.7,
+    financialScore: 9.1,
+    contractTrend: 18
+  }
   });
 
   const fetchDashboardData = async () => {
@@ -252,7 +342,35 @@ const VendorDashboardContent = () => {
         <div>
           <h1 className="text-3xl font-bold text-gray-800">Welcome, {data.vendorInfo.companyName}</h1>
           <p className="text-gray-600 mt-2">Vendor Portal - Track your proposals, performance, and compliance</p>
-          <DataSourceIndicator />
+          <DataSourceIndicator />                    
+          <div className="flex items-center gap-4 mt-3">
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-gray-500">Vendor Class:</span>
+              <span className={`px-3 py-1 rounded-full text-sm font-bold ${
+                data.vendorInfo.vendorClass === 'A' ? 'bg-green-100 text-green-800' :
+                data.vendorInfo.vendorClass === 'B' ? 'bg-blue-100 text-blue-800' :
+                'bg-yellow-100 text-yellow-800'
+              }`}>
+                Class {data.vendorInfo.vendorClass}
+              </span>
+            </div>
+            <div className="h-4 w-px bg-gray-300"></div>
+            <div className="text-sm">
+              <span className="text-gray-500">Profile Completion: </span>
+              <span className="font-semibold">{data.vendorInfo.profileCompletion}%</span>
+            </div>
+          </div>
+          
+          <div className="w-full bg-gray-200 rounded-full h-2.5 mt-2">
+            <div 
+              className={`h-2.5 rounded-full ${
+                data.vendorInfo.profileCompletion >= 80 ? 'bg-green-600' :
+                data.vendorInfo.profileCompletion >= 60 ? 'bg-blue-600' :
+                'bg-yellow-500'
+              }`}
+              style={{ width: `${data.vendorInfo.profileCompletion}%` }}
+            ></div>
+          </div>
         </div>
         <div className="flex items-center gap-4">
           {getVendorStatusBadge(data.vendorInfo.status)}
@@ -395,8 +513,36 @@ const VendorDashboardContent = () => {
         </div>
       )}
 
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 ">
+      {/* Filter and Sort Controls */}
+      <div className="flex flex-wrap gap-3 mb-6">
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-gray-600">Filter Pipeline by:</span>
+          <select className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm">
+            <option value="all">All Status</option>
+            <option value="pending">Pending Review</option>
+            <option value="approved">Approved</option>
+            <option value="rejected">Rejected</option>
+            <option value="draft">Draft</option>
+          </select>
+          <select className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm">
+            <option value="newest">Newest First</option>
+            <option value="oldest">Oldest First</option>
+            <option value="value-high">Value (High to Low)</option>
+            <option value="value-low">Value (Low to High)</option>
+          </select>
+          <button className="px-3 py-1.5 bg-blue-50 text-blue-600 rounded-lg text-sm font-medium hover:bg-blue-100">
+            Apply Filters
+          </button>
+          <button className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm text-gray-600 hover:bg-gray-50">
+            Clear All
+          </button>
+        </div>
+      </div>
+      </div>
+
       {/* Main Content Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">        
         {/* Proposals Tracking */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
           <div className="flex justify-between items-center mb-6">
@@ -456,101 +602,204 @@ const VendorDashboardContent = () => {
         <div className="space-y-6">
           {/* Performance Metrics */}
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-            <h3 className="text-xl font-semibold text-gray-800 mb-4">Performance Overview</h3>
-            <div className="space-y-4">
-              <div className="flex justify-between items-center">
-                <span className="text-gray-600">Total Proposals Submitted</span>
-                <span className="font-semibold">{data.performance.totalProposals}</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-gray-600">Active Contracts</span>
-                <span className="font-semibold">{data.performance.activeContracts}</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-gray-600">Average Response Time</span>
-                <span className="font-semibold text-green-600">{data.performance.averageResponseTime}</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-gray-600">Client Satisfaction</span>
-                <span className="font-semibold flex items-center gap-1">
-                  {data.performance.satisfactionScore}/5
-                  <TrendingUp className="text-green-500" size={16} />
-                </span>
-              </div>
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-xl font-semibold text-gray-800">Performance Overview</h3>
+            <div className="flex items-center gap-2 text-sm">
+              <span className="text-gray-500">Last 12 months</span>
+              <button className="text-blue-600 hover:text-blue-700">View Trends →</button>
             </div>
           </div>
+          
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            <div className="p-4 border border-gray-200 rounded-lg">
+              <div className="text-sm text-gray-500 mb-1">Delivery Compliance</div>
+              <div className="text-2xl font-bold text-gray-800">94.7%</div>
+              <div className="flex items-center gap-1 mt-1">
+                <TrendingUp className="text-green-500" size={14} />
+                <span className="text-xs text-green-600">+2.1%</span>
+              </div>
+            </div>
+            
+            <div className="p-4 border border-gray-200 rounded-lg">
+              <div className="text-sm text-gray-500 mb-1">Technical Score</div>
+              <div className="text-2xl font-bold text-gray-800">8.7/10</div>
+              <div className="text-xs text-gray-500">Based on 12 evaluations</div>
+            </div>
+            
+            <div className="p-4 border border-gray-200 rounded-lg">
+              <div className="text-sm text-gray-500 mb-1">Financial Score</div>
+              <div className="text-2xl font-bold text-gray-800">9.1/10</div>
+              <div className="text-xs text-gray-500">Payment & credit rating</div>
+            </div>
+            
+            <div className="p-4 border border-gray-200 rounded-lg">
+              <div className="text-sm text-gray-500 mb-1">Contract Value Trend</div>
+              <div className="text-2xl font-bold text-gray-800">↑ 18%</div>
+              <div className="text-xs text-gray-500">YTD growth</div>
+            </div>
+          </div>
+          
+          {/* Mini chart placeholder */}
+          <div className="border-t border-gray-200 pt-4">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm font-medium text-gray-700">12-Month Rating Trend</span>
+              <span className="text-xs text-gray-500">Class B average: 7.5/10</span>
+            </div>
+            <div className="h-20 bg-gray-50 rounded-lg flex items-end justify-between p-2">
+              {[65, 70, 72, 75, 78, 82, 80, 85, 87, 85, 88, 90].map((value, index) => (
+                <div key={index} className="flex flex-col items-center">
+                  <div 
+                    className="w-4 bg-blue-500 rounded-t-sm"
+                    style={{ height: `${value * 0.6}px` }}
+                  ></div>
+                  <span className="text-xs text-gray-500 mt-1">{['J', 'F', 'M', 'A', 'M', 'J', 'J', 'A', 'S', 'O', 'N', 'D'][index]}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
 
           {/* Document Compliance */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-            <h3 className="text-xl font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                  <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-xl font-semibold text-gray-800 flex items-center gap-2">
               <FileCheck className="text-blue-500" size={20} />
-              Document Compliance
+              Document Compliance Matrix
             </h3>
-            <div className="space-y-3">
-              <div className="flex justify-between items-center p-3 bg-green-50 rounded-lg">
-                <span className="text-green-700 font-medium">Valid Documents</span>
+            <button className="text-blue-600 hover:text-blue-700 font-medium text-sm">
+              View Details →
+            </button>
+          </div>
+          
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+            <div className="bg-green-50 p-4 rounded-lg border border-green-200">
+              <div className="flex justify-between items-center mb-2">
+                <span className="text-green-700 font-medium">Valid</span>
                 <span className="bg-green-100 text-green-800 px-2 py-1 rounded-full text-sm font-bold">
                   {data.documents.valid}
                 </span>
               </div>
-              <div className="flex justify-between items-center p-3 bg-amber-50 rounded-lg">
-                <span className="text-amber-700 font-medium">Expiring Soon</span>
+              <p className="text-xs text-green-600">Ready for use</p>
+            </div>
+            
+            <div className="bg-amber-50 p-4 rounded-lg border border-amber-200">
+              <div className="flex justify-between items-center mb-2">
+                <span className="text-amber-700 font-medium">Expiring</span>
                 <span className="bg-amber-100 text-amber-800 px-2 py-1 rounded-full text-sm font-bold">
                   {data.documents.expiring}
                 </span>
               </div>
-              <div className="flex justify-between items-center p-3 bg-red-50 rounded-lg">
-                <span className="text-red-700 font-medium">Expired Documents</span>
+              <p className="text-xs text-amber-600">Within 30 days</p>
+              {data.documents.expiring > 0 && (
+                <div className="flex items-center gap-1 mt-1 text-xs">
+                  <Clock size={12} />
+                  <span>Renew soon</span>
+                </div>
+              )}
+            </div>
+            
+            <div className="bg-red-50 p-4 rounded-lg border border-red-200">
+              <div className="flex justify-between items-center mb-2">
+                <span className="text-red-700 font-medium">Expired</span>
                 <span className="bg-red-100 text-red-800 px-2 py-1 rounded-full text-sm font-bold">
                   {data.documents.expired}
                 </span>
               </div>
-              <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                <span className="text-gray-700 font-medium">Missing Documents</span>
+              <p className="text-xs text-red-600">Immediate action</p>
+              {data.documents.expired > 0 && (
+                <button className="mt-1 text-xs text-red-700 underline">View list</button>
+              )}
+            </div>
+            
+            <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+              <div className="flex justify-between items-center mb-2">
+                <span className="text-gray-700 font-medium">Missing</span>
                 <span className="bg-gray-100 text-gray-800 px-2 py-1 rounded-full text-sm font-bold">
                   {data.documents.missing}
                 </span>
               </div>
+              <p className="text-xs text-gray-600">Required documents</p>
             </div>
-            <button className="w-full mt-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium">
-              Manage Documents
+          </div>
+          
+          <div className="flex justify-between items-center">
+            <div className="text-sm">
+              <span className="text-gray-500">Required for: </span>
+              <span className="font-medium">RFQ Response, Contract Renewal</span>
+            </div>
+            <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium flex items-center gap-2">
+              <Upload size={16} />
+              Update Documents
             </button>
           </div>
+        </div>
         </div>
       </div>
 
       {/* Quick Actions */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-        <h3 className="text-xl font-semibold text-gray-800 mb-4">Quick Actions</h3>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <ActionButton 
-            icon={<FileText size={20} />}
-            label="Submit New Proposal"
-            description="Respond to RFQs"
-            onClick={() => console.log('Submit Proposal')}
-          />
-          <ActionButton 
-            icon={<BarChart3 size={20} />}
-            label="View Performance"
-            description="Analytics & Reports"
-            onClick={() => console.log('View Performance')}
-          />
-          <ActionButton 
-            icon={<Users size={20} />}
-            label="Update Profile" // Fixed syntax: was missing a closing quote and had an extra brace
-            description="Company information"
-            onClick={() => console.log('Update Profile')}
-          />
-          <ActionButton 
-            icon={<Download size={20} />}
-            label="Download Reports"
-            description="Export data"
-            onClick={() => console.log('Download Reports')}
-          />
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <h3 className="text-xl font-semibold text-gray-800 mb-4">Quick Actions</h3>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {quickActionsConfig.map((action) => (
+              <button
+                key={action.id}
+                onClick={() => navigateToPage(action.label, action.path)}
+                className="flex flex-col items-center justify-center p-4 border border-gray-200 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-all duration-200 group text-center relative"
+                title={action.tooltip}
+              >
+                <div className="text-gray-600 group-hover:text-blue-600 mb-2">
+                  {action.icon}
+                </div>
+                <span className="font-medium text-gray-700 group-hover:text-blue-700 mb-1">
+                  {action.label}
+                </span>
+                <span className="text-xs text-gray-500 group-hover:text-gray-600">
+                  {action.description}
+                </span>
+                
+                {/* Status indicators */}
+                {action.id === 'update-profile' && data.vendorInfo.profileCompletion < 100 && (
+                  <div className="absolute -top-1 -right-1 w-6 h-6 bg-yellow-500 text-white text-xs rounded-full flex items-center justify-center animate-pulse">
+                    !
+                  </div>
+                )}
+                
+                {action.id === 'submit-proposal' && data.newRFQs > 0 && (
+                  <div className="absolute -top-1 -right-1 w-6 h-6 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
+                    {data.newRFQs}
+                  </div>
+                )}
+              </button>
+            ))}
+          </div>
+          
+          {/* Help text */}
+          <div className="mt-4 pt-4 border-t border-gray-100">
+            <p className="text-sm text-gray-500 text-center">
+              Click any button to navigate. Hover for more details.
+            </p>
+          </div>
         </div>
-      </div>
+
+        {/* Navigation Modal */}
+        {navigationModal.show && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white p-8 rounded-xl max-w-md w-full mx-4">
+              <div className="flex flex-col items-center gap-4">
+                <Loader2 className="animate-spin h-12 w-12 text-blue-600" />
+                <h3 className="text-xl font-semibold text-gray-800">Preparing your page...</h3>
+                <p className="text-gray-600 text-center">
+                  Redirecting to {navigationModal.page}...
+                </p>
+                <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
+                  <div className="bg-blue-600 h-2 rounded-full w-3/4 animate-pulse"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
     </div>
   );
 };
 
-export default VendorDashboardContent;
+export default VendorDashboardContent;  
