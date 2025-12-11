@@ -18,7 +18,8 @@ const EnhancedQualificationDocumentManager = ({
   documentData, 
   setDocumentData, 
   isEditable,
-  vendorType 
+  vendorType,
+  vendorConfig 
 }) => {
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [selectedDocType, setSelectedDocType] = useState(null);
@@ -32,7 +33,8 @@ const EnhancedQualificationDocumentManager = ({
       hasNumber: true, 
       isMandatory: true, 
       numberLabel: "CR Number",
-      description: "Official commercial registration document"
+      description: "Official commercial registration document",
+      forAllVendors: true
     },
     { 
       label: "Zakat Certificate", 
@@ -40,7 +42,8 @@ const EnhancedQualificationDocumentManager = ({
       hasExpiry: true, 
       hasNumber: false, 
       isMandatory: true,
-      description: "Zakat compliance certificate"
+      description: "Zakat compliance certificate",
+      forAllVendors: true
     },
     { 
       label: "VAT Certificate", 
@@ -49,7 +52,8 @@ const EnhancedQualificationDocumentManager = ({
       hasNumber: true, 
       isMandatory: true, 
       numberLabel: "VAT Number",
-      description: "Value Added Tax registration"
+      description: "Value Added Tax registration",
+      forAllVendors: true
     },
     { 
       label: "GOSI Certificate", 
@@ -58,7 +62,8 @@ const EnhancedQualificationDocumentManager = ({
       hasNumber: true, 
       isMandatory: true, 
       numberLabel: "GOSI Number",
-      description: "General Organization for Social Insurance"
+      description: "General Organization for Social Insurance",
+      forAllVendors: true
     },
     { 
       label: "ISO Certificate", 
@@ -67,16 +72,18 @@ const EnhancedQualificationDocumentManager = ({
       hasNumber: false, 
       isMandatory: true, 
       hasIsoType: true,
-      description: "ISO quality management certification"
+      description: "ISO quality management certification",
+      forAllVendors: true
     },
     { 
       label: "SASO/SABER Certificate", 
       dbKey: "SASO_SABER_CERTIFICATE", 
       hasExpiry: true, 
       hasNumber: true, 
-      isMandatory: vendorType === 'Supplier' || vendorType === 'Manufacturer',
-      condition: "For Suppliers/Manufacturers",
-      description: "Saudi Standards, Metrology and Quality Organization"
+      isMandatory: vendorType === 'Supplier' || vendorType === 'Manufacturer' || vendorType === 'Distributor',
+      condition: "For Suppliers/Manufacturers/Distributors",
+      description: "Saudi Standards, Metrology and Quality Organization",
+      forAllVendors: false
     },
     { 
       label: "HSE Plan", 
@@ -84,56 +91,9 @@ const EnhancedQualificationDocumentManager = ({
       hasExpiry: false, 
       hasNumber: false, 
       isMandatory: vendorType === 'Contractor' || vendorType === 'Subcontractor',
-      condition: "For Contractors",
-      description: "Health, Safety and Environment plan"
-    },
-    { 
-      label: "Warranty Certificate", 
-      dbKey: "WARRANTY_CERTIFICATE", 
-      hasExpiry: false, 
-      hasNumber: false, 
-      isMandatory: true,
-      description: "Product/service warranty documentation"
-    },
-    { 
-      label: "Quality Plan", 
-      dbKey: "QUALITY_PLAN", 
-      hasExpiry: false, 
-      hasNumber: false, 
-      isMandatory: true,
-      description: "Quality management and assurance plan"
-    },
-    { 
-      label: "Organization Chart", 
-      dbKey: "ORGANIZATION_CHART", 
-      hasExpiry: false, 
-      hasNumber: false, 
-      isMandatory: true,
-      description: "Company organizational structure"
-    },
-    { 
-      label: "Technical File", 
-      dbKey: "TECHNICAL_FILE", 
-      hasExpiry: false, 
-      hasNumber: false, 
-      isMandatory: true,
-      description: "Technical specifications and capabilities"
-    },
-    { 
-      label: "Financial File", 
-      dbKey: "FINANCIAL_FILE", 
-      hasExpiry: false, 
-      hasNumber: false, 
-      isMandatory: true,
-      description: "Audited financial statements and bank information"
-    },
-    { 
-      label: "Bank Letter/IBAN", 
-      dbKey: "BANK_LETTER", 
-      hasExpiry: false, 
-      hasNumber: false, 
-      isMandatory: true,
-      description: "Bank account verification letter"
+      condition: "For Contractors/Subcontractors",
+      description: "Health, Safety and Environment plan",
+      forAllVendors: false
     },
     { 
       label: "Insurance Certificates", 
@@ -141,7 +101,62 @@ const EnhancedQualificationDocumentManager = ({
       hasExpiry: true, 
       hasNumber: false, 
       isMandatory: true,
-      description: "Insurance coverage certificates"
+      description: "Insurance coverage certificates",
+      forAllVendors: true
+    },
+    { 
+      label: "Organization Chart", 
+      dbKey: "ORGANIZATION_CHART", 
+      hasExpiry: false, 
+      hasNumber: false, 
+      isMandatory: vendorType === 'Contractor' || vendorType === 'Subcontractor' || true,
+      description: "Company organizational structure",
+      forAllVendors: true
+    },
+    { 
+      label: "Technical File", 
+      dbKey: "TECHNICAL_FILE", 
+      hasExpiry: false, 
+      hasNumber: false, 
+      isMandatory: true,
+      description: "Technical specifications and capabilities",
+      forAllVendors: true
+    },
+    { 
+      label: "Financial File", 
+      dbKey: "FINANCIAL_FILE", 
+      hasExpiry: false, 
+      hasNumber: false, 
+      isMandatory: true,
+      description: "Audited financial statements and bank information",
+      forAllVendors: true
+    },
+    { 
+      label: "Bank Letter/IBAN", 
+      dbKey: "BANK_LETTER", 
+      hasExpiry: false, 
+      hasNumber: false, 
+      isMandatory: true,
+      description: "Bank account verification letter",
+      forAllVendors: true
+    },
+    { 
+      label: "Warranty Certificate", 
+      dbKey: "WARRANTY_CERTIFICATE", 
+      hasExpiry: false, 
+      hasNumber: false, 
+      isMandatory: vendorType === 'Supplier' || vendorType === 'Manufacturer' || true,
+      description: "Product/service warranty documentation",
+      forAllVendors: true
+    },
+    { 
+      label: "Quality Plan", 
+      dbKey: "QUALITY_PLAN", 
+      hasExpiry: false, 
+      hasNumber: false, 
+      isMandatory: true,
+      description: "Quality management and assurance plan",
+      forAllVendors: true
     },
     { 
       label: "Industry Licenses/Permits", 
@@ -149,7 +164,8 @@ const EnhancedQualificationDocumentManager = ({
       hasExpiry: true, 
       hasNumber: false, 
       isMandatory: false,
-      description: "Industry-specific licenses and permits"
+      description: "Industry-specific licenses and permits",
+      forAllVendors: false
     },
     { 
       label: "Vendor Code of Conduct", 
@@ -157,7 +173,8 @@ const EnhancedQualificationDocumentManager = ({
       hasExpiry: false, 
       hasNumber: false, 
       isMandatory: true,
-      description: "Company code of conduct and ethics"
+      description: "Company code of conduct and ethics",
+      forAllVendors: true
     },
     { 
       label: "Company Profile (PDF)", 
@@ -165,9 +182,54 @@ const EnhancedQualificationDocumentManager = ({
       hasExpiry: false, 
       hasNumber: false, 
       isMandatory: true,
-      description: "Company overview and capabilities"
+      description: "Company overview and capabilities",
+      forAllVendors: true
     },
   ];
+
+  // Filter documents based on vendor type and config
+  const getFilteredDocuments = () => {
+    return ENHANCED_DOCUMENT_CHECKLIST.filter(doc => {
+      // Show all documents for all vendors
+      if (doc.forAllVendors) return true;
+      
+      // Show documents based on vendor type
+      if (vendorType) {
+        // Hide documents that are specifically hidden for this vendor type
+        if (vendorConfig?.hiddenDocuments?.includes(doc.dbKey)) {
+          return false;
+        }
+        
+        // Show documents that are specifically added for this vendor type
+        if (vendorConfig?.additionalDocuments?.includes(doc.dbKey)) {
+          return true;
+        }
+        
+        // For conditional documents
+        // Update the condition check in getFilteredDocuments():
+        if (doc.condition) {
+          const vendorTypeLower = vendorType?.toLowerCase() || '';
+          
+          if (doc.condition.toLowerCase().includes("suppliers") && 
+              (vendorTypeLower.includes('supplier') || 
+              vendorTypeLower.includes('manufacturer') || 
+              vendorTypeLower.includes('distributor'))) {
+            return true;
+          }
+          
+          if (doc.condition.toLowerCase().includes("contractors") && 
+              (vendorTypeLower.includes('contractor') || 
+              vendorTypeLower.includes('subcontractor'))) {
+            return true;
+          }
+        }
+      }
+      
+      return false;
+    });
+  };
+
+  const filteredDocuments = getFilteredDocuments();
 
   const getDocumentStatus = (doc) => {
     const docEntry = documentData[doc.dbKey];
@@ -212,20 +274,131 @@ const EnhancedQualificationDocumentManager = ({
     }
   };
 
-  // Calculate compliance summary
-  const summary = ENHANCED_DOCUMENT_CHECKLIST.reduce((acc, doc) => {
-    const { status } = getDocumentStatus(doc);
-    if (doc.isMandatory) {
-      if (status === 'valid') acc.compliant++;
-      acc.totalMandatory++;
-    }
-    return acc;
-  }, { compliant: 0, totalMandatory: 0 });
+    // Calculate compliance summary - UPDATED for filtered documents
+    const summary = filteredDocuments.reduce((acc, doc) => {
+      const { status } = getDocumentStatus(doc);
+      if (doc.isMandatory) {
+        if (status === 'valid') acc.compliant++;
+        acc.totalMandatory++;
+      }
+      return acc;
+    }, { compliant: 0, totalMandatory: 0 });
+  
+    const compliancePercentage = summary.totalMandatory > 0 
+      ? Math.round((summary.compliant / summary.totalMandatory) * 100) 
+      : 0;
 
-  const compliancePercentage = summary.totalMandatory > 0 
-    ? Math.round((summary.compliant / summary.totalMandatory) * 100) 
-    : 0;
+       // Document Row Component (replaces grid cards with rows)
+  const DocumentRow = ({ doc }) => {
+    const { status, color } = getDocumentStatus(doc);
+    const docEntry = documentData[doc.dbKey];
+    
+    return (
+      <div className={`p-4 rounded-lg border-2 transition-all duration-200 ${color} mb-3`}>
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          {/* Left side: Document info */}
+          <div className="flex-1">
+            <div className="flex items-start gap-3 mb-2">
+              {getStatusIcon(status)}
+              <div>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h5 className="font-semibold text-gray-800">
+                    {doc.label}
+                  </h5>
+                  {doc.isMandatory && (
+                    <span className="text-xs bg-red-100 text-red-600 px-2 py-1 rounded-full">
+                      Required
+                    </span>
+                  )}
+                  {doc.condition && (
+                    <span className="text-xs text-blue-600 bg-blue-100 px-2 py-1 rounded-full">
+                      {doc.condition}
+                    </span>
+                  )}
+                </div>
+                <p className="text-sm text-gray-600 mt-1">
+                  {doc.description}
+                </p>
+                
+                {/* Document details */}
+                {docEntry && docEntry.file && (
+                  <div className="mt-2 text-sm text-gray-700 space-y-1">
+                    <p className="flex items-center gap-1">
+                      <FileText className="w-4 h-4" />
+                      <span className="truncate">{docEntry.file.name}</span>
+                    </p>
+                    {docEntry.expiry && (
+                      <p className="flex items-center gap-1">
+                        <Calendar className="w-4 h-4" />
+                        <span>Expires: {new Date(docEntry.expiry).toLocaleDateString()}</span>
+                      </p>
+                    )}
+                    {docEntry.number && (
+                      <p>Number: {docEntry.number}</p>
+                    )}
+                    {docEntry.isoType && (
+                      <p>ISO Type: {docEntry.isoType}</p>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
 
+          {/* Right side: Actions */}
+          <div className="flex items-center gap-3">
+            {isEditable ? (
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedDocType(doc.dbKey);
+                  setShowUploadModal(true);
+                }}
+                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                <Upload className="w-4 h-4" />
+                <span>{docEntry?.file ? 'Replace' : 'Upload'}</span>
+              </button>
+            ) : (
+              <span className="text-gray-500">View Only</span>
+            )}
+
+            {docEntry?.file && (
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const fileUrl = URL.createObjectURL(docEntry.file);
+                    window.open(fileUrl, '_blank');
+                  }}
+                  className="p-2 text-gray-600 hover:text-gray-800"
+                  title="View Document"
+                >
+                  <Eye className="w-5 h-5" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const link = document.createElement('a');
+                    const fileUrl = URL.createObjectURL(docEntry.file);
+                    link.href = fileUrl;
+                    link.download = docEntry.file.name;
+                    link.click();
+                    URL.revokeObjectURL(fileUrl);
+                  }}
+                  className="p-2 text-gray-600 hover:text-gray-800"
+                  title="Download Document"
+                >
+                  <Download className="w-5 h-5" />
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  };
+      
   // Document Upload Modal Component
   const DocumentUploadModal = () => {
     const [file, setFile] = useState(null);
@@ -254,7 +427,20 @@ const EnhancedQualificationDocumentManager = ({
     };
 
     return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">        
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-xl shadow-2xl max-w-md w-full">
+              {/* Add close button on overlay click */}
+              <div 
+                className="fixed inset-0" 
+                onClick={() => setShowUploadModal(false)}
+              ></div>
+              
+              <div className="relative z-10"> {/* Add this wrapper */}
+                {/* Rest of your modal content */}
+              </div>
+            </div>
+          </div>
         <div className="bg-white rounded-xl shadow-2xl max-w-md w-full">
           <div className="flex items-center justify-between p-6 border-b border-gray-200">
             <h3 className="text-lg font-bold text-gray-900">
@@ -363,143 +549,56 @@ const EnhancedQualificationDocumentManager = ({
   );
 };
 
-  return (
-    <div className="space-y-6">
-      {/* Compliance Summary */}
-      <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-        <div className="flex justify-between items-center">
-          <div>
-            <h4 className="font-semibold text-blue-800">Document Compliance</h4>
-            <p className="text-sm text-blue-600">
-              {summary.compliant} of {summary.totalMandatory} mandatory documents uploaded
-            </p>
-          </div>
-          <div className="text-right">
-            <p className="text-sm font-medium text-blue-800">
-              {compliancePercentage}% Complete
-            </p>
-            <div className="w-32 bg-blue-200 rounded-full h-2 mt-1">
-              <div 
-                className="bg-blue-600 h-2 rounded-full transition-all duration-300"
-                style={{ width: `${compliancePercentage}%` }}
-              ></div>
-            </div>
+return (
+  <div className="space-y-6">
+    {/* Compliance Summary */}
+    <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+      <div className="flex justify-between items-center">
+        <div>
+          <h4 className="font-semibold text-blue-800">Document Compliance</h4>
+          <p className="text-sm text-blue-600">
+            {summary.compliant} of {summary.totalMandatory} mandatory documents uploaded
+            {vendorType && (
+              <span className="ml-2 text-blue-500">
+                (Filtered for {vendorType})
+              </span>
+            )}
+          </p>
+        </div>
+        <div className="text-right">
+          <p className="text-sm font-medium text-blue-800">
+            {compliancePercentage}% Complete
+          </p>
+          <div className="w-32 bg-blue-200 rounded-full h-2 mt-1">
+            <div 
+              className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+              style={{ width: `${compliancePercentage}%` }}
+            ></div>
           </div>
         </div>
       </div>
+    </div>
 
-      {/* Document Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {ENHANCED_DOCUMENT_CHECKLIST.map((doc) => {
-          const { status, color } = getDocumentStatus(doc);
-          const docEntry = documentData[doc.dbKey];
-          
-          return (
-            <div 
-              key={doc.dbKey}
-              className={`p-4 rounded-lg border-2 transition-all duration-200 ${color} ${
-                !isEditable ? 'opacity-75' : ''
-              }`}
-            >
-              <div className="flex items-start justify-between mb-3">
-                <div className="flex items-center space-x-2 flex-1">
-                  {getStatusIcon(status)}
-                  <div>
-                    <h5 className="font-semibold text-gray-800 text-sm">
-                      {doc.label}
-                    </h5>
-                    {doc.condition && (
-                      <span className="text-xs text-blue-600 bg-blue-100 px-2 py-1 rounded-full">
-                        {doc.condition}
-                      </span>
-                    )}
-                  </div>
-                </div>
-                {doc.isMandatory && (
-                  <span className="text-xs bg-red-100 text-red-600 px-2 py-1 rounded-full">
-                    Required
-                  </span>
-                )}
-              </div>
-
-              <p className="text-xs text-gray-600 mb-3">
-                {doc.description}
-              </p>
-
-              {/* Document Details */}
-              {docEntry && docEntry.file && (
-                <div className="text-xs text-gray-700 space-y-1 mb-3">
-                  <p className="flex items-center space-x-1">
-                    <FileText className="w-3 h-3" />
-                    <span className="truncate">{docEntry.file.name}</span>
-                  </p>
-                  {docEntry.expiry && (
-                    <p className="flex items-center space-x-1">
-                      <Calendar className="w-3 h-3" />
-                      <span>Expires: {new Date(docEntry.expiry).toLocaleDateString()}</span>
-                    </p>
-                  )}
-                  {docEntry.number && (
-                    <p>Number: {docEntry.number}</p>
-                  )}
-                  {docEntry.isoType && (
-                    <p>ISO Type: {docEntry.isoType}</p>
-                  )}
-                </div>
-              )}
-
-              {/* Actions */}
-              <div className="flex justify-between items-center">
-                {isEditable ? (
-                  <button
-                    type="button"
-                    onClick={() => handleUploadClick(doc.dbKey)}
-                    className="text-blue-600 hover:text-blue-800 text-sm font-medium flex items-center space-x-1"
-                  >
-                    <Upload className="w-4 h-4" />
-                    <span>{docEntry?.file ? 'Replace' : 'Upload'}</span>
-                  </button>
-                ) : (
-                  <span className="text-gray-500 text-sm">View Only</span>
-                )}
-
-                {docEntry?.file && (
-                  <div className="flex space-x-2">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        // Create object URL for preview
-                        const fileUrl = URL.createObjectURL(docEntry.file);
-                        window.open(fileUrl, '_blank');
-                      }}
-                      className="text-gray-600 hover:text-gray-800"
-                      title="View Document"
-                    >
-                      <Eye className="w-4 h-4" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        // Download logic
-                        const link = document.createElement('a');
-                        const fileUrl = URL.createObjectURL(docEntry.file);
-                        link.href = fileUrl;
-                        link.download = docEntry.file.name;
-                        link.click();
-                        URL.revokeObjectURL(fileUrl);
-                      }}
-                      className="text-gray-600 hover:text-gray-800"
-                      title="Download Document"
-                    >
-                      <Download className="w-4 h-4" />
-                    </button>
-                  </div>
-                )}
-              </div>
-            </div>
-          );
-        })}
+      {/* Document List in Rows */}
+      <div className="space-y-3">
+        {filteredDocuments.map((doc) => (
+          <DocumentRow key={doc.dbKey} doc={doc} />
+        ))}
       </div>
+
+      {vendorType && (
+        <div className="mt-4 p-3 bg-gray-50 border border-gray-200 rounded-lg">
+          <p className="text-sm text-gray-600">
+            <span className="font-medium">Note:</span> Documents are filtered for 
+            <span className="font-semibold ml-1">
+              {vendorType === 'ServiceProvider' ? 'Service Provider' : 
+              vendorType === 'GeneralContractor' ? 'General Contractor' : 
+              vendorType}
+            </span> vendors.
+            Some documents may be hidden if they don't apply.
+          </p>
+        </div>
+      )}
 
       {/* Upload Modal */}
       <DocumentUploadModal />

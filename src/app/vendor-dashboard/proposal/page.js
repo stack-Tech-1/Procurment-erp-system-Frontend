@@ -1,12 +1,12 @@
-// components/VendorQualificationForm.jsx
 "use client";
 import { useState, useEffect } from "react"; 
 import { z } from 'zod';
-import { Building2, FileText, CheckCircle, Send, Plus, Trash2, Calendar, Hash, Upload } from "lucide-react";
+import { Building2, FileText, CheckCircle, Send, Plus, Trash2, Calendar, Hash, Upload, Package, UserCheck, Briefcase } from "lucide-react";
 import ProjectExperienceTable from "../components/ProjectExperienceTable.js";
 import { VendorQualificationSchema, DocumentEntrySchema, MANDATORY_DOCS } from '@/lib/validation/vendorQualificationSchema.js'; 
 import EnhancedQualificationDocumentManager from '@/components/EnhancedQualificationDocumentManager';
-import { useRouter } from 'next/navigation'; 
+import { useRouter } from 'next/navigation';
+
 
 // --- NEW: VENDOR DROPDOWN OPTIONS (Section A) ---
 
@@ -51,6 +51,92 @@ const DOCUMENT_CHECKLIST = [
   { label: "Vendor Code of Conduct", dbKey: "VENDOR_CODE_OF_CONDUCT", hasExpiry: false, hasNumber: false, isMandatory: true },
   { label: "Company Profile (PDF)", dbKey: "COMPANY_PROFILE", hasExpiry: false, hasNumber: false, isMandatory: true },
 ];
+
+
+// --- NEW: Vendor Type Configuration ---
+const VENDOR_TYPE_CONFIG = {
+  'Contractor': {
+    showProjectExperience: true,
+    isProjectExperienceMandatory: true,
+    additionalDocuments: ['INSURANCE_CERTIFICATE', 'HSE_PLAN', 'ORGANIZATION_CHART'],
+    hiddenDocuments: ['SASO_SABER_CERTIFICATE'],
+    showBrandsSection: false,
+    showCVSection: false,
+    showSupplierCompliance: false
+  },
+  'Subcontractor': {
+    showProjectExperience: true,
+    isProjectExperienceMandatory: true,
+    additionalDocuments: ['INSURANCE_CERTIFICATE', 'HSE_PLAN', 'ORGANIZATION_CHART'],
+    hiddenDocuments: ['SASO_SABER_CERTIFICATE'],
+    showBrandsSection: false,
+    showCVSection: false,
+    showSupplierCompliance: false
+  },
+  'Supplier': {
+    showProjectExperience: false,
+    isProjectExperienceMandatory: false,
+    additionalDocuments: ['SASO_SABER_CERTIFICATE'],
+    hiddenDocuments: ['HSE_PLAN'],
+    showBrandsSection: true,
+    showCVSection: false,
+    showSupplierCompliance: true
+  },
+  'Manufacturer': {
+    showProjectExperience: false,
+    isProjectExperienceMandatory: false,
+    additionalDocuments: ['SASO_SABER_CERTIFICATE'],
+    hiddenDocuments: ['HSE_PLAN'],
+    showBrandsSection: true,
+    showCVSection: false,
+    showSupplierCompliance: true
+  },
+  'Distributor': {
+    showProjectExperience: false,
+    isProjectExperienceMandatory: false,
+    additionalDocuments: ['SASO_SABER_CERTIFICATE'],
+    hiddenDocuments: ['HSE_PLAN'],
+    showBrandsSection: true,
+    showCVSection: false,
+    showSupplierCompliance: true
+  },
+  'ServiceProvider': {
+    showProjectExperience: true,
+    isProjectExperienceMandatory: false,
+    additionalDocuments: [],
+    hiddenDocuments: ['SASO_SABER_CERTIFICATE', 'HSE_PLAN'],
+    showBrandsSection: false,
+    showCVSection: true,
+    showSupplierCompliance: false
+  },
+  'Consultant': {
+    showProjectExperience: true,
+    isProjectExperienceMandatory: false,
+    additionalDocuments: [],
+    hiddenDocuments: ['SASO_SABER_CERTIFICATE', 'HSE_PLAN'],
+    showBrandsSection: false,
+    showCVSection: true,
+    showSupplierCompliance: false
+  },
+  'default': {
+    showProjectExperience: true,
+    isProjectExperienceMandatory: false,
+    additionalDocuments: [],
+    hiddenDocuments: [],
+    showBrandsSection: false,
+    showCVSection: false,
+    showSupplierCompliance: false
+  }
+};
+
+const getVendorTypeConfig = (vendorType) => {
+  const typeKey = vendorType;    
+  if (VENDOR_TYPE_CONFIG[typeKey]) {
+    return VENDOR_TYPE_CONFIG[typeKey];
+  }  
+  const normalizedKey = vendorType?.replace(/\s+/g, '');
+  return VENDOR_TYPE_CONFIG[normalizedKey] || VENDOR_TYPE_CONFIG['default'];
+};
 
 // --- IMPROVED COMPONENTS ---
 
@@ -229,6 +315,9 @@ export default function VendorQualificationForm({ initialData, isEditable = true
   
   const router = useRouter();
 
+  // Get current vendor type configuration
+  const vendorConfig = getVendorTypeConfig(formData.vendorType);
+
    // 2. 🔑 ADD useEffect TO POPULATE STATE FROM initialData
 useEffect(() => {
   if (initialData) {
@@ -294,15 +383,37 @@ useEffect(() => {
 const handleChange = (e) => {
   const { name, value, type, files } = e.target;
   
-  
-  if (name.includes("_")) {
-      const docKey = name.replace("_file", "").replace("_expiry", "").replace("_number", "");
-      let docField;
-      if (name.endsWith("_file")) docField = "file";
-      else if (name.endsWith("_expiry")) docField = "expiry";
-      else if (name.endsWith("_number")) docField = "number";
-      
-      
+  // Update form data
+  if (!name.includes("_")) {
+    // Handle file inputs from new sections
+    if (type === 'file') {
+      setFormData((prev) => ({
+        ...prev,
+        [name]: files[0], // Store the file object
+      }));
+    } else {
+      setFormData((prev) => ({
+        ...prev,
+        [name]: value,
+      }));
+    }
+    
+    // If vendor type changes, reset dependent sections
+    if (name === 'vendorType') {
+      setFormData(prev => ({
+        ...prev,
+        majorBrands: '',
+        authorizationLevel: '',      
+      }));
+    }
+  } else {
+    // Handle document fields (existing logic)
+    const docKey = name.replace("_file", "").replace("_expiry", "").replace("_number", "");
+    let docField;
+    if (name.endsWith("_file")) docField = "file";
+    else if (name.endsWith("_expiry")) docField = "expiry";
+    else if (name.endsWith("_number")) docField = "number";
+    
     setDocumentData(prev => ({
       ...prev,
       [docKey]: {
@@ -310,14 +421,192 @@ const handleChange = (e) => {
         [docField]: type === "file" ? files[0] : value,
       }
     }));
-  } else {
-    // Handle standard form fields
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
   }
 };
+
+
+const getVendorTypeDisplayName = (vendorTypeValue) => {
+  const mapping = {
+    'ServiceProvider': 'Service Provider',
+    'GeneralContractor': 'General Contractor',
+    'TestingCommissioning': 'Testing & Commissioning',
+    'EngineeringOffice': 'Engineering Office',
+    'FactoryRepresentative': 'Factory Representative',
+    'SpecialistContractor': 'Specialist Contractor'
+  };
+  
+  return mapping[vendorTypeValue] || 
+         vendorTypeValue?.replace(/([A-Z])/g, ' $1').trim() || 
+         vendorTypeValue;
+};
+
+// --- NEW: Additional Section Components ---
+  
+  // Brands Section for Suppliers/Manufacturers/Distributors
+  const BrandsSection = () => (
+    <section className="p-6 bg-white rounded-xl border border-gray-200 mt-6">
+      <SectionHeader title="Brands Represented" icon={Package} />
+      <div className="space-y-4">
+        <FormInput 
+          label="Major Brands" 
+          name="majorBrands" 
+          placeholder="e.g., Siemens, Schneider, ABB" 
+          value={formData.majorBrands || ''} 
+          onChange={handleChange}
+          colSpan={2}
+        />
+        <FormInput 
+          label="Authorization Level" 
+          name="authorizationLevel" 
+          type="select"
+          value={formData.authorizationLevel || ''} 
+          onChange={handleChange}
+        >
+          <option value="">-- Select Authorization --</option>
+          <option value="Authorized Distributor">Authorized Distributor</option>
+          <option value="Authorized Dealer">Authorized Dealer</option>
+          <option value="Exclusive Distributor">Exclusive Distributor</option>
+          <option value="Value Added Reseller">Value Added Reseller</option>
+        </FormInput>
+        <FormInput 
+          label="Authorization Letters Available" 
+          name="authLettersAvailable" 
+          type="select"
+          value={formData.authLettersAvailable || ''} 
+          onChange={handleChange}
+        >
+          <option value="">-- Select --</option>
+          <option value="Yes">Yes</option>
+          <option value="No">No</option>
+        </FormInput>
+      </div>
+    </section>
+  );
+
+  // Product Categories Section
+  const ProductCategoriesSection = () => (
+    <section className="p-6 bg-white rounded-xl border border-gray-200 mt-6">
+      <SectionHeader title="Product Categories" icon={Package} />
+      <div className="space-y-4">
+        <FormInput 
+          label="Primary Product Categories" 
+          name="primaryProductCategories" 
+          placeholder="e.g., Electrical, HVAC, Plumbing, Fire Safety" 
+          value={formData.primaryProductCategories || ''} 
+          onChange={handleChange}
+          colSpan={2}
+        />
+        <FormInput 
+          label="Country of Origin (Main Products)" 
+          name="countryOfOrigin" 
+          placeholder="e.g., Germany, USA, China, Saudi Arabia" 
+          value={formData.countryOfOrigin || ''} 
+          onChange={handleChange}
+        />
+        <FormInput 
+          label="Local Manufacturing Capacity" 
+          name="localManufacturing" 
+          type="select"
+          value={formData.localManufacturing || ''} 
+          onChange={handleChange}
+        >
+          <option value="">-- Select --</option>
+          <option value="Yes">Yes</option>
+          <option value="No">No</option>
+          <option value="Partial">Partial Assembly</option>
+        </FormInput>
+      </div>
+    </section>
+  );
+
+  // CV Upload Section for Service Providers/Consultants
+  const CVUploadSection = () => (
+    <section className="p-6 bg-white rounded-xl border border-gray-200 mt-6">
+      <SectionHeader title="Professional CV & Credentials" icon={UserCheck} />
+      <div className="space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <FormInput 
+            label="Lead Consultant CV" 
+            name="leadConsultantCV" 
+            type="file"
+            onChange={handleChange}
+            colSpan={1}
+          />
+          <div className="flex items-end">
+            {formData.leadConsultantCV && (
+              <span className="text-sm text-green-600">✓ CV uploaded</span>
+            )}
+          </div>
+        </div>
+        
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Key Team Members
+          </label>
+          <textarea 
+            name="keyTeamMembers"
+            value={formData.keyTeamMembers || ''}
+            onChange={handleChange}
+            placeholder="List key team members with their qualifications and experience..."
+            className="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 shadow-sm h-32"
+            rows={4}
+          />
+        </div>
+        
+        <FormInput 
+          label="Company Résumé (PDF)" 
+          name="companyResume" 
+          type="file"
+          onChange={handleChange}
+          colSpan={2}
+        />
+      </div>
+    </section>
+  );
+
+  // Past Assignments Section
+  const PastAssignmentsSection = () => (
+    <section className="p-6 bg-white rounded-xl border border-gray-200 mt-6">
+      <SectionHeader title="Past Assignments & References" icon={Briefcase} />
+      <div className="space-y-4">
+        <FormInput 
+          label="Number of Similar Projects Completed" 
+          name="similarProjectsCount" 
+          type="number"
+          placeholder="e.g., 10"
+          value={formData.similarProjectsCount || ''} 
+          onChange={handleChange}
+        />
+        
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Assignment Details
+          </label>
+          <textarea 
+            name="assignmentDetails"
+            value={formData.assignmentDetails || ''}
+            onChange={handleChange}
+            placeholder="Describe your past relevant assignments, clients, and project outcomes..."
+            className="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 shadow-sm h-32"
+            rows={4}
+          />
+        </div>
+        
+        <FormInput 
+          label="Client References Available" 
+          name="clientReferences" 
+          type="select"
+          value={formData.clientReferences || ''} 
+          onChange={handleChange}
+        >
+          <option value="">-- Select --</option>
+          <option value="Yes">Yes (Available upon request)</option>
+          <option value="No">No</option>
+          <option value="Confidential">Confidential</option>
+        </FormInput>
+      </div>
+    </section>
+  );
 
 const handleSubmit = async (e) => {
   e.preventDefault();
@@ -325,6 +614,13 @@ const handleSubmit = async (e) => {
   setIsSubmitting(true);
   setSubmissionError(null);
   setSubmissionSuccess(false);
+
+  // --- 🔑 NEW: Project Experience Mandatory Check ---  
+if (vendorConfig.isProjectExperienceMandatory && projectExperience.length === 0) {
+  setSubmissionError("Project Experience is mandatory for this vendor type. Please add at least one project.");
+  setIsSubmitting(false);
+  return;
+}
 
   const token = localStorage.getItem("authToken");
   if (!token) {
@@ -510,20 +806,29 @@ if (result.success) {
   }
 };
 
-  return (
-    <div className="p-4 sm:p-6 bg-gray-50 min-h-screen">
-      <div className="max-w-7xl mx-auto bg-white shadow-lg rounded-xl p-6 sm:p-8 border border-gray-200">
-        
-        <header className="mb-8 text-center">
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-2">
-            Vendor Qualification Form
-          </h1>
-          <p className="text-gray-600 text-sm sm:text-base">
-            Complete all sections to submit your company for qualification. Mandatory fields are marked with (*).
-          </p>
-        </header>
+return (
+  <div className="p-4 sm:p-6 bg-gray-50 min-h-screen">
+    <div className="max-w-7xl mx-auto bg-white shadow-lg rounded-xl p-6 sm:p-8 border border-gray-200">
+      
+      <header className="mb-8 text-center">
+        <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-2">
+          Vendor Qualification Form
+        </h1>
+        <p className="text-gray-600 text-sm sm:text-base">
+          Complete all sections to submit your company for qualification. 
+          <span className="font-semibold text-blue-600 ml-1">
+            Form adapts based on your vendor type selection.
+          </span>
+        </p>
+        {formData.vendorType && (
+          <div className="mt-2 inline-flex items-center px-3 py-1 rounded-full bg-blue-100 text-blue-800 text-sm">
+            <span className="font-medium">Selected: </span>
+            {VENDOR_TYPES.find(v => v.value === formData.vendorType)?.label || formData.vendorType}
+          </div>
+        )}
+      </header>
 
-        <form onSubmit={handleSubmit} className="space-y-8">
+      <form onSubmit={handleSubmit} className="space-y-8">
 
           {/* Submission Feedback */}
           {submissionSuccess && (
@@ -540,8 +845,8 @@ if (result.success) {
             </div>
           )}
           
-          {/* A. Company Information - IMPROVED LAYOUT */}
-          <section className="bg-blue-50/30 p-6 rounded-xl border border-blue-200">
+           {/* A. Company Information - IMPROVED LAYOUT */}
+           <section className="bg-blue-50/30 p-6 rounded-xl border border-blue-200">
             <SectionHeader title="A. Company Information" icon={Building2} />
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               
@@ -573,8 +878,9 @@ if (result.success) {
                 error={errors.licenseNumber} 
               />
 
-              <FormInput 
-                label="Vendor Type" 
+               {/* VENDOR TYPE SELECTION - CRITICAL FOR DYNAMIC FORM */}
+               <FormInput 
+                label="Vendor Type *" 
                 name="vendorType" 
                 type="select" 
                 required 
@@ -585,6 +891,19 @@ if (result.success) {
                 <option value="">-- Select Vendor Type --</option>
                 {VENDOR_TYPES.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
               </FormInput>
+              {/* Dynamic note based on vendor type */}
+              {formData.vendorType && (
+                <div className="md:col-span-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                  <p className="text-sm text-blue-700">
+                    <span className="font-semibold">Note: </span>
+                    Selecting <strong>{VENDOR_TYPES.find(v => v.value === formData.vendorType)?.label}</strong> will {
+                      vendorConfig.showProjectExperience 
+                        ? 'require Project Experience details' 
+                        : 'show Supplier-specific sections'
+                    }.
+                  </p>
+                </div>
+              )}
 
               <FormInput 
                 label="Business Type" 
@@ -837,24 +1156,67 @@ if (result.success) {
           {/* C. Advanced Document Management */}
           <section className="bg-gray-50 p-6 rounded-xl border border-gray-200">
             <SectionHeader title="C. Advanced Document Management" icon={CheckCircle} />
+
+            {formData.vendorType && (
+              <div className="mt-2 inline-flex items-center px-3 py-1 rounded-full bg-blue-100 text-blue-800 text-sm">
+                <span className="font-medium">Selected: </span>
+                {getVendorTypeDisplayName(formData.vendorType)}
+              </div>
+            )}
             
-            {/* Enhanced Document Manager for Qualification */}
+            {/* Vendor type specific note */}
+            {formData.vendorType && vendorConfig.hiddenDocuments.length > 0 && (
+              <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                <p className="text-sm text-yellow-700">
+                  <span className="font-semibold">Document Note: </span>
+                  Some documents are hidden because they don't apply to {
+                    VENDOR_TYPES.find(v => v.value === formData.vendorType)?.label
+                  } vendors.
+                </p>
+              </div>
+            )}
+            
+            {/* Enhanced Document Manager - Now with vendor type filtering */}
             <EnhancedQualificationDocumentManager 
               documentData={documentData}
               setDocumentData={setDocumentData}
               isEditable={isEditable}
               vendorType={formData.vendorType}
+              vendorConfig={vendorConfig}
             />
           </section>
 
-          {/* D. Project Experience */}
-          <section className="p-6 bg-white rounded-xl border border-gray-200">
-            <SectionHeader title="D. Project Experience" icon={FileText} />
-            <ProjectExperienceTable 
-              projects={projectExperience}   
-              setProjects={setProjectExperience} 
-            />
-          </section>
+          {/* D. Project Experience - CONDITIONAL RENDERING */}
+          {vendorConfig.showProjectExperience && (
+            <section className="p-6 bg-white rounded-xl border border-gray-200">
+              <SectionHeader title="D. Project Experience" icon={FileText} />
+              {vendorConfig.isProjectExperienceMandatory && (
+                <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+                  <p className="text-sm text-red-700 font-medium">
+                    ⚠️ This section is <strong>MANDATORY</strong> for {formData.vendorType} vendors.
+                  </p>
+                </div>
+              )}
+              <ProjectExperienceTable 
+                projects={projectExperience}   
+                setProjects={setProjectExperience} 
+              />
+            </section>
+          )}
+
+          {/* E. Dynamic Sections Based on Vendor Type */}
+
+          {/* Brands Section for Suppliers/Manufacturers/Distributors */}
+          {vendorConfig.showBrandsSection && <BrandsSection />}
+
+          {/* Product Categories Section */}
+          {vendorConfig.showBrandsSection && <ProductCategoriesSection />}
+
+          {/* CV Upload Section for Service Providers/Consultants */}
+          {vendorConfig.showCVSection && <CVUploadSection />}
+
+          {/* Past Assignments Section */}
+          {vendorConfig.showCVSection && <PastAssignmentsSection />}
 
           {/* Submission Button */}
           <div className="flex justify-end gap-4 pt-6 border-t border-gray-200">
