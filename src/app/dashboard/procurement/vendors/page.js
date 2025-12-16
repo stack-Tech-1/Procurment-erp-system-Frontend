@@ -8,7 +8,7 @@ import VendorChart from '@/components/VendorChart';
 import StatusChart from '@/components/StatusChart';
 import ExpiryRiskCard from '@/components/ExpiryRiskCard';
 
-const API_BASE_URL = `${process.env.NEXT_PUBLIC_API_URL}/api/vendor`; // Your backend URL
+const API_BASE_URL = `${process.env.NEXT_PUBLIC_API_URL}/api/vendor`;
 
 const STATUS_OPTIONS = ['NEW', 'UNDER_REVIEW', 'APPROVED', 'REJECTED', 'NEEDS_RENEWAL'];
 const TYPE_OPTIONS = ['GeneralContractor', 'SubContractor', 'Supplier'];

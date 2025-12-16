@@ -1,5 +1,6 @@
+// frontend/src/components/reports/ReportViewer.js - ENHANCED VERSION
 "use client";
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   Play,
   Download,
@@ -14,8 +15,17 @@ import {
   Calendar,
   User,
   Building,
-  X
+  X,
+  Grid,
+  List,
+  Zap
 } from 'lucide-react';
+
+// Import the new visualization components
+import AdvancedChart from './AdvancedChart';
+import DrillDownChart from './DrillDownChart';
+import RealTimeChart from './RealTimeChart';
+import ChartDashboard from './ChartDashboard';
 
 const ReportViewer = ({ report, onBack }) => {
   const [reportData, setReportData] = useState(null);
@@ -25,9 +35,10 @@ const ReportViewer = ({ report, onBack }) => {
   const [activeFilters, setActiveFilters] = useState([]);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(25);
-  const [viewMode, setViewMode] = useState('table'); // 'table', 'chart'
-  const [chartType, setChartType] = useState('bar'); // 'bar', 'pie', 'line'
+  const [viewMode, setViewMode] = useState('table'); // 'table', 'chart', 'dashboard'
+  const [chartType, setChartType] = useState('bar');
   const [exportMenuOpen, setExportMenuOpen] = useState(false);
+  const [dashboardView, setDashboardView] = useState('grid'); // 'grid', 'list'
 
   // Initialize filters from report definition
   useEffect(() => {
@@ -40,9 +51,79 @@ const ReportViewer = ({ report, onBack }) => {
     }
   }, [report]);
 
-  // In ReportViewer.js, update the executeReport function:
+  // Transform report data for charts
+  const chartData = useMemo(() => {
+    if (!reportData?.rows) return [];
 
-const executeReport = async () => {
+    return reportData.rows.map(row => {
+      const chartRow = { name: row[reportData.columns[0]?.fieldName] || 'Unknown' };
+      
+      reportData.columns.forEach((column, index) => {
+        if (index > 0) { // Skip first column (used as name)
+          chartRow[column.columnLabel || column.fieldName] = row[column.fieldName];
+        }
+      });
+      
+      return chartRow;
+    });
+  }, [reportData]);
+
+  // Generate chart configurations based on report data
+  const chartConfigs = useMemo(() => {
+    if (!reportData?.columns) return [];
+
+    const numericColumns = reportData.columns.filter(col => 
+      col.dataType === 'CURRENCY' || col.dataType === 'NUMBER' || col.dataType === 'PERCENTAGE'
+    );
+
+    if (numericColumns.length === 0) return [];
+
+    return [
+      {
+        id: 1,
+        title: `${report?.name} - Overview`,
+        type: "bar",
+        data: chartData,
+        config: {
+          currency: numericColumns.some(col => col.dataType === 'CURRENCY'),
+          percentage: numericColumns.some(col => col.dataType === 'PERCENTAGE'),
+          bars: numericColumns.slice(0, 3).map(col => ({
+            dataKey: col.columnLabel || col.fieldName,
+            name: col.columnLabel
+          }))
+        }
+      },
+      {
+        id: 2,
+        title: `${report?.name} - Trends`,
+        type: "line",
+        data: chartData.slice(-12), // Last 12 data points for trends
+        config: {
+          currency: numericColumns.some(col => col.dataType === 'CURRENCY'),
+          lines: numericColumns.slice(0, 2).map(col => ({
+            dataKey: col.columnLabel || col.fieldName,
+            name: col.columnLabel
+          }))
+        }
+      },
+      {
+        id: 3,
+        title: `${report?.name} - Distribution`,
+        type: "pie",
+        data: chartData.map(item => ({
+          name: item.name,
+          value: item[numericColumns[0]?.columnLabel] || 0
+        })),
+        config: {
+          dataKey: "value",
+          percentage: true
+        }
+      }
+    ];
+  }, [reportData, chartData, report]);
+
+  // Enhanced executeReport function
+  const executeReport = async () => {
     if (!report) return;
     
     setExecuting(true);
@@ -57,7 +138,7 @@ const executeReport = async () => {
           value: f.value,
           operator: getDefaultOperator(f.filterType)
         }));
-  
+
       // Convert report.id to number
       const numericReportId = parseInt(report.id, 10);
       
@@ -69,7 +150,7 @@ const executeReport = async () => {
         },
         body: JSON.stringify({ filters })
       });
-  
+
       if (!response.ok) throw new Error('Failed to execute report');
       
       const result = await response.json();
@@ -101,9 +182,7 @@ const executeReport = async () => {
     );
   };
 
-  // In ReportViewer.js, update the handleExport function:
-
-const handleExport = async (format) => {
+  const handleExport = async (format) => {
     if (!report) return;
     
     try {
@@ -115,7 +194,7 @@ const handleExport = async (format) => {
           value: f.value,
           operator: getDefaultOperator(f.filterType)
         }));
-  
+
       // Convert report.id to number
       const numericReportId = parseInt(report.id, 10);
       
@@ -127,7 +206,7 @@ const handleExport = async (format) => {
         },
         body: JSON.stringify({ format, filters })
       });
-  
+
       if (!response.ok) throw new Error('Export failed');
       
       const blob = await response.blob();
@@ -149,6 +228,12 @@ const handleExport = async (format) => {
 
   const handleRefresh = () => {
     executeReport();
+  };
+
+  const handleDataPointClick = (clickData) => {
+    console.log('Chart data point clicked:', clickData);
+    // You can implement drill-down logic here
+    // For example, set a state to show detailed view
   };
 
   const renderFilterInput = (filter, index) => {
@@ -241,6 +326,176 @@ const handleExport = async (format) => {
     );
   };
 
+  // Enhanced View Controls with Dashboard option
+  const renderViewControls = () => (
+    <div className="bg-white rounded-lg shadow mb-4">
+      <div className="flex border-b border-gray-200">
+        <button
+          onClick={() => setViewMode('table')}
+          className={`flex-1 py-3 px-4 text-center font-medium ${
+            viewMode === 'table'
+              ? 'text-blue-600 border-b-2 border-blue-600'
+              : 'text-gray-500 hover:text-gray-700'
+          }`}
+        >
+          <Table className="w-4 h-4 inline mr-2" />
+          Table View
+        </button>
+        <button
+          onClick={() => setViewMode('chart')}
+          className={`flex-1 py-3 px-4 text-center font-medium ${
+            viewMode === 'chart'
+              ? 'text-blue-600 border-b-2 border-blue-600'
+              : 'text-gray-500 hover:text-gray-700'
+          }`}
+        >
+          <BarChart3 className="w-4 h-4 inline mr-2" />
+          Single Chart
+        </button>
+        <button
+          onClick={() => setViewMode('dashboard')}
+          className={`flex-1 py-3 px-4 text-center font-medium ${
+            viewMode === 'dashboard'
+              ? 'text-blue-600 border-b-2 border-blue-600'
+              : 'text-gray-500 hover:text-gray-700'
+          }`}
+        >
+          <Grid className="w-4 h-4 inline mr-2" />
+          Dashboard
+        </button>
+      </div>
+    </div>
+  );
+
+  // Render different view modes
+  const renderViewMode = () => {
+    switch (viewMode) {
+      case 'table':
+        return renderTableView();
+      case 'chart':
+        return renderChartView();
+      case 'dashboard':
+        return renderDashboardView();
+      default:
+        return renderTableView();
+    }
+  };
+
+  const renderTableView = () => (
+    <div>
+      <h3 className="text-lg font-semibold text-gray-800 mb-4">
+        Report Data ({reportData.totalRecords} records)
+      </h3>
+      
+      <div className="overflow-x-auto">
+        <table className="min-w-full divide-y divide-gray-200">
+          <thead className="bg-gray-50">
+            <tr>
+              {reportData.columns
+                .filter(col => col.isVisible)
+                .map((column) => (
+                  <th
+                    key={column.fieldName}
+                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                  >
+                    {column.columnLabel}
+                  </th>
+                ))}
+            </tr>
+          </thead>
+          <tbody className="bg-white divide-y divide-gray-200">
+            {reportData.rows
+              .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+              .map((row, index) => (
+                <tr key={index} className="hover:bg-gray-50">
+                  {reportData.columns
+                    .filter(col => col.isVisible)
+                    .map((column) => (
+                      <td key={column.fieldName} className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {formatCellValue(row[column.fieldName], column)}
+                      </td>
+                    ))}
+                </tr>
+              ))}
+          </tbody>
+        </table>
+      </div>
+      
+      {/* Pagination */}
+      <div className="flex items-center justify-between mt-4">
+        <div className="text-sm text-gray-700">
+          Showing {page * rowsPerPage + 1} to {Math.min((page + 1) * rowsPerPage, reportData.rows.length)} of {reportData.rows.length} entries
+        </div>
+        <div className="flex space-x-2">
+          <button
+            onClick={() => setPage(Math.max(0, page - 1))}
+            disabled={page === 0}
+            className="px-3 py-1 border border-gray-300 rounded text-sm disabled:opacity-50"
+          >
+            Previous
+          </button>
+          <button
+            onClick={() => setPage(Math.min(Math.ceil(reportData.rows.length / rowsPerPage) - 1, page + 1))}
+            disabled={page >= Math.ceil(reportData.rows.length / rowsPerPage) - 1}
+            className="px-3 py-1 border border-gray-300 rounded text-sm disabled:opacity-50"
+          >
+            Next
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+
+  const renderChartView = () => (
+    <div className="space-y-6">
+      {/* Chart Type Selector */}
+      <div className="flex items-center justify-between">
+        <h3 className="text-lg font-semibold text-gray-800">Data Visualization</h3>
+        <div className="flex items-center gap-4">
+          <select
+            value={chartType}
+            onChange={(e) => setChartType(e.target.value)}
+            className="px-3 py-2 border border-gray-300 rounded-lg text-sm"
+          >
+            <option value="bar">Bar Chart</option>
+            <option value="line">Line Chart</option>
+            <option value="area">Area Chart</option>
+            <option value="pie">Pie Chart</option>
+            <option value="composed">Composed Chart</option>
+          </select>
+        </div>
+      </div>
+
+      {/* Enhanced Chart */}
+      <AdvancedChart
+        data={chartData}
+        title={`${report.name} - ${chartType.charAt(0).toUpperCase() + chartType.slice(1)} View`}
+        chartType={chartType}
+        config={chartConfigs[0]?.config || {}}
+        height={500}
+        onDataPointClick={handleDataPointClick}
+      />
+
+      {/* Additional Chart Info */}
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+        <div className="flex items-center gap-2 text-blue-700 text-sm">
+          <Zap size={16} />
+          <span>
+            <strong>Interactive Features:</strong> Click on chart elements to explore data, 
+            use mouse wheel to zoom, and hover for detailed values.
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+
+  const renderDashboardView = () => (
+    <ChartDashboard
+      title={`${report.name} - Analytics Dashboard`}
+      charts={chartConfigs}
+    />
+  );
+
   if (!report) {
     return (
       <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
@@ -277,6 +532,11 @@ const handleExport = async (format) => {
                 {report.isPublic && (
                   <span className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-green-100 text-green-800">
                     Public
+                  </span>
+                )}
+                {viewMode === 'dashboard' && (
+                  <span className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-purple-100 text-purple-800">
+                    Dashboard View
                   </span>
                 )}
               </div>
@@ -380,119 +640,12 @@ const handleExport = async (format) => {
           {renderSummaryCards()}
 
           {/* View Controls */}
-          <div className="bg-white rounded-lg shadow mb-4">
-            <div className="flex border-b border-gray-200">
-              <button
-                onClick={() => setViewMode('table')}
-                className={`flex-1 py-3 px-4 text-center font-medium ${
-                  viewMode === 'table'
-                    ? 'text-blue-600 border-b-2 border-blue-600'
-                    : 'text-gray-500 hover:text-gray-700'
-                }`}
-              >
-                <Table className="w-4 h-4 inline mr-2" />
-                Table View
-              </button>
-              <button
-                onClick={() => setViewMode('chart')}
-                className={`flex-1 py-3 px-4 text-center font-medium ${
-                  viewMode === 'chart'
-                    ? 'text-blue-600 border-b-2 border-blue-600'
-                    : 'text-gray-500 hover:text-gray-700'
-                }`}
-              >
-                <BarChart3 className="w-4 h-4 inline mr-2" />
-                Chart View
-              </button>
-            </div>
+          {renderViewControls()}
 
+          {/* Main Content */}
+          <div className="bg-white rounded-lg shadow">
             <div className="p-6">
-              {viewMode === 'table' ? (
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-800 mb-4">
-                    Report Data ({reportData.totalRecords} records)
-                  </h3>
-                  
-                  <div className="overflow-x-auto">
-                    <table className="min-w-full divide-y divide-gray-200">
-                      <thead className="bg-gray-50">
-                        <tr>
-                          {reportData.columns
-                            .filter(col => col.isVisible)
-                            .map((column) => (
-                              <th
-                                key={column.fieldName}
-                                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                              >
-                                {column.columnLabel}
-                              </th>
-                            ))}
-                        </tr>
-                      </thead>
-                      <tbody className="bg-white divide-y divide-gray-200">
-                        {reportData.rows
-                          .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-                          .map((row, index) => (
-                            <tr key={index} className="hover:bg-gray-50">
-                              {reportData.columns
-                                .filter(col => col.isVisible)
-                                .map((column) => (
-                                  <td key={column.fieldName} className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                    {formatCellValue(row[column.fieldName], column)}
-                                  </td>
-                                ))}
-                            </tr>
-                          ))}
-                      </tbody>
-                    </table>
-                  </div>
-                  
-                  {/* Pagination */}
-                  <div className="flex items-center justify-between mt-4">
-                    <div className="text-sm text-gray-700">
-                      Showing {page * rowsPerPage + 1} to {Math.min((page + 1) * rowsPerPage, reportData.rows.length)} of {reportData.rows.length} entries
-                    </div>
-                    <div className="flex space-x-2">
-                      <button
-                        onClick={() => setPage(Math.max(0, page - 1))}
-                        disabled={page === 0}
-                        className="px-3 py-1 border border-gray-300 rounded text-sm disabled:opacity-50"
-                      >
-                        Previous
-                      </button>
-                      <button
-                        onClick={() => setPage(Math.min(Math.ceil(reportData.rows.length / rowsPerPage) - 1, page + 1))}
-                        disabled={page >= Math.ceil(reportData.rows.length / rowsPerPage) - 1}
-                        className="px-3 py-1 border border-gray-300 rounded text-sm disabled:opacity-50"
-                      >
-                        Next
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                <div>
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-lg font-semibold text-gray-800">Data Visualization</h3>
-                    <select
-                      value={chartType}
-                      onChange={(e) => setChartType(e.target.value)}
-                      className="px-3 py-2 border border-gray-300 rounded-lg text-sm"
-                    >
-                      <option value="bar">Bar Chart</option>
-                      <option value="pie">Pie Chart</option>
-                      <option value="line">Line Chart</option>
-                    </select>
-                  </div>
-                  <div className="h-96 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center">
-                    <div className="text-center">
-                      <BarChart3 className="w-12 h-12 text-gray-300 mx-auto mb-2" />
-                      <p className="text-gray-500">Chart visualization will be implemented here</p>
-                      <p className="text-sm text-gray-400 mt-1">Using {chartType} chart</p>
-                    </div>
-                  </div>
-                </div>
-              )}
+              {renderViewMode()}
             </div>
           </div>
 

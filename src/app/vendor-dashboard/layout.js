@@ -1,4 +1,4 @@
-// frontend/src/app/vendor-dashboard/layout.js - ENHANCED VERSION
+// frontend/src/app/vendor-dashboard/layout.js - UPDATED WITH KUN BRANDING
 "use client";
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
@@ -74,6 +74,12 @@ export default function VendorLayout({ children }) {
       description: 'Monitor your proposals'
     },
     { 
+      name: 'Information Requests', 
+      href: '/vendor-dashboard/requests', 
+      icon: <FileText size={20} />,
+      description: 'View and respond to requests'
+    },
+    { 
       name: 'My Profile', 
       href: '/dashboard/vendors/profile', 
       icon: <Briefcase size={20} />,
@@ -107,7 +113,7 @@ export default function VendorLayout({ children }) {
         />
       )}
 
-      {/* Enhanced Sidebar */}
+      {/* Enhanced Sidebar with KUN Branding */}
       <aside className={`
         bg-gradient-to-b from-slate-900 to-slate-800 text-gray-100 flex flex-col shadow-xl
         ${isMobile 
@@ -117,32 +123,47 @@ export default function VendorLayout({ children }) {
           : 'w-80 min-h-screen'
         }
       `}>
-        {/* Sidebar Header */}
+        {/* Sidebar Header with KUN Logo - Matching Executive Dashboard */}
         <div className="p-6 border-b border-slate-700">
-          <div className="flex items-center justify-between">
-            <div className="text-2xl font-bold">
-              <span className="text-teal-400">Vendor</span>Portal
+          <div className="flex flex-col items-center text-center space-y-4">
+            {/* KUN Logo Container - Matching Executive Dashboard */}
+            <div className="w-20 h-20 bg-gradient-to-br from-yellow-400 to-yellow-600 rounded-2xl flex items-center justify-center shadow-2xl shadow-yellow-500/30 mb-2">
+              <span className="text-white font-bold text-2xl">KUN</span>
             </div>
-            {isMobile && (
-              <button 
-                onClick={() => setSidebarOpen(false)}
-                className="p-1 text-gray-400 hover:text-white transition-colors"
-              >
-                <X size={20} />
-              </button>
-            )}
+            
+            {/* Company Info - Matching Executive Dashboard */}
+            <div className="space-y-1">
+              <h1 className="text-xl font-bold text-white leading-tight">
+                KUN Real Estate
+              </h1>
+              <p className="text-sm text-gray-300">Vendor Portal</p>
+            </div>
           </div>
           
-          {/* Vendor Quick Info */}
+          {isMobile && (
+            <button 
+              onClick={() => setSidebarOpen(false)}
+              className="absolute top-4 right-4 p-2 text-gray-400 hover:text-white bg-slate-800 rounded-lg"
+            >
+              <X size={20} />
+            </button>
+          )}
+          
+          {/* Vendor Quick Info - KEPT INTACT as requested */}
           {vendorData && (
-            <div className="mt-4 p-3 bg-slate-700/50 rounded-lg">
+            <div className="mt-6 p-3 bg-slate-700/50 rounded-lg border border-slate-600">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-sm font-medium text-teal-300">Status</span>
                 {getStatusBadge(vendorData.status)}
               </div>
-              <div className="text-xs text-gray-300">
-                <div className="truncate">{vendorData.companyName}</div>
-                <div className="text-gray-400 mt-1">Score: {vendorData.qualificationScore}/100</div>
+              <div className="text-sm text-white font-medium truncate">
+                {vendorData.companyName}
+              </div>
+              <div className="flex items-center justify-between mt-2">
+                <span className="text-xs text-gray-300">Score:</span>
+                <span className="text-xs font-medium text-teal-300">
+                  {vendorData.qualificationScore || 0}/100
+                </span>
               </div>
             </div>
           )}
@@ -187,10 +208,10 @@ export default function VendorLayout({ children }) {
 
       {/* Main Content Area */}
       <div className={`flex-1 flex flex-col min-w-0 ${!isMobile ? 'ml-0' : ''}`}>
-        {/* Enhanced Topbar */}
+        {/* Enhanced Topbar with KUN Branding */}
         <header className="bg-white shadow-sm border-b border-gray-100 sticky top-0 z-30">
           <div className={`flex justify-between items-center ${isMobile ? 'px-4 py-3' : 'px-8 py-4'}`}>
-            {/* Left: Menu & Title */}
+            {/* Left: Menu & Title with KUN Logo */}
             <div className="flex items-center gap-4">
               {/* Mobile Menu Button */}
               {isMobile && (
@@ -202,17 +223,17 @@ export default function VendorLayout({ children }) {
                 </button>
               )}
               
-              {/* Page Title Area */}
+              {/* KUN Logo & Page Title - Matching Executive Dashboard */}
               <div className="flex items-center gap-3">
-                <div className="bg-teal-100 p-2 rounded-lg">
-                  <Building className="text-teal-600" size={24} />
+                <div className="w-10 h-10 bg-gradient-to-br from-yellow-400 to-yellow-600 rounded-xl flex items-center justify-center shadow-lg shadow-yellow-500/20 mr-3">
+                  <span className="text-white font-bold text-base">KUN</span>
                 </div>
                 <div>
                   <h1 className={`font-semibold text-gray-800 ${isMobile ? 'text-lg' : 'text-xl'}`}>
                     Vendor Portal
                   </h1>
-                  <p className={`text-gray-500 ${isMobile ? 'text-xs' : 'text-sm'}`}>
-                    Procurement collaboration platform
+                  <p className={`text-gray-500 mt-1 ${isMobile ? 'text-xs' : 'text-sm'}`}>
+                    KUN Real Estate - Procurement Department
                   </p>
                 </div>
               </div>
@@ -228,7 +249,7 @@ export default function VendorLayout({ children }) {
                 </span>
               </button>
 
-              {/* Enhanced User Menu */}
+              {/* Enhanced User Menu with Vendor Status */}
               <div className="relative">
                 <button 
                   className={`flex items-center gap-3 rounded-lg hover:bg-gray-50 transition-colors ${
@@ -240,14 +261,23 @@ export default function VendorLayout({ children }) {
                     <div className="bg-teal-100 p-2 rounded-full">
                       <UserCircle2 className="text-teal-600" size={isMobile ? 20 : 24} />
                     </div>
-                    {!isMobile && (
+                    {!isMobile && vendorData && (
                       <div className="text-left">
-                        <p className="font-medium text-gray-800 text-sm">
-                          {vendorData?.companyName || "Vendor Company"}
-                        </p>
-                        <p className="text-xs text-gray-500">
-                          {vendorData?.email || "vendor@company.com"}
-                        </p>
+                        <div className="flex items-center gap-2">
+                          <p className="font-medium text-gray-800 text-sm">
+                            {vendorData.companyName || "Vendor Company"}
+                          </p>
+                          {getStatusBadge(vendorData.status)}
+                        </div>
+                        <div className="flex items-center gap-2 text-xs">
+                          <span className="text-gray-500">
+                            {vendorData.email || "vendor@company.com"}
+                          </span>
+                          <span className="text-gray-400">•</span>
+                          <span className="text-teal-600 font-medium">
+                            Score: {vendorData.qualificationScore || 0}/100
+                          </span>
+                        </div>
                       </div>
                     )}
                   </div>
@@ -266,12 +296,21 @@ export default function VendorLayout({ children }) {
                   }`}>
                     {vendorData && (
                       <div className="px-4 py-3 border-b border-gray-100">
-                        <p className="font-medium text-gray-800 text-sm">{vendorData.companyName}</p>
-                        <p className="text-xs text-gray-500 truncate">{vendorData.email}</p>
-                        <div className="flex items-center gap-2 mt-2">
+                        <div className="flex items-center justify-between mb-2">
+                          <p className="font-medium text-gray-800 text-sm">{vendorData.companyName}</p>
                           {getStatusBadge(vendorData.status)}
-                          <span className="text-xs text-gray-400">
-                            Class {vendorData.vendorClass}
+                        </div>
+                        <p className="text-xs text-gray-500 truncate">{vendorData.email}</p>
+                        <div className="flex items-center justify-between mt-2 pt-2 border-t border-gray-100">
+                          <span className="text-xs text-gray-400">Qualification Score:</span>
+                          <span className="text-xs font-medium text-teal-600">
+                            {vendorData.qualificationScore || 0}/100
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between mt-1">
+                          <span className="text-xs text-gray-400">Vendor Class:</span>
+                          <span className="text-xs font-medium text-blue-600">
+                            {vendorData.vendorClass || "N/A"}
                           </span>
                         </div>
                       </div>
@@ -319,16 +358,16 @@ export default function VendorLayout({ children }) {
                   <div className="text-xs text-blue-800">Active Proposals</div>
                 </div>
                 <div className="text-center p-3 bg-green-50 rounded-lg border border-green-100">
-                  <div className="text-2xl font-bold text-green-600">85%</div>
-                  <div className="text-xs text-green-800">Success Rate</div>
+                  <div className="text-2xl font-bold text-green-600">{vendorData.qualificationScore || 0}%</div>
+                  <div className="text-xs text-green-800">Qualification Score</div>
                 </div>
                 <div className="text-center p-3 bg-orange-50 rounded-lg border border-orange-100">
                   <div className="text-2xl font-bold text-orange-600">3</div>
                   <div className="text-xs text-orange-800">Expiring Docs</div>
                 </div>
                 <div className="text-center p-3 bg-purple-50 rounded-lg border border-purple-100">
-                  <div className="text-2xl font-bold text-purple-600">A</div>
-                  <div className="text-xs text-purple-800">Performance Tier</div>
+                  <div className="text-2xl font-bold text-purple-600">{vendorData.vendorClass || "A"}</div>
+                  <div className="text-xs text-purple-800">Vendor Class</div>
                 </div>
               </div>
             </div>
