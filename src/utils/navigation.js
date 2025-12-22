@@ -2,7 +2,7 @@
 import { 
   Home, Users, ClipboardList, Briefcase, Receipt, BarChart3, FileText, 
   TrendingUp, DollarSign, Shield, CheckCircle, Building, Send, ListOrdered,
-  CheckSquare, UserPlus, Settings, MessageSquare 
+  CheckSquare, UserPlus, Settings, MessageSquare, Grid, Truck 
 } from 'lucide-react';
 import { ROLES } from '../constants/roles';
 
@@ -28,8 +28,7 @@ export const getNavigationItems = (roleId) => {
         { name: "User Management", icon: <UserPlus size={18} />, href: "/dashboard/admin/users" },
         { name: "Reports", icon: <FileText size={18} />, href: "/dashboard/admin/reports" },
         { name: "System Settings", icon: <Settings size={18} />, href: "/dashboard/admin/settings" },
-        { name: "Account Approvals", icon: <CheckCircle size={18} />, href: "/dashboard/admin/approvals" },
-        // Add this to each role that should have access to workflow builder
+        { name: "Account Approvals", icon: <CheckCircle size={18} />, href: "/dashboard/admin/approvals" },        
         { name: "Workflow Builder", icon: <Settings size={18} />, href: "/dashboard/approvals/workflows"}
       ];
 
@@ -39,14 +38,22 @@ export const getNavigationItems = (roleId) => {
         { name: "Team Overview", icon: <Users size={18} />, href: "/dashboard/manager/team" },
         { name: "Approval Queue", icon: <CheckCircle size={18} />, href: "/dashboard/manager/approvals" },
         { name: "Information Requests", icon: <MessageSquare size={18} />, href: "/dashboard/procurement/information-requests" },
-        { name: "Approvals", icon: <CheckCircle size={18} />, href: "/dashboard/approvals" }, 
+        { name: "Approvals", icon: <CheckCircle size={18} />, href: "/dashboard/approvals" },
+        { name: "Material Submittals", icon: <FileText size={18} />, href: "/dashboard/manager/material-submittals" },
+        { name: "Shop Drawings", icon: <Grid size={18} />, href: "/dashboard/manager/shop-drawings" },
+        { name: "Deliveries", icon: <Truck size={18} />, href: "/dashboard/manager/deliveries" },
+        { name: "Budget Control", icon: <DollarSign size={18} />, href: "/dashboard/manager/budget-control" },
+        { name: "Supplier Performance", icon: <Users size={18} />, href: "/dashboard/manager/supplier-performance" },
         { name: "Task Assignment", icon: <CheckSquare size={18} />, href: "/dashboard/tasks" },
         { name: "Vendor Management", icon: <Building size={18} />, href: "/dashboard/procurement/vendors" },
-        { name: "RFOs", icon: <ClipboardList size={18} />, href: "/dashboard/procurement/rfos" },
+        { name: "RFQs", icon: <ClipboardList size={18} />, href: "/dashboard/procurement/rfq" },
+        { name: "POs", icon: <TrendingUp size={18} />, href: "/dashboard/procurement/purchase-orders" },
+        { name: "PRs", icon: <Receipt size={18} />, href: "/dashboard/procurement/purchase-requests" },
         { name: "Contracts", icon: <FileText size={18} />, href: "/dashboard/procurement/contracts" },
+        { name: "Invoice", icon: <DollarSign size={18} />, href: "/dashboard/procurement/invoices" },
+        { name: "IPCs", icon: <Receipt size={18} />, href: "/dashboard/procurement/ipcs" },        
         { name: "Performance Metrics", icon: <BarChart3 size={18} />, href: "/dashboard/procurement/cost-control" },
-        { name: "Reports", icon: <FileText size={18} />, href: "/dashboard/admin/reports" },
-        // Add this to each role that should have access to workflow builder
+        { name: "Reports", icon: <FileText size={18} />, href: "/dashboard/admin/reports" },        
         { name: "Workflow Builder", icon: <Settings size={18} />, href: "/dashboard/approvals/workflows"}        
       ];
 

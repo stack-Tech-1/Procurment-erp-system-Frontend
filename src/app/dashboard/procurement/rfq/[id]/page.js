@@ -1,4 +1,4 @@
-// frontend/src/app/dashboard/procurement/rfos/[id]/page.js - MOBILE OPTIMIZED
+// frontend/src/app/dashboard/procurement/rfq/[id]/page.js - MOBILE OPTIMIZED
 "use client";
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
@@ -15,12 +15,12 @@ import VendorEvaluationModal from '@/components/VendorEvaluationModal';
 
 const API_BASE_URL = `${process.env.NEXT_PUBLIC_API_URL}/api`;
 
-const RFODetailPage = () => {
+const RFQDetailPage = () => {
     const params = useParams();
     const router = useRouter();
-    const rfoId = params.id;
+    const rfqId = params.id;
   
-    const [rfo, setRfo] = useState(null);
+    const [rfq, setRfq] = useState(null);
     const [submissions, setSubmissions] = useState([]);
     const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState('overview');
@@ -30,20 +30,24 @@ const RFODetailPage = () => {
       submission: null
     });
 
-    // Fetch RFO details and submissions
-  const fetchData = async () => {
-    try {
-      const token = localStorage.getItem('authToken');
+    // Fetch RFQ details and submissions
+    const fetchData = async () => {
+      // 1. ADD THIS GUARD: Stop if rfqId is missing or literally the string "undefined"
+      if (!rfqId || rfqId === 'undefined') return;
+    
+      try {
+        const token = localStorage.getItem('authToken');
+        setLoading(true); // Ensure loading is true when starting
       
-      // Fetch RFO details
-      const rfoResponse = await axios.get(`${API_BASE_URL}/rfqs/${rfoId}`, {
+      // Fetch RFQ details
+      const rfqResponse = await axios.get(`${API_BASE_URL}/rfqs/${rfqId}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      setRfo(rfoResponse.data);
+      setRfq(rfqResponse.data);
 
-      // Fetch submissions for this RFO
+      // Fetch submissions for this RFQ
       const submissionsResponse = await axios.get(
-        `${API_BASE_URL}/submissions?rfqId=${rfoId}`,
+        `${API_BASE_URL}/submissions?rfqId=${rfqId}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       setSubmissions(submissionsResponse.data);
@@ -55,11 +59,11 @@ const RFODetailPage = () => {
     }
   };
 
-  useEffect(() => {
-    if (rfoId) {
+  useEffect(() => {    
+    if (rfqId && rfqId !== 'undefined') {
       fetchData();
     }
-  }, [rfoId]);
+  }, [rfqId]);
  
 
   // Status configuration  
@@ -110,13 +114,13 @@ const getStatusConfig = (status) => {
     });
   };
 
-  const updateRFOStatus = async (newStatus) => {
+  const updateRFQStatus = async (newStatus) => {
     try {
       const token = localStorage.getItem('authToken');
       const user = JSON.parse(localStorage.getItem('user'));
       
-      console.log('🔄 Update RFO Status:', {
-        rfoId,
+      console.log('🔄 Update RFQ Status:', {
+        rfqId,
         newStatus, 
         tokenExists: !!token,
         user: user?.email
@@ -140,7 +144,7 @@ const getStatusConfig = (status) => {
       const backendStatus = statusMap[newStatus] || newStatus;
   
       const response = await axios.put(
-        `${API_BASE_URL}/rfqs/${rfoId}`,
+        `${API_BASE_URL}/rfqs/${rfqId}`,
         { 
           status: backendStatus
         },
@@ -154,7 +158,7 @@ const getStatusConfig = (status) => {
   
       console.log('✅ Status update successful:', response.data);
       fetchData();
-      alert(`RFO status updated to ${newStatus}`);
+      alert(`RFQ status updated to ${newStatus}`);
       
     } catch (error) {
       console.error('❌ Failed to update status:', error);
@@ -182,8 +186,8 @@ const getStatusConfig = (status) => {
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
-      // Update RFO status to AWARDED
-      await updateRFOStatus('AWARDED');
+      // Update RFQ status to AWARDED
+      await updateRFQStatus('AWARDED');
       
       alert('Contract awarded successfully!');
     } catch (error) {
@@ -220,7 +224,8 @@ const getStatusConfig = (status) => {
               { id: 'overview', label: 'Overview', icon: FileText },
               { id: 'submissions', label: `Submissions (${submissions.length})`, icon: Users },
               { id: 'evaluation', label: 'Evaluation', icon: BarChart3 },
-              { id: 'documents', label: 'Documents', icon: Download }
+              { id: 'documents', label: 'Documents', icon: Download },
+              { id: 'comparison', label: 'Comparison', icon: BarChart3 }
             ].map((tab) => {
               const IconComponent = tab.icon;
               return (
@@ -257,18 +262,18 @@ const getStatusConfig = (status) => {
     );
   }
 
-  if (!rfo) {
+  if (!rfq) {
     return (
       <ResponsiveLayout>
         <div className="max-w-7xl mx-auto w-full">
           <div className="text-center py-12">
-            <h2 className="text-2xl font-bold text-gray-800 mb-2">RFO Not Found</h2>
-            <p className="text-gray-600 mb-4">The requested RFO could not be found.</p>
+            <h2 className="text-2xl font-bold text-gray-800 mb-2">RFQ Not Found</h2>
+            <p className="text-gray-600 mb-4">The requested RFQ could not be found.</p>
             <Link 
-              href="/dashboard/procurement/rfos"
+              href="/dashboard/procurement/rfq"
               className="text-blue-600 hover:text-blue-800"
             >
-              Back to RFOs
+              Back to RFQs
             </Link>
           </div>
         </div>
@@ -276,7 +281,7 @@ const getStatusConfig = (status) => {
     );
   }
 
-  const statusConfig = getStatusConfig(rfo.status);
+  const statusConfig = getStatusConfig(rfq.status);
 
   return (
     <ResponsiveLayout>
@@ -284,41 +289,41 @@ const getStatusConfig = (status) => {
         {/* Header */}
         <div className="mb-6">
           <Link 
-            href="/dashboard/procurement/rfos"
+            href="/dashboard/procurement/rfq"
             className="flex items-center text-gray-600 hover:text-gray-900 mb-4"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
-            <span className="hidden sm:inline">Back to RFOs</span>
+            <span className="hidden sm:inline">Back to RFQs</span>
           </Link>
           
           <div className="flex flex-col lg:flex-row lg:justify-between lg:items-start gap-4">
             <div className="flex-1">
               <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-4 mb-2">
-                <h1 className="text-xl sm:text-2xl font-bold text-gray-800 truncate">{rfo.title}</h1>
+                <h1 className="text-xl sm:text-2xl font-bold text-gray-800 truncate">{rfq.title}</h1>
                 <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${statusConfig.color} mt-2 sm:mt-0`}>
                   <statusConfig.icon className="w-4 h-4 mr-1" />
                   {statusConfig.label}
                 </span>
               </div>
               <p className="text-gray-600 text-sm sm:text-base">
-                RFO Number: {rfo.rfqNumber} • Project: {rfo.projectName}
+                RFQ Number: {rfq.rfqNumber} • Project: {rfq.projectName}
               </p>
             </div>
-            
+                        
             <div className="flex flex-wrap gap-2">
-              {rfo.status === 'DRAFT' && (
+              {rfq.status === 'DRAFT' && (
                 <button 
-                  onClick={() => updateRFOStatus('PUBLISHED')}
+                  onClick={() => updateRFQStatus('PUBLISHED')}
                   className="flex items-center px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm"
                 >
                   <Send className="w-4 h-4 mr-2" />
-                  <span className="hidden sm:inline">Publish RFO</span>
+                  <span className="hidden sm:inline">Publish RFQ</span>
                   <span className="sm:hidden">Publish</span>
                 </button>
               )}
-              {rfo.status === 'ISSUED' && (
+              {rfq.status === 'ISSUED' && (
                 <button 
-                  onClick={() => updateRFOStatus('UNDER_EVALUATION')}
+                  onClick={() => updateRFQStatus('UNDER_EVALUATION')}
                   className="flex items-center px-3 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 text-sm"
                 >
                   <BarChart3 className="w-4 h-4 mr-2" />
@@ -326,8 +331,27 @@ const getStatusConfig = (status) => {
                   <span className="sm:hidden">Evaluate</span>
                 </button>
               )}
+               {/* Add these comparison buttons when RFQ status is appropriate */}
+  {rfq.status === 'OPEN' && (
+    <>
+      <Link 
+        href={`/dashboard/procurement/rfq/${rfqId}/technical`}
+        className="flex items-center px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+      >
+        <BarChart3 className="w-4 h-4 mr-2" />
+        Technical Comparison
+      </Link>
+      <Link 
+        href={`/dashboard/procurement/rfq/${rfqId}/financial`}
+        className="flex items-center px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+      >
+        <BarChart3 className="w-4 h-4 mr-2" />
+        Financial Comparison
+      </Link>
+    </>
+  )}
               <Link
-                href={`/dashboard/procurement/rfos/${rfoId}/edit`}
+                href={`/dashboard/procurement/rfq/${rfqId}/edit`}
                 className="flex items-center px-3 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 text-sm"
               >
                 <Edit className="w-4 h-4 mr-2" />
@@ -354,7 +378,7 @@ const getStatusConfig = (status) => {
               <div>
                 <p className="text-xs sm:text-sm text-gray-500">Budget</p>
                 <p className="text-lg sm:text-2xl font-bold text-green-600">
-                  {rfo.estimatedUnitPrice ? `$${rfo.estimatedUnitPrice.toLocaleString()}` : 'N/A'}
+                  {rfq.estimatedUnitPrice ? `$${rfq.estimatedUnitPrice.toLocaleString()}` : 'N/A'}
                 </p>
               </div>
               <DollarSign className="w-5 h-5 sm:w-6 sm:h-6 text-green-500" />
@@ -366,7 +390,7 @@ const getStatusConfig = (status) => {
               <div>
                 <p className="text-xs sm:text-sm text-gray-500">Due Date</p>
                 <p className="text-sm sm:text-lg font-bold text-orange-600">
-                  {rfo.dueDate ? new Date(rfo.dueDate).toLocaleDateString() : 'N/A'}
+                  {rfq.dueDate ? new Date(rfq.dueDate).toLocaleDateString() : 'N/A'}
                 </p>
               </div>
               <Calendar className="w-5 h-5 sm:w-6 sm:h-6 text-orange-500" />
@@ -377,12 +401,13 @@ const getStatusConfig = (status) => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs sm:text-sm text-gray-500">CSI Code</p>
-                <p className="text-sm sm:text-lg font-bold text-purple-600">{rfo.csiCode || 'N/A'}</p>
+                <p className="text-sm sm:text-lg font-bold text-purple-600">{rfq.csiCode || 'N/A'}</p>
               </div>
               <Package className="w-5 h-5 sm:w-6 sm:h-6 text-purple-500" />
             </div>
-          </div>
+          </div>         
         </div>
+
 
         <MobileTabNavigation />
 
@@ -416,33 +441,33 @@ const getStatusConfig = (status) => {
           </div>
 
           <div className="p-6">
-            {activeTab === 'overview' && <OverviewTab rfo={rfo} />}
+            {activeTab === 'overview' && <OverviewTab rfq={rfq} />}
             {activeTab === 'submissions' && (
               <SubmissionsTab 
                 submissions={submissions}
                 onEvaluate={openEvaluationModal}
                 onAwardContract={awardContract}
-                rfoStatus={rfo.status}
+                rfqStatus={rfq.status}
               />
             )}
-            {activeTab === 'evaluation' && <EvaluationTab rfo={rfo} submissions={submissions} />}
-            {activeTab === 'documents' && <DocumentsTab rfo={rfo} />}
+            {activeTab === 'evaluation' && <EvaluationTab rfq={rfq} submissions={submissions} />}
+            {activeTab === 'documents' && <DocumentsTab rfq={rfq} />}
           </div>
         </div>
 
         {/* Mobile Content */}
         <div className="lg:hidden">
-          {activeTab === 'overview' && <OverviewTab rfo={rfo} />}
+          {activeTab === 'overview' && <OverviewTab rfq={rfq} />}
           {activeTab === 'submissions' && (
             <SubmissionsTab 
               submissions={submissions}
               onEvaluate={openEvaluationModal}
               onAwardContract={awardContract}
-              rfoStatus={rfo.status}
+              rfqStatus={rfq.status}
             />
           )}
-          {activeTab === 'evaluation' && <EvaluationTab rfo={rfo} submissions={submissions} />}
-          {activeTab === 'documents' && <DocumentsTab rfo={rfo} />}
+          {activeTab === 'evaluation' && <EvaluationTab rfq={rfq} submissions={submissions} />}
+          {activeTab === 'documents' && <DocumentsTab rfq={rfq} />}
         </div>
 
         {/* Evaluation Modal */}
@@ -459,16 +484,16 @@ const getStatusConfig = (status) => {
 
 
 // Overview Tab Component
-const OverviewTab = ({ rfo }) => (
+const OverviewTab = ({ rfq }) => (
   <div className="space-y-6">
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
       <div>
         <h3 className="text-lg font-semibold mb-4">Basic Information</h3>
         <div className="space-y-3">
-          <DetailItem label="RFO Number" value={rfo.rfqNumber} />
-          <DetailItem label="Project" value={rfo.projectName} />
-          <DetailItem label="CSI Code" value={rfo.csiCode} />
-          <DetailItem label="Currency" value={rfo.currency} />
+          <DetailItem label="RFQ Number" value={rfq.rfqNumber} />
+          <DetailItem label="Project" value={rfq.projectName} />
+          <DetailItem label="CSI Code" value={rfq.csiCode} />
+          <DetailItem label="Currency" value={rfq.currency} />          
         </div>
       </div>
       
@@ -477,17 +502,17 @@ const OverviewTab = ({ rfo }) => (
         <div className="space-y-3">
           <DetailItem 
             label="Required Date" 
-            value={rfo.requiredDate ? new Date(rfo.requiredDate).toLocaleDateString() : 'N/A'} 
+            value={rfq.requiredDate ? new Date(rfq.requiredDate).toLocaleDateString() : 'N/A'} 
             icon={Calendar}
           />
           <DetailItem 
             label="Target Submission" 
-            value={rfo.targetSubmissionDate ? new Date(rfo.targetSubmissionDate).toLocaleDateString() : 'N/A'} 
+            value={rfq.targetSubmissionDate ? new Date(rfq.targetSubmissionDate).toLocaleDateString() : 'N/A'} 
             icon={Calendar}
           />
           <DetailItem 
             label="Due Date" 
-            value={rfo.dueDate ? new Date(rfo.dueDate).toLocaleDateString() : 'N/A'} 
+            value={rfq.dueDate ? new Date(rfq.dueDate).toLocaleDateString() : 'N/A'} 
             icon={Calendar}
           />
         </div>
@@ -500,21 +525,21 @@ const OverviewTab = ({ rfo }) => (
         <div>
           <h4 className="font-medium text-gray-700 mb-2">Description</h4>
           <p className="text-gray-600 bg-gray-50 p-4 rounded-lg">
-            {rfo.description || 'No description provided.'}
+            {rfq.description || 'No description provided.'}
           </p>
         </div>
         
         <div>
           <h4 className="font-medium text-gray-700 mb-2">Package Scope</h4>
           <p className="text-gray-600 bg-gray-50 p-4 rounded-lg">
-            {rfo.packageScope || 'No scope details provided.'}
+            {rfq.packageScope || 'No scope details provided.'}
           </p>
         </div>
         
         <div>
           <h4 className="font-medium text-gray-700 mb-2">Item Description</h4>
           <p className="text-gray-600 bg-gray-50 p-4 rounded-lg">
-            {rfo.itemDesc || 'No item description provided.'}
+            {rfq.itemDesc || 'No item description provided.'}
           </p>
         </div>
       </div>
@@ -525,7 +550,7 @@ const OverviewTab = ({ rfo }) => (
       <div className="bg-blue-50 p-4 rounded-lg">
         <div className="flex justify-between items-center">
           <span className="text-lg font-bold text-blue-800">
-            Estimated Budget: {rfo.estimatedUnitPrice ? `$${rfo.estimatedUnitPrice.toLocaleString()}` : 'Not specified'}
+            Estimated Budget: {rfq.estimatedUnitPrice ? `$${rfq.estimatedUnitPrice.toLocaleString()}` : 'Not specified'}
           </span>
           <DollarSign className="text-blue-600 w-8 h-8" />
         </div>
@@ -535,7 +560,7 @@ const OverviewTab = ({ rfo }) => (
 );
 
 // Enhanced Submissions Tab with Real Data
-const SubmissionsTab = ({ submissions, onEvaluate, onAwardContract, rfoStatus }) => {
+const SubmissionsTab = ({ submissions, onEvaluate, onAwardContract, rfqStatus }) => {
     const getStatusColor = (status) => {
       const colors = {
         SUBMITTED: 'bg-blue-100 text-blue-800',
@@ -555,7 +580,7 @@ const SubmissionsTab = ({ submissions, onEvaluate, onAwardContract, rfoStatus })
       <div>
         <div className="flex justify-between items-center mb-6">
           <h3 className="text-lg font-semibold">Vendor Submissions ({submissions.length})</h3>
-          {rfoStatus === 'AWARDED' && (
+          {rfqStatus === 'AWARDED' && (
             <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm font-medium">
               Contract Awarded
             </span>
@@ -566,7 +591,7 @@ const SubmissionsTab = ({ submissions, onEvaluate, onAwardContract, rfoStatus })
           <div className="text-center py-8 text-gray-500">
             <Users className="w-12 h-12 text-gray-300 mx-auto mb-2" />
             <p>No vendor submissions yet.</p>
-            <p className="text-sm">Vendors can submit proposals once the RFO is published.</p>
+            <p className="text-sm">Vendors can submit proposals once the RFQ is published.</p>
           </div>
         ) : (
           <div className="space-y-4">
@@ -659,13 +684,13 @@ const SubmissionsTab = ({ submissions, onEvaluate, onAwardContract, rfoStatus })
   
 
 // Evaluation Tab Component
-const EvaluationTab = ({ rfo }) => (
+const EvaluationTab = ({ rfq }) => (
   <div>
     <h3 className="text-lg font-semibold mb-4">Evaluation Criteria & Scoring</h3>
     <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
       <div className="flex items-center">
         <BarChart3 className="w-5 h-5 text-yellow-600 mr-2" />
-        <p className="text-yellow-800">Evaluation in progress. {rfo.submissions?.length || 0} submissions to review.</p>
+        <p className="text-yellow-800">Evaluation in progress. {rfq.submissions?.length || 0} submissions to review.</p>
       </div>
     </div>
 
@@ -695,7 +720,7 @@ const EvaluationTab = ({ rfo }) => (
 );
 
 // Documents Tab Component
-const DocumentsTab = ({ rfo }) => (
+const DocumentsTab = ({ rfq }) => (
   <div>
     <h3 className="text-lg font-semibold mb-4">Related Documents</h3>
     <div className="space-y-3">
@@ -703,7 +728,7 @@ const DocumentsTab = ({ rfo }) => (
         <div className="flex items-center">
           <FileText className="w-5 h-5 text-blue-500 mr-3" />
           <div>
-            <p className="font-medium">RFO Specification Document</p>
+            <p className="font-medium">RFQ Specification Document</p>
             <p className="text-sm text-gray-500">PDF • 2.3 MB</p>
           </div>
         </div>
@@ -739,4 +764,4 @@ const DetailItem = ({ label, value, icon: Icon }) => (
   </div>
 );
 
-export default RFODetailPage;
+export default RFQDetailPage;

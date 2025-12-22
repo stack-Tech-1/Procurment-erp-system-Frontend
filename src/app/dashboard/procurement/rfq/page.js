@@ -1,4 +1,4 @@
-// frontend/src/app/dashboard/procurement/rfos/page.js - MOBILE OPTIMIZED
+// frontend/src/app/dashboard/procurement/RFQs/page.js - MOBILE OPTIMIZED
 "use client";
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
@@ -13,7 +13,7 @@ import Link from 'next/link';
 
 const API_BASE_URL = `${process.env.NEXT_PUBLIC_API_URL}/api/rfqs`;
 
-// RFO Status Options
+// RFQ Status Options
 const STATUS_OPTIONS = {
   DRAFT: { label: 'Draft', color: 'bg-gray-100 text-gray-800', icon: Clock },
   PUBLISHED: { label: 'Published', color: 'bg-blue-100 text-blue-800', icon: Send },
@@ -23,8 +23,8 @@ const STATUS_OPTIONS = {
   CANCELLED: { label: 'Cancelled', color: 'bg-red-100 text-red-800', icon: XCircle }
 };
 
-const RFOPage = () => {
-  const [rfos, setRfos] = useState([]);
+const RFQPage = () => {
+  const [RFQs, setRfqs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [pagination, setPagination] = useState({ page: 1, pageSize: 10, total: 0 });
   const [filters, setFilters] = useState({ 
@@ -50,7 +50,7 @@ const RFOPage = () => {
       });
 
       console.log('RFQs data:', response.data);
-      setRfos(response.data);
+      setRfqs(response.data);
       setPagination(prev => ({ ...prev, total: response.data.length }));
 
     } catch (error) {
@@ -65,7 +65,7 @@ const RFOPage = () => {
   }, [fetchRFQs]);
 
   // Filter and sort RFQs
-  const filteredRFQs = rfos.filter(rfq => {
+  const filteredRFQs = RFQs.filter(rfq => {
     const matchesSearch = !filters.search || 
       rfq.title?.toLowerCase().includes(filters.search.toLowerCase()) ||
       rfq.rfqNumber?.toLowerCase().includes(filters.search.toLowerCase()) ||
@@ -125,12 +125,12 @@ const RFOPage = () => {
 
   // Calculate statistics
   const stats = {
-    total: rfos.length,
-    draft: rfos.filter(r => r.status === 'DRAFT').length,
-    published: rfos.filter(r => r.status === 'PUBLISHED').length,
-    underEvaluation: rfos.filter(r => r.status === 'UNDER_EVALUATION').length,
-    awarded: rfos.filter(r => r.status === 'AWARDED').length,
-    closed: rfos.filter(r => r.status === 'CLOSED').length,
+    total: RFQs.length,
+    draft: RFQs.filter(r => r.status === 'DRAFT').length,
+    published: RFQs.filter(r => r.status === 'PUBLISHED').length,
+    underEvaluation: RFQs.filter(r => r.status === 'UNDER_EVALUATION').length,
+    awarded: RFQs.filter(r => r.status === 'AWARDED').length,
+    closed: RFQs.filter(r => r.status === 'CLOSED').length,
   };
 
   // Mobile Filter Panel Component
@@ -154,7 +154,7 @@ const RFOPage = () => {
             {/* Search */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Search RFOs
+                Search RFQs
               </label>
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
@@ -162,7 +162,7 @@ const RFOPage = () => {
                   type="text"
                   value={filters.search}
                   onChange={(e) => handleFilterChange('search', e.target.value)}
-                  placeholder="Search RFOs..."
+                  placeholder="Search RFQs..."
                   className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 />
               </div>
@@ -200,8 +200,8 @@ const RFOPage = () => {
     );
   };
 
-  // RFO Card Component for Mobile
-  const RFOCard = ({ rfq }) => (
+  // RFQ Card Component for Mobile
+  const RFQCard = ({ rfq }) => (
     <div className="bg-white rounded-lg border border-gray-200 p-4 shadow-sm hover:shadow-md transition-shadow">
       <div className="flex justify-between items-start mb-3">
         <div>
@@ -236,7 +236,7 @@ const RFOPage = () => {
         </div>
         <div className="flex space-x-2">
           <Link
-            href={`/dashboard/procurement/rfos/${rfq.id}`}
+            href={`/dashboard/procurement/rfq/${rfq.id}`}
             className="p-1 text-blue-600 hover:text-blue-800"
             title="View Details"
           >
@@ -244,7 +244,7 @@ const RFOPage = () => {
           </Link>
           <button
             className="p-1 text-gray-600 hover:text-gray-800"
-            title="Edit RFO"
+            title="Edit RFQ"
           >
             <Edit className="w-4 h-4" />
           </button>
@@ -267,10 +267,10 @@ const RFOPage = () => {
           <div>
             <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 flex items-center">
               <FileText className="w-6 h-6 sm:w-7 sm:h-7 mr-2 sm:mr-3 text-blue-600" />
-              Request for Offers (RFOs)
+              Request for Quote (RFQs)
             </h1>
             <p className="text-gray-600 mt-2 text-sm sm:text-base">
-              Manage and track your procurement requests
+              Manage and track your procurement Quotes
             </p>
           </div>
           
@@ -284,23 +284,15 @@ const RFOPage = () => {
               <Filter className="w-4 h-4" />
             </button>
 
-            {/* Refresh Button */}
-            <button
-              onClick={fetchRFQs}
-              disabled={loading}
-              className="flex items-center px-3 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 text-sm"
-            >
-              <RefreshCw className={`w-4 h-4 mr-1 ${loading ? 'animate-spin' : ''}`} />
-              <span className="hidden sm:inline">Refresh</span>
-            </button>
+           
 
-            {/* New RFO Button */}
+            {/* New RFQ Button */}
             <Link 
-              href="/dashboard/procurement/rfos/create"
+              href="/dashboard/procurement/rfq/create"
               className="flex items-center px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm"
             >
               <Plus className="w-4 h-4 mr-1" />
-              <span className="hidden sm:inline">New RFO</span>
+              <span className="hidden sm:inline">New RFQ</span>
               <span className="sm:hidden">New</span>
             </Link>
           </div>
@@ -376,7 +368,7 @@ const RFOPage = () => {
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
               <input
                 type="text"
-                placeholder="Search by RFO Number, Title, or Project..."
+                placeholder="Search by RFQ Number, Title, or Project..."
                 className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 value={filters.search}
                 onChange={(e) => handleFilterChange('search', e.target.value)}
@@ -408,12 +400,12 @@ const RFOPage = () => {
           </button>
         </div>
 
-        {/* RFO List - Mobile Cards / Desktop Table */}
+        {/* RFQ List - Mobile Cards / Desktop Table */}
         <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
           {loading ? (
             <div className="p-8 text-center">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-              <p className="text-gray-500">Loading RFOs...</p>
+              <p className="text-gray-500">Loading RFQs...</p>
             </div>
           ) : (
             <>
@@ -422,17 +414,17 @@ const RFOPage = () => {
                 {filteredRFQs.length === 0 ? (
                   <div className="text-center py-8 text-gray-500">
                     <FileText className="w-12 h-12 text-gray-300 mx-auto mb-2" />
-                    <p>No RFOs found matching your criteria.</p>
+                    <p>No RFQs found matching your criteria.</p>
                     <Link 
-                      href="/dashboard/procurement/rfos/create"
+                      href="/dashboard/procurement/rfq/create"
                       className="text-blue-600 hover:text-blue-800 font-medium text-sm"
                     >
-                      Create your first RFO
+                      Create your first RFQ
                     </Link>
                   </div>
                 ) : (
                   filteredRFQs.map((rfq) => (
-                    <RFOCard key={rfq.id} rfq={rfq} />
+                    <RFQCard key={rfq.id} rfq={rfq} />
                   ))
                 )}
               </div>
@@ -442,7 +434,7 @@ const RFOPage = () => {
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gray-50">
                     <tr>
-                      {['RFO Number', 'Title', 'Project', 'Status', 'Due Date', 'Budget', 'Submissions', 'Actions'].map((header, index) => {
+                      {['RFQ Number', 'Title', 'Project', 'Status', 'Due Date', 'Budget', 'Submissions', 'Actions'].map((header, index) => {
                         const field = ['rfqNumber', 'title', 'projectName', 'status', 'dueDate', 'estimatedUnitPrice', 'submissions', 'actions'][index];
                         return (
                           <th
@@ -465,12 +457,12 @@ const RFOPage = () => {
                       <tr>
                         <td colSpan="8" className="px-6 py-8 text-center text-gray-500">
                           <FileText className="w-12 h-12 text-gray-300 mx-auto mb-2" />
-                          <p>No RFOs found matching your criteria.</p>
+                          <p>No RFQs found matching your criteria.</p>
                           <Link 
-                            href="/dashboard/procurement/rfos/create"
+                            href="/dashboard/procurement/rfq/create"
                             className="text-blue-600 hover:text-blue-800 font-medium"
                           >
-                            Create your first RFO
+                            Create your first RFQ
                           </Link>
                         </td>
                       </tr>
@@ -512,7 +504,7 @@ const RFOPage = () => {
                           <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                             <div className="flex space-x-2">
                               <Link
-                                href={`/dashboard/procurement/rfos/${rfq.id}`}
+                                href={`/dashboard/procurement/rfq/${rfq.id}`}
                                 className="text-blue-600 hover:text-blue-900 p-1 rounded hover:bg-blue-50"
                                 title="View Details"
                               >
@@ -520,13 +512,13 @@ const RFOPage = () => {
                               </Link>
                               <button
                                 className="text-gray-600 hover:text-gray-900 p-1 rounded hover:bg-gray-50"
-                                title="Edit RFO"
+                                title="Edit RFQ"
                               >
                                 <Edit className="w-4 h-4" />
                               </button>
                               <button
                                 className="text-red-600 hover:text-red-900 p-1 rounded hover:bg-red-50"
-                                title="Delete RFO"
+                                title="Delete RFQ"
                               >
                                 <Trash2 className="w-4 h-4" />
                               </button>
@@ -546,7 +538,7 @@ const RFOPage = () => {
         {filteredRFQs.length > 0 && (
           <div className="flex justify-between items-center mt-6">
             <p className="text-sm text-gray-600">
-              Showing {filteredRFQs.length} of {rfos.length} RFOs
+              Showing {filteredRFQs.length} of {RFQs.length} RFQs
             </p>
             <div className="flex space-x-2">
               <button 
@@ -572,4 +564,4 @@ const RFOPage = () => {
   );
 };
 
-export default RFOPage;
+export default RFQPage;
