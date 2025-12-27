@@ -2,31 +2,17 @@
 "use client";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useTranslation } from "@/lib/i18n";
+import { useTranslation } from 'react-i18next';
 
 export default function AuthLayoutV2({ children, background = null, showGlobalHeader = true }) {
   const router = useRouter();
-  const [currentLang, setCurrentLang] = useState("en");
-  const { t } = useTranslation(currentLang);
+  const { t, i18n } = useTranslation();
+  const currentLang = i18n.language;
 
-  useEffect(() => {
-    const savedLang = localStorage.getItem("preferred-language") || "en";
-    setCurrentLang(savedLang);
-    if (typeof document !== "undefined") {
-      document.documentElement.dir = savedLang === "ar" ? "rtl" : "ltr";
-      document.documentElement.lang = savedLang;
-    }
-  }, []);
-
+  
   const changeLanguage = (lng) => {
-    setCurrentLang(lng);
-    localStorage.setItem("preferred-language", lng);
-    if (typeof document !== "undefined") {
-      document.documentElement.dir = lng === "ar" ? "rtl" : "ltr";
-      document.documentElement.lang = lng;
-    }
-    // reload to apply translations (keeps behaviour similar to original)
-    window.location.reload();
+    i18n.changeLanguage(lng); // Let i18n handle everything
+    localStorage.setItem('preferred-language', lng); // Optional: keep your preference
   };
 
   return (
@@ -42,7 +28,7 @@ export default function AuthLayoutV2({ children, background = null, showGlobalHe
                 </div>
                 <div>
                   <h1 className="text-lg font-bold text-white">KUN Real Estate</h1>
-                  <p className="text-white/70 text-xs">Procurement System</p>
+                  <p className="text-white/70 text-xs">{t('procurementSystem')}</p>
                 </div>
               </div>
 
@@ -53,7 +39,7 @@ export default function AuthLayoutV2({ children, background = null, showGlobalHe
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" />
                     </svg>
-                    <span className="text-sm hidden sm:inline">{t("language")}</span>
+                    <span className="text-sm hidden sm:inline">{t('language')}</span>
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                     </svg>
