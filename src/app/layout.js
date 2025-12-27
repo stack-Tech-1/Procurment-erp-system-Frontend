@@ -2,6 +2,7 @@
 import { Geist, Geist_Mono } from "next/font/google";
 import { Toaster } from "react-hot-toast";
 import "./globals.css";
+import I18nProvider from "@/components/I18nProvider"; // Add this import
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -31,8 +32,11 @@ export default function RootLayout({ children }) {
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        {children}
-        <Toaster position="top-right" reverseOrder={false} />
+        {/* Wrap children with I18nProvider */}
+        <I18nProvider>
+          {children}
+          <Toaster position="top-right" reverseOrder={false} />
+        </I18nProvider>
       </body>
     </html>
   );
