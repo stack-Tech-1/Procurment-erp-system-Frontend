@@ -27,48 +27,61 @@ export default function LoginPage() {
   useEffect(() => {
     setMounted(true);
   
-    // Add callbacks to window
-    window.onCaptchaSuccess = (token) => {
-      console.log("✅ CAPTCHA verified, token:", token);
-      setCaptchaToken(token);
-    };
-  
-    window.onCaptchaExpired = () => {
-      console.log("⚠️ CAPTCHA expired");
-      setCaptchaToken(null);
-    };
-  
-    window.onCaptchaError = () => {
-      console.log("❌ CAPTCHA error");
-      setCaptchaToken(null);
-    };
-  
     const siteKey = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY;
-  
     if (!siteKey) {
       console.error("❌ Missing reCAPTCHA site key");
       return;
     }
   
-    // 🔐 GLOBAL GUARD (IMPORTANT)
+    // Load reCAPTCHA script
     if (!window.__recaptchaScriptLoaded) {
-      loadRecaptcha(siteKey).then((ok) => {
+      loadRecaptcha(siteKey).then((loaded) => {
         window.__recaptchaScriptLoaded = true;
-        setCaptchaLoaded(Boolean(ok));
-        console.log("reCAPTCHA loaded (login):", ok);
+  
+        if (loaded) {
+          // Render the v2 widget
+          const widgetId = window.grecaptcha.render("recaptcha-container", {
+            sitekey: siteKey,
+            theme: "dark",
+            callback: (token) => {
+              console.log("✅ CAPTCHA verified, token:", token);
+              setCaptchaToken(token);
+            },
+            "expired-callback": () => {
+              console.log("⚠️ CAPTCHA expired");
+              setCaptchaToken(null);
+            },
+            "error-callback": () => {
+              console.log("❌ CAPTCHA error");
+              setCaptchaToken(null);
+            },
+          });
+  
+          setCaptchaLoaded(true);
+        } else {
+          console.error("❌ Failed to load reCAPTCHA");
+          setCaptchaLoaded(false);
+        }
       });
     } else {
-      setCaptchaLoaded(true);
-      console.log("reCAPTCHA already loaded (login)");
+      // Already loaded, render again if needed
+      if (window.grecaptcha && !captchaLoaded) {
+        window.grecaptcha.render("recaptcha-container", {
+          sitekey: siteKey,
+          theme: "dark",
+          callback: (token) => setCaptchaToken(token),
+        });
+        setCaptchaLoaded(true);
+      }
     }
   
-    // Cleanup
     return () => {
       delete window.onCaptchaSuccess;
       delete window.onCaptchaExpired;
       delete window.onCaptchaError;
     };
   }, []);
+  
   
 
   // In both login and signup pages, update the executeCaptcha function:
@@ -270,20 +283,10 @@ const handleSubmit = async (e) => {
               <div className="text-white text-sm font-semibold mb-2">{t('securityVerification')}</div>
               <div className="text-xs text-white/50 mb-3">{t('securityDescription')}</div>
               
-              {!captchaLoaded ? (
-                <div className="text-center text-white/70 text-sm py-2">{t('loading')}</div>
-              ) : (
-                <div className="flex justify-center">
-                  <div 
-                    className="g-recaptcha" 
-                    data-sitekey={process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY}
-                    data-theme="dark"
-                    data-callback="onCaptchaSuccess"
-                    data-expired-callback="onCaptchaExpired"
-                    data-error-callback="onCaptchaError"
-                  ></div>
-                </div>
-              )}
+              <div className="flex justify-center" id="recaptcha-container">
+  {!captchaLoaded && <div className="text-center text-white/70 text-sm py-2">{t('loading')}</div>}
+</div>
+
             </div>
 
             <button type="submit" disabled={loading} className="w-full bg-gradient-to-r from-yellow-500 to-yellow-600 text-gray-900 py-4 rounded-2xl hover:from-yellow-400 hover:to-yellow-500 transition-all duration-500 font-bold text-lg shadow-2xl hover:shadow-yellow-500/25 transform hover:-translate-y-1 disabled:opacity-50 disabled:cursor-not-allowed group relative overflow-hidden">
