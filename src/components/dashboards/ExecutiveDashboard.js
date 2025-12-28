@@ -100,19 +100,19 @@ const ExecutiveDashboard = () => {
       const token = localStorage.getItem('authToken');
       
       const [kpisResponse, forecastResponse, spendAnalysisResponse] = await Promise.all([
-        fetch(`http://localhost:4000/api/analytics/kpis?range=${timeRange}`, {
+        fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/analytics/kpis?range=${timeRange}`, {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'
           }
         }),
-        fetch(`http://localhost:4000/api/analytics/forecast?range=${timeRange}`, {
+        fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/analytics/forecast?range=${timeRange}`, {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'
           }
         }),
-        fetch(`http://localhost:4000/api/analytics/spend-analysis?category=all`, {
+        fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/analytics/spend-analysis?category=all`, {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'
@@ -169,7 +169,7 @@ const fetchDashboardData = async () => {
     console.log('🔄 Fetching executive dashboard data from API...');
     
     // CORRECTED ENDPOINT: /api/dashboard (NOT /api/dashboard/executive)
-    const response = await fetch(`http://localhost:4000/api/dashboard?range=${timeRange}`, {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/dashboard?range=${timeRange}`, {
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json'
