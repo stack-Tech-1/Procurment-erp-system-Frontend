@@ -279,15 +279,11 @@ const handleSubmit = async (e) => {
             </div>
 
             
-            <div className="p-4 bg-white/5 rounded-2xl border border-white/10">
-              <div className="text-white text-sm font-semibold mb-2">{t('securityVerification')}</div>
-              <div className="text-xs text-white/50 mb-3">{t('securityDescription')}</div>
-              
-              <div className="flex justify-center" id="recaptcha-container">
-  {!captchaLoaded && <div className="text-center text-white/70 text-sm py-2">{t('loading')}</div>}
-</div>
+            <div className="flex justify-center">
+          <div id="recaptcha-container"></div>  {/* always empty for reCAPTCHA */}
+          {!captchaLoaded && <div className="text-center text-white/70 text-sm py-2">{t('loading')}</div>}
+        </div>
 
-            </div>
 
             <button type="submit" disabled={loading} className="w-full bg-gradient-to-r from-yellow-500 to-yellow-600 text-gray-900 py-4 rounded-2xl hover:from-yellow-400 hover:to-yellow-500 transition-all duration-500 font-bold text-lg shadow-2xl hover:shadow-yellow-500/25 transform hover:-translate-y-1 disabled:opacity-50 disabled:cursor-not-allowed group relative overflow-hidden">
               <div className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 bg-gradient-to-r from-transparent via-white/40 to-transparent"></div>
