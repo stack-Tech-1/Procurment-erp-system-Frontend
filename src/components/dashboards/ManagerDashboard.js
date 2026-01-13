@@ -10,6 +10,20 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 
+const getAvatarColor = (index) => {
+  const colors = [
+    'bg-blue-500',
+    'bg-green-500', 
+    'bg-purple-500',
+    'bg-pink-500',
+    'bg-orange-500',
+    'bg-teal-500',
+    'bg-red-500',
+    'bg-yellow-500'
+  ];
+  return colors[index % colors.length];
+};
+
 const ManagerDashboard = () => {
   const [dashboardData, setDashboardData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -26,7 +40,7 @@ const ManagerDashboard = () => {
       'PO': 'purchase-orders',
       'Purchase Requests': 'purchase-requests',
       'Invoice': 'invoices'
-    };
+    };   
     
     const route = typeMap[item.type];
     return `/dashboard/procurement/${route}/${item.id}`;
@@ -67,7 +81,7 @@ const ManagerDashboard = () => {
         status: 'Awaiting Approval' 
       },
       { 
-        id: 1, 
+        id: 2, 
         type: 'RFQ', 
         details: 'Project Alpha - HVAC Systems', 
         project: 'Tower B', 
@@ -76,7 +90,7 @@ const ManagerDashboard = () => {
         status: 'Awaiting Approval' 
       },
       { 
-        id: 1, 
+        id: 3, 
         type: 'Purchase Requests', 
         details: 'HVAC System for Tower B', 
         project: 'Tower B Construction', 
@@ -85,7 +99,7 @@ const ManagerDashboard = () => {
         status: 'Awaiting Approval' 
       },
       { 
-        id: 1, 
+        id: 4, 
         type: 'PO', 
         details: 'Office Furniture Procurement', 
         project: 'HQ Office', 
@@ -177,7 +191,7 @@ const ManagerDashboard = () => {
         status: 'IN PROGRESS' 
       },
       { 
-        id: 1, 
+        id: 2, 
         task: 'RFQ Evaluation – Project Alpha HVAC', 
         module: 'RFQ', 
         project: 'Commercial Complex', 
@@ -187,7 +201,7 @@ const ManagerDashboard = () => {
         status: 'NOT STARTED' 
       },
       { 
-        id: 1, 
+        id: 3, 
         task: 'Contract Renewal – Gulf Materials', 
         module: 'Contract', 
         project: 'All Buildings', 
@@ -197,7 +211,7 @@ const ManagerDashboard = () => {
         status: 'IN PROGRESS' 
       },
       { 
-        id: 1, 
+        id: 4, 
         task: 'Budget Review Q1 2024', 
         module: 'Finance', 
         project: 'All Projects', 
@@ -207,7 +221,7 @@ const ManagerDashboard = () => {
         status: 'NOT STARTED' 
       },
       { 
-        id: 1, 
+        id: 5, 
         task: 'Material Submittal Approval - Steel Beams', 
         module: 'Material', 
         project: 'Tower B Construction', 
@@ -217,7 +231,7 @@ const ManagerDashboard = () => {
         status: 'PENDING REVIEW' 
       },
       { 
-        id: 1, 
+        id: 6, 
         task: 'Shop Drawing Review - HVAC Ductwork', 
         module: 'Shop', 
         project: 'Commercial Complex', 
@@ -227,7 +241,7 @@ const ManagerDashboard = () => {
         status: 'IN PROGRESS' 
       },
       { 
-        id: 1, 
+        id: 7, 
         task: 'Site Delivery - Concrete Materials', 
         module: 'Delivery', 
         project: 'Obhur Beach', 
@@ -237,7 +251,7 @@ const ManagerDashboard = () => {
         status: 'DELAYED' 
       },
       { 
-        id: 1, 
+        id: 8, 
         task: 'Contractor Invoice Approval - TechBuild', 
         module: 'Invoice', 
         project: 'Core DQ', 
@@ -268,28 +282,129 @@ const ManagerDashboard = () => {
       if (!token) {
         throw new Error('No authentication token found');
       }
-
-      console.log('🔄 Fetching manager dashboard data from API...');
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/dashboard/manager?range=${timeRange}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
+  
+      console.log('🔄 Fetching dashboard data...');
+  
+      // Create promises with proper error handling for each endpoint
+      const endpoints = [
+        { 
+          url: `${process.env.NEXT_PUBLIC_API_URL}/api/dashboard?range=${timeRange}`, 
+          key: 'dashboard',
+          fallback: null 
+        },
+        { 
+          url: `${process.env.NEXT_PUBLIC_API_URL}/api/vendors/stats`, 
+          key: 'vendors',
+          fallback: {
+            totalSuppliers: 0,
+            qualifiedSuppliers: 0,
+            underEvaluation: 0,
+            rejectedBlacklisted: 0,
+            qualifiedPercentage: 0
+          }
+        },
+        { 
+          url: `${process.env.NEXT_PUBLIC_API_URL}/api/tasks/stats`, 
+          key: 'tasks',
+          fallback: {
+            overview: {
+              totalTasks: 0,
+              completedTasks: 0,
+              overdueTasks: 0,
+              pendingTasks: 0,
+              completionRate: 0,
+              overdueRate: 0,
+              highPriorityTasks: 0,
+              tasksDueThisWeek: 0
+            },
+            recentTasks: [],
+            distributions: { priority: [], status: [] },
+            metrics: { averageCompletionTime: 0, onTimeCompletionRate: 0 }
+          }
+        },
+        { 
+          url: `${process.env.NEXT_PUBLIC_API_URL}/api/approvals/pending`, 
+          key: 'approvals',
+          fallback: [] 
+        },
+        { 
+          url: `${process.env.NEXT_PUBLIC_API_URL}/api/budget/summary`, 
+          key: 'budgetSummary' 
+        },
+        { 
+          url: `${process.env.NEXT_PUBLIC_API_URL}/api/budget/projects`, 
+          key: 'budgetProjects' 
+        },
+        { 
+          url: `${process.env.NEXT_PUBLIC_API_URL}/api/budget/trends`, 
+          key: 'budgetTrends' 
         }
-      });
+      ];
+  
+      const results = {};
       
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+      for (const endpoint of endpoints) {
+        try {
+          const response = await fetch(endpoint.url, {
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+          
+          if (response.ok) {
+            results[endpoint.key] = await response.json();
+          } else {
+            console.warn(`⚠️ ${endpoint.key} endpoint failed: ${response.status}`);
+            results[endpoint.key] = null;
+          }
+        } catch (error) {
+          console.warn(`⚠️ ${endpoint.key} endpoint error:`, error.message);
+          results[endpoint.key] = null;
+        }
       }
-      
-      const result = await response.json();
-      
-      if (result.success) {
-        console.log('✅ Successfully loaded real manager data from API');
-        setDashboardData(result.data);
+  
+      // Check if main dashboard data exists
+      if (!results.dashboard?.success) {
+        throw new Error('Failed to fetch main dashboard data');
+      }
+  
+      // Transform data with fallbacks
+      const transformedData = {
+        ...transformBackendData(results.dashboard.data),
+        supplierMetrics: results.vendors?.data || {
+          totalSuppliers: 0,
+          qualifiedSuppliers: 0,
+          underEvaluation: 0,
+          rejectedBlacklisted: 0,
+          qualifiedPercentage: 0
+        },
+        taskStats: results.tasks?.data || {},
+        rawApprovals: results.approvals?.data || [],
+
+        budgetData: {
+          summary: results.budgetSummary?.data || {
+            totalBudget: 0,
+            totalSpent: 0,
+            budgetUtilization: 0,
+            totalContracts: 0,
+            activeContracts: 0,
+            remainingBudget: 0
+          },
+          projects: results.budgetProjects?.data || [],
+          trends: results.budgetTrends?.data || []
+        }
+      };
+  
+      // Merge with fallback data for any missing fields
+      const fallbackData = generateFallbackData();
+      const combinedData = {
+        ...fallbackData,  // Start with fallback data
+        ...transformedData, // Override with API data
+        // Make sure we preserve the fallback structure for budgetData if API returns null
+        budgetData: transformedData.budgetData.summary ? transformedData.budgetData : fallbackData.budgetData
+        };
+
+        setDashboardData(combinedData); // ✅ FIXED: Use combinedData
         setDataSource('api');
-      } else {
-        throw new Error(result.message || 'Failed to fetch dashboard data');
-      }
+  
     } catch (error) {
       console.log('⚠️ API unavailable, using fallback data:', error.message);
       setError('Database temporarily unavailable. Showing sample data.');
@@ -300,9 +415,112 @@ const ManagerDashboard = () => {
     }
   };
 
-  useEffect(() => {
-    fetchDashboardData();
-  }, [timeRange]);
+
+useEffect(() => {
+  fetchDashboardData();
+}, [timeRange]);
+
+        const transformBackendData = (backendData) => {
+          const { teamOverview, teamPerformance, approvalQueue, deadlineTracking } = backendData;
+
+          // Transform approval queue
+        const transformedApprovalQueue = approvalQueue.map(item => ({
+          id: item.id,
+          type: item.entityType || 'Approval', // Map from backend entityType
+          details: item.entityId || `Approval ${item.id}`,
+          project: '—', // You might need to fetch project from related entity
+          requested: new Date(item.createdAt).toLocaleDateString(),
+          priority: 'MEDIUM', // Determine from workflow or SLA
+          status: 'Awaiting Approval'
+        }));
+        
+        // Transform deadline tracking
+        const transformedDeadlineTracking = deadlineTracking.map(item => ({
+          id: item.id,
+          task: item.title,
+          module: item.taskType || 'General', // Map from backend taskType
+          project: 'All Projects', // You might need to associate with projects
+          assignedTo: item.assignedTo || 'Unassigned',
+          dueIn: item.dueIn || 0,
+          priority: item.priority,
+          status: item.status
+        }));
+        
+        // Calculate vendor metrics from real data
+        const calculateVendorMetrics = async () => {
+          try {
+            const token = localStorage.getItem('authToken');
+            const response = await fetch('${process.env.NEXT_PUBLIC_API_URL}/api/vendors/stats', {
+              headers: {
+                'Authorization': `Bearer ${token}`,
+              }
+            });
+            
+            if (response.ok) {
+              const vendorStats = await response.json();
+              return vendorStats;
+            }
+          } catch (error) {
+            console.error('Error fetching vendor stats:', error);
+          }
+          
+          // Fallback if vendor stats endpoint doesn't exist
+          return {
+            totalSuppliers: 0,
+            qualifiedSuppliers: 0,
+            underEvaluation: 0,
+            rejectedBlacklisted: 0
+          };
+        };
+        
+        // Return transformed data
+        return {
+          summary: {
+            openPRs: teamOverview?.pendingApprovals || 0,
+            pendingApprovals: teamOverview?.pendingApprovals || 0,
+            overdueTasks: teamOverview?.overdueTasks || 0,
+            vendorReviews: teamOverview?.vendorReviews || 0,
+            teamMembers: teamOverview?.teamMembers || 0,
+            activeProjects: 0, // You'll need to add this to backend
+            budgetUtilization: 0 // You'll need to add this to backend
+          },
+          teamPerformance: {
+            teamStats: teamPerformance?.teamStats?.map((member, index) => ({
+              id: member.id || index + 1, // Use index as fallback if no ID
+              name: member.memberName || `Team Member ${index + 1}`,
+              completed: member.completedTasks || 0,
+              overdue: member.overdueTasks || 0,
+              successRate: member.completionRate || 0,
+              avatarColor: getAvatarColor(index) // Helper function for colors
+            })) || [],
+            averageCompletionRate: teamPerformance?.averageCompletionRate || 0,
+            totalOverdueTasks: teamPerformance?.totalOverdueTasks || 0,
+            teamSize: teamPerformance?.teamSize || 0,
+            monthlyTrend: 0 // You'll need to calculate this
+          },
+          approvalQueue: transformedApprovalQueue,
+          deadlineTracking: transformedDeadlineTracking,
+          supplierMetrics: {
+            totalSuppliers: 0,
+            qualifiedSuppliers: 0,
+            underEvaluation: 0,
+            rejectedBlacklisted: 0
+          },
+          chartData: [], // You'll need to add chart data endpoint
+          priorityData: [], // You'll need to add priority data endpoint
+          
+          // These can be fetched separately
+          extendedKPIs: {
+            qualifiedSuppliersPercentage: 0,
+            projectsOver90PercentBudget: 0,
+            totalSubmittals: 0,
+            delayedSubmittals: 0,
+            totalShopDrawings: 0,
+            delayedShopDrawings: 0
+          }
+        };
+      };
+
 
   const handleRetry = () => {
     fetchDashboardData();
@@ -642,14 +860,7 @@ const getActionButton = (item) => {
             <option value="month">This Month</option>
             <option value="quarter">This Quarter</option>
             <option value="year">This Year</option>
-          </select>
-          <button
-            onClick={handleRetry}
-            className="p-2 text-gray-600 hover:text-gray-800 transition-colors"
-            title="Refresh all data"
-          >
-            <RefreshCw size={20} />
-          </button>
+          </select>          
         </div>
       </div>
 
@@ -1209,178 +1420,180 @@ const getActionButton = (item) => {
           </div>
         </div>
       </div>
-      {/* Spend vs Budget Section */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h3 className="text-xl font-semibold text-gray-800">Spend vs Budget</h3>
-            <p className="text-gray-600 text-sm">Project-level budget utilization (Phase 1)</p>
-          </div>
-          <div className="flex items-center gap-2">
-            <button className="px-3 py-1 text-sm border border-gray-300 rounded-lg hover:bg-gray-50">
-              Table
-            </button>
-            <button className="px-3 py-1 text-sm bg-blue-50 text-blue-600 border border-blue-200 rounded-lg">
-              Chart
-            </button>
-            <Download className="text-gray-400 cursor-pointer" size={20} />
-          </div>
-        </div>
 
-        {/* Table View */}
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-gray-200">
-                <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Project</th>
-                <th className="text-right py-3 px-4 text-sm font-medium text-gray-500">Project Budget</th>
-                <th className="text-right py-3 px-4 text-sm font-medium text-gray-500">Total PO Amount</th>
-                <th className="text-right py-3 px-4 text-sm font-medium text-gray-500">Total Paid</th>
-                <th className="text-right py-3 px-4 text-sm font-medium text-gray-500">Budget Usage %</th>
-              </tr>
-            </thead>
-            <tbody>
-              {[
-                {
-                  id: 1,
-                  name: 'Core DQ',
-                  budget: 100000000,
-                  poAmount: 80000000,
-                  totalPaid: 65000000,
-                  budgetUsage: 80
-                },
-                {
-                  id: 2,
-                  name: 'Obhur Beach',
-                  budget: 50000000,
-                  poAmount: 40000000,
-                  totalPaid: 30000000,
-                  budgetUsage: 80
-                },
-                {
-                  id: 3,
-                  name: 'Tower B Construction',
-                  budget: 75000000,
-                  poAmount: 60000000,
-                  totalPaid: 45000000,
-                  budgetUsage: 80
-                },
-                {
-                  id: 4,
-                  name: 'Commercial Complex',
-                  budget: 120000000,
-                  poAmount: 90000000,
-                  totalPaid: 70000000,
-                  budgetUsage: 75
-                },
-                {
-                  id: 5,
-                  name: 'HQ Office Renovation',
-                  budget: 30000000,
-                  poAmount: 25000000,
-                  totalPaid: 20000000,
-                  budgetUsage: 83.3
-                }
-              ].map((project) => (
-                <tr key={project.id} className="border-b border-gray-100 hover:bg-gray-50">
-                  <td className="py-3 px-4">
-                    <div>
-                      <p className="font-medium text-gray-800">{project.name}</p>
-                      <p className="text-xs text-gray-500">Project ID: PRJ-{project.id.toString().padStart(4, '0')}</p>
-                    </div>
-                  </td>
-                  <td className="py-3 px-4 text-right">
-                    <p className="font-medium text-gray-800">
-                      SAR {formatCurrency(project.budget)}
-                    </p>
-                  </td>
-                  <td className="py-3 px-4 text-right">
-                    <p className="font-medium text-gray-800">
-                      SAR {formatCurrency(project.poAmount)}
-                    </p>
-                  </td>
-                  <td className="py-3 px-4 text-right">
-                    <p className="font-medium text-gray-800">
-                      SAR {formatCurrency(project.totalPaid)}
-                    </p>
-                    <p className="text-xs text-gray-500">
-                      {((project.totalPaid / project.poAmount) * 100).toFixed(1)}% of PO
-                    </p>
-                  </td>
-                  <td className="py-3 px-4">
-                    <div className="flex items-center justify-end gap-3">
-                      <div className="w-32 bg-gray-200 rounded-full h-2">
+                {/* Spend vs Budget Section - UPDATED WITH REAL DATA */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h3 className="text-xl font-semibold text-gray-800">Spend vs Budget</h3>
+                <p className="text-gray-600 text-sm">Real-time budget utilization and project spending</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <button className="px-3 py-1 text-sm border border-gray-300 rounded-lg hover:bg-gray-50">
+                  Table
+                </button>
+                <button className="px-3 py-1 text-sm bg-blue-50 text-blue-600 border border-blue-200 rounded-lg">
+                  Chart
+                </button>
+                <Download className="text-gray-400 cursor-pointer" size={20} />
+              </div>
+            </div>
+
+            {/* Summary Stats - REAL DATA */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+              <div className="text-center p-4 border border-gray-200 rounded-lg">
+                <p className="text-sm text-gray-500">Total Budget</p>
+                <p className="text-xl font-bold text-gray-900">
+                  SAR {formatCurrency(dashboardData?.budgetData?.summary?.totalBudget || 0)}
+                </p>
+              </div>
+              <div className="text-center p-4 border border-blue-200 bg-blue-50 rounded-lg">
+                <p className="text-sm text-blue-700">Total Spent</p>
+                <p className="text-xl font-bold text-blue-800">
+                  SAR {formatCurrency(dashboardData?.budgetData?.summary?.totalSpent || 0)}
+                </p>
+              </div>
+              <div className={`text-center p-4 border rounded-lg ${
+                (dashboardData?.budgetData?.summary?.budgetUtilization || 0) >= 90 
+                  ? 'border-red-200 bg-red-50' 
+                  : (dashboardData?.budgetData?.summary?.budgetUtilization || 0) >= 75
+                  ? 'border-yellow-200 bg-yellow-50'
+                  : 'border-green-200 bg-green-50'
+              }`}>
+                <p className={`text-sm ${
+                  (dashboardData?.budgetData?.summary?.budgetUtilization || 0) >= 90 
+                    ? 'text-red-700' 
+                    : (dashboardData?.budgetData?.summary?.budgetUtilization || 0) >= 75
+                    ? 'text-yellow-700'
+                    : 'text-green-700'
+                }`}>
+                  Budget Utilization
+                </p>
+                <p className={`text-xl font-bold ${
+                  (dashboardData?.budgetData?.summary?.budgetUtilization || 0) >= 90 
+                    ? 'text-red-800' 
+                    : (dashboardData?.budgetData?.summary?.budgetUtilization || 0) >= 75
+                    ? 'text-yellow-800'
+                    : 'text-green-800'
+                }`}>
+                  {(dashboardData?.budgetData?.summary?.budgetUtilization || 0).toFixed(1)}%
+                </p>
+              </div>
+            </div>
+
+            {/* Table View - REAL PROJECT DATA */}
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-gray-200">
+                    <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Project</th>
+                    <th className="text-right py-3 px-4 text-sm font-medium text-gray-500">Budget</th>
+                    <th className="text-right py-3 px-4 text-sm font-medium text-gray-500">Spent</th>
+                    <th className="text-right py-3 px-4 text-sm font-medium text-gray-500">Remaining</th>
+                    <th className="text-right py-3 px-4 text-sm font-medium text-gray-500">Budget Usage %</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {(dashboardData?.budgetData?.projects || []).slice(0, 5).map((project, index) => (
+                    <tr key={`project-${index}`} className="border-b border-gray-100 hover:bg-gray-50">
+                      <td className="py-3 px-4">
+                        <div>
+                          <p className="font-medium text-gray-800">{project.projectName || 'Unnamed Project'}</p>
+                          <p className="text-xs text-gray-500">
+                            {project.contractCount} contracts • {project.rfqCount} RFQs
+                          </p>
+                        </div>
+                      </td>
+                      <td className="py-3 px-4 text-right">
+                        <p className="font-medium text-gray-800">
+                          SAR {formatCurrency(project.budget || 0)}
+                        </p>
+                      </td>
+                      <td className="py-3 px-4 text-right">
+                        <p className="font-medium text-gray-800">
+                          SAR {formatCurrency(project.spent || 0)}
+                        </p>
+                      </td>
+                      <td className="py-3 px-4 text-right">
+                        <p className={`font-medium ${
+                          (project.budget - project.spent) < 0 
+                            ? 'text-red-600' 
+                            : (project.budget - project.spent) < (project.budget * 0.1)
+                            ? 'text-yellow-600'
+                            : 'text-green-600'
+                        }`}>
+                          SAR {formatCurrency(Math.max(0, (project.budget || 0) - (project.spent || 0)))}
+                        </p>
+                      </td>
+                      <td className="py-3 px-4">
+                        <div className="flex items-center justify-end gap-3">
+                          <div className="w-32 bg-gray-200 rounded-full h-2">
+                            <div 
+                              className={`h-2 rounded-full ${
+                                (project.budgetUsage || 0) >= 90 ? 'bg-red-500' : 
+                                (project.budgetUsage || 0) >= 75 ? 'bg-yellow-500' : 'bg-green-500'
+                              }`}
+                              style={{ width: `${Math.min(project.budgetUsage || 0, 100)}%` }}
+                            ></div>
+                          </div>
+                          <span className={`text-sm font-semibold min-w-[50px] text-right ${
+                            (project.budgetUsage || 0) >= 90 ? 'text-red-600' : 
+                            (project.budgetUsage || 0) >= 75 ? 'text-yellow-600' : 'text-green-600'
+                          }`}>
+                            {(project.budgetUsage || 0).toFixed(1)}%
+                          </span>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Monthly Trends Chart - REAL DATA */}
+            {(dashboardData?.budgetData?.trends || []).length > 0 && (
+              <div className="mt-6 p-4 border border-gray-200 rounded-lg bg-gray-50">
+                <div className="flex items-center justify-between mb-4">
+                  <p className="text-sm font-medium text-gray-700">Monthly Spend Trends (Last 6 Months)</p>
+                  <span className="text-xs text-gray-500">Actual vs Budget</span>
+                </div>
+                <div className="space-y-3">
+                  {dashboardData.budgetData.trends.map((month, index) => (
+                    <div key={`trend-${index}`} className="space-y-1">
+                      <div className="flex justify-between text-sm">
+                        <span className="font-medium text-gray-700">{month.month}</span>
+                        <span className="text-gray-600">
+                          SAR {formatCurrency(month.spend || 0)} spent
+                          {month.budget && (
+                            <span className="ml-2 text-gray-400">
+                              (Budget: SAR {formatCurrency(month.budget)})
+                            </span>
+                          )}
+                        </span>
+                      </div>
+                      <div className="w-full bg-gray-200 rounded-full h-2 relative">
                         <div 
-                          className={`h-2 rounded-full ${
-                            project.budgetUsage >= 90 ? 'bg-red-500' : 
-                            project.budgetUsage >= 75 ? 'bg-yellow-500' : 'bg-green-500'
-                          }`}
-                          style={{ width: `${Math.min(project.budgetUsage, 100)}%` }}
+                          className="absolute h-2 rounded-full bg-blue-400"
+                          style={{ width: `${Math.min(((month.spend || 0) / (month.budget || 1)) * 100, 100)}%` }}
                         ></div>
                       </div>
-                      <span className={`text-sm font-semibold min-w-[50px] text-right ${
-                        project.budgetUsage >= 90 ? 'text-red-600' : 
-                        project.budgetUsage >= 75 ? 'text-yellow-600' : 'text-green-600'
-                      }`}>
-                        {project.budgetUsage.toFixed(1)}%
-                      </span>
                     </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        {/* Summary Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6 pt-6 border-t border-gray-200">
-          <div className="text-center p-4 border border-gray-200 rounded-lg">
-            <p className="text-sm text-gray-500">Total Budget</p>
-            <p className="text-xl font-bold text-gray-900">SAR 375M</p>
-          </div>
-          <div className="text-center p-4 border border-blue-200 bg-blue-50 rounded-lg">
-            <p className="text-sm text-blue-700">Total PO Amount</p>
-            <p className="text-xl font-bold text-blue-800">SAR 295M</p>
-          </div>
-          <div className="text-center p-4 border border-green-200 bg-green-50 rounded-lg">
-            <p className="text-sm text-green-700">Avg. Budget Usage</p>
-            <p className="text-xl font-bold text-green-800">79.5%</p>
-          </div>
-        </div>
-
-        {/* Bar Chart Visualization (Alternative View) */}
-        <div className="mt-6 p-4 border border-gray-200 rounded-lg bg-gray-50">
-          <div className="flex items-center justify-between mb-4">
-            <p className="text-sm font-medium text-gray-700">Budget Utilization by Project</p>
-            <span className="text-xs text-gray-500">Visual comparison</span>
-          </div>
-          <div className="space-y-3">
-            {[
-              { name: 'Core DQ', used: 80, total: 100 },
-              { name: 'Obhur Beach', used: 80, total: 50 },
-              { name: 'Tower B', used: 80, total: 75 },
-              { name: 'Commercial', used: 75, total: 120 },
-              { name: 'HQ Office', used: 83.3, total: 30 }
-            ].map((project, index) => (
-              <div key={index} className="space-y-1">
-                <div className="flex justify-between text-sm">
-                  <span className="font-medium text-gray-700">{project.name}</span>
-                  <span className="text-gray-600">{project.used}% of SAR {project.total}M</span>
-                </div>
-                <div className="w-full bg-gray-200 rounded-full h-2">
-                  <div 
-                    className={`h-2 rounded-full ${
-                      project.used >= 90 ? 'bg-red-500' : 
-                      project.used >= 75 ? 'bg-yellow-500' : 'bg-green-500'
-                    }`}
-                    style={{ width: `${project.used}%` }}
-                  ></div>
+                  ))}
                 </div>
               </div>
-            ))}
+            )}
+
+            {/* No Data Message */}
+            {(dashboardData?.budgetData?.projects || []).length === 0 && (
+              <div className="text-center py-8">
+                <DollarSign className="mx-auto text-gray-400 mb-2" size={32} />
+                <p className="text-gray-600">No budget data available</p>
+                <p className="text-sm text-gray-500 mt-1">
+                  Create RFQs and contracts to see budget utilization
+                </p>
+              </div>
+            )}
           </div>
-        </div>
-      </div>
     </div>
   );
 };
