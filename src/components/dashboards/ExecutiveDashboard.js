@@ -692,7 +692,13 @@ const alertsToShow = dashboardData?.alerts || realAlerts; // Use real alerts if 
               {timeRange === 'month' && 'This Month'}
               {timeRange === 'quarter' && 'This Quarter'}
               {timeRange === 'year' && 'This Year'}
-            </div>            
+            </div>
+            {analyticsLoading && (
+              <div className="flex items-center gap-2 text-blue-600 bg-blue-50 px-3 py-1 rounded-full text-sm">
+                <RefreshCw className="animate-spin" size={14} />
+                Loading Analytics...
+              </div>
+            )}
           </div>
                 
         <div className="flex items-center space-x-4">
@@ -712,17 +718,7 @@ const alertsToShow = dashboardData?.alerts || realAlerts; // Use real alerts if 
                 <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/>
               </svg>
             </div>
-          </div>
-  
-            {/* Add refresh button */}
-            <button
-              onClick={handleRefreshAll}
-              disabled={loading || analyticsLoading}
-              className={`p-2 rounded-lg ${loading || analyticsLoading ? 'bg-gray-100 text-gray-400' : 'bg-blue-50 text-blue-600 hover:bg-blue-100'}`}
-              title="Refresh all data"
-            >
-              <RefreshCw className={`${loading || analyticsLoading ? 'animate-spin' : ''}`} size={20} />
-            </button>
+          </div>            
           </div>
       </div>
 
