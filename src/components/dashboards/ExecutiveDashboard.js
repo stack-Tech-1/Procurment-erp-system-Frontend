@@ -684,10 +684,7 @@ const alertsToShow = dashboardData?.alerts || realAlerts; // Use real alerts if 
   return (
     <div className="p-6 space-y-6 bg-gray-50 min-h-screen">
       {/* Header with Data Source Indicator */}
-      <div className="flex justify-between items-start">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-800">Executive Dashboard</h1>
-          <p className="text-gray-600 mt-1">Procurement performance and KPIs</p>
+      <div className="flex justify-between items-start">          
           <div className="flex items-center gap-2 mt-2">
             <DataSourceIndicator />
             <div className="flex items-center gap-2 text-blue-600 bg-blue-50 px-3 py-1 rounded-full text-sm">
@@ -703,7 +700,7 @@ const alertsToShow = dashboardData?.alerts || realAlerts; // Use real alerts if 
               </div>
             )}
           </div>
-        </div>        
+                
         <div className="flex items-center space-x-4">
           <div className="relative">
             <select 

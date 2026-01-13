@@ -104,7 +104,7 @@ const OfficerDashboard = ({ data }) => {
       }
 
       console.log('🔄 Fetching officer dashboard data from API...');
-      const response = await fetch('http://localhost:4000/api/dashboard/officer', {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/dashboard/officer`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -328,18 +328,8 @@ const OfficerDashboard = ({ data }) => {
 
   return (
     <div className="p-6 space-y-6 bg-gray-50 min-h-screen">
-      {/* Header with Data Source Indicator */}
-      <div className="flex justify-between items-start">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-800">Officer Dashboard</h1>
-          <p className="text-gray-600 mt-1">Your tasks, deadlines, and performance metrics</p>
-          <div className="flex items-center gap-2 mt-2">
-            <DataSourceIndicator />
-          </div>
-        </div>
-        <div className="flex items-center space-x-4">          
-        </div>
-      </div>
+      {/* Header with Data Source Indicator */}       
+            <DataSourceIndicator />       
 
       {/* Data Status Alert */}
       {dataSource === 'fallback' && (

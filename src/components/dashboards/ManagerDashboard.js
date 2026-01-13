@@ -843,14 +843,8 @@ const getActionButton = (item) => {
   return (
     <div className="p-6 space-y-6 bg-gray-50 min-h-screen">
       {/* Header with Data Source Indicator */}
-      <div className="flex justify-between items-start">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-800">Manager Dashboard</h1>
-          <p className="text-gray-600 mt-1">Procurement team oversight and task management</p>
-          <div className="flex items-center gap-2 mt-2">
-            <DataSourceIndicator />
-          </div>
-        </div>
+      <div className="flex justify-between items-start">        
+            <DataSourceIndicator />          
         <div className="flex items-center space-x-4">
           <select 
             value={timeRange}
