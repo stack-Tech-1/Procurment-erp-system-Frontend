@@ -1,59 +1,21 @@
-// frontend/src/components/dashboards/OfficerDashboard.jsx
-import React, { useState, useEffect } from 'react';
-import {
-  Card,
-  CardContent,
-  Grid,
-  Typography,
-  Box,
-  Chip,
-  LinearProgress,
-  Alert,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Paper,
-  Button,
-  Avatar,
-  IconButton,
-  Tooltip,
-  alpha,
-  useTheme
-} from '@mui/material';
-import {
-  Assignment as AssignmentIcon,
-  Schedule as ScheduleIcon,
-  CheckCircle as CheckCircleIcon,
-  Warning as WarningIcon,
-  TrendingUp as TrendingUpIcon,
-  PlayArrow as PlayArrowIcon,
-  Refresh as RefreshIcon,
-  Download as DownloadIcon,
-  Notifications as NotificationsIcon,
-  Storage as DatabaseIcon,
-  WifiOff as WifiOffIcon
-} from '@mui/icons-material';
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip as RechartsTooltip,
-  Legend,
-  ResponsiveContainer,
-  Cell
-} from 'recharts';
+// frontend/src/components/dashboards/OfficerDashboard.js
+"use client";
+import { useState, useEffect } from 'react';
+import { 
+  FileText, Clock, AlertTriangle, CheckCircle, 
+  TrendingUp, TrendingDown, RefreshCw, Database, 
+  WifiOff, Users, DollarSign, Play,
+  BarChart, PieChart as PieChartIcon, Target,
+  Search, Filter, ChevronRight
+} from 'lucide-react';
+import Link from 'next/link';
 
 const OfficerDashboard = ({ data }) => {
   const [dashboardData, setDashboardData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [dataSource, setDataSource] = useState('unknown');
-  const theme = useTheme();
+  const [timeRange, setTimeRange] = useState('month');
 
   // Enhanced mock data for officer dashboard matching specifications
   const generateFallbackData = () => ({
@@ -114,12 +76,21 @@ const OfficerDashboard = ({ data }) => {
       efficiencyScore: 88,
       qualityScore: 95
     },
-    quickStats: {
+    weeklyActivity: [    
+      { day: 'Mon', completed: 3, assigned: 4 },
+      { day: 'Tue', completed: 2, assigned: 3 },
+      { day: 'Wed', completed: 4, assigned: 5 },
+      { day: 'Thu', completed: 3, assigned: 4 },
+      { day: 'Fri', completed: 2, assigned: 3 },
+      { day: 'Sat', completed: 1, assigned: 2 },
+      { day: 'Sun', completed: 0, assigned: 1 }
+    ],
+    quickStats: {       
       vendorsProcessed: 12,
       rfqsEvaluated: 8,
       contractsReviewed: 6,
       savingsIdentified: 450000
-    }
+    }  
   });
 
   const fetchDashboardData = async () => {
@@ -133,7 +104,7 @@ const OfficerDashboard = ({ data }) => {
       }
 
       console.log('🔄 Fetching officer dashboard data from API...');
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/dashboard/officer`, {
+      const response = await fetch('http://localhost:4000/api/dashboard/officer', {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -177,485 +148,465 @@ const OfficerDashboard = ({ data }) => {
     fetchDashboardData();
   };
 
-  // Weekly activity data - consistent across data sources
-  const weeklyData = [
-    { day: 'Mon', completed: 3, assigned: 4 },
-    { day: 'Tue', completed: 2, assigned: 3 },
-    { day: 'Wed', completed: 4, assigned: 5 },
-    { day: 'Thu', completed: 3, assigned: 4 },
-    { day: 'Fri', completed: 2, assigned: 3 },
-    { day: 'Sat', completed: 1, assigned: 2 },
-    { day: 'Sun', completed: 0, assigned: 1 }
-  ];
-
-  const dataToUse = dashboardData || generateFallbackData();
-
-  // Data Source Indicator Component
+  // Data Source Indicator Component (same as ManagerDashboard)
   const DataSourceIndicator = () => {
     if (dataSource === 'api') {
       return (
-        <Chip 
-          icon={<DatabaseIcon />}
-          label="Live Data"
-          color="success"
-          variant="outlined"
-          size="small"
-        />
+        <div className="flex items-center gap-2 text-green-600 bg-green-50 px-3 py-1 rounded-full text-sm">
+          <Database size={16} />
+          Live Data
+        </div>
       );
     } else if (dataSource === 'fallback') {
       return (
-        <Chip 
-          icon={<WifiOffIcon />}
-          label="Sample Data (DB Offline)"
-          color="warning"
-          variant="outlined"
-          size="small"
-        />
+        <div className="flex items-center gap-2 text-amber-600 bg-amber-50 px-3 py-1 rounded-full text-sm">
+          <WifiOff size={16} />
+          Sample Data (DB Offline)
+        </div>
       );
     }
     return null;
   };
 
-  // KPI Card Component
-  const KPICard = ({ title, value, subtitle, icon, color = 'primary', trend, onClick }) => (
-    <Card 
-      sx={{ 
-        height: '100%',
-        cursor: onClick ? 'pointer' : 'default',
-        transition: 'all 0.3s ease',
-        background: `linear-gradient(135deg, ${alpha(theme.palette[color].main, 0.1)} 0%, ${alpha(theme.palette.background.paper, 0.8)} 100%)`,
-        border: `1px solid ${alpha(theme.palette[color].main, 0.1)}`,
-        '&:hover': onClick ? {
-          transform: 'translateY(-4px)',
-          boxShadow: `0 12px 40px ${alpha(theme.palette[color].main, 0.15)}`
-        } : {}
-      }}
-      onClick={onClick}
-    >
-      <CardContent sx={{ p: 3 }}>
-        <Box display="flex" justifyContent="space-between" alignItems="flex-start">
-          <Box flex={1}>
-            <Typography color="textSecondary" gutterBottom variant="overline" sx={{ fontWeight: 600 }}>
-              {title}
-            </Typography>
-            <Typography variant="h3" component="div" fontWeight="bold" color={color + '.main'}>
-              {value}
-            </Typography>
-            {subtitle && (
-              <Typography variant="body2" color="textSecondary" sx={{ mt: 0.5 }}>
-                {subtitle}
-              </Typography>
-            )}
-            {trend && (
-              <Box display="flex" alignItems="center" gap={0.5} sx={{ mt: 1 }}>
-                <TrendingUpIcon sx={{ 
-                  fontSize: 16, 
-                  color: trend > 0 ? 'success.main' : 'error.main',
-                  transform: trend > 0 ? 'none' : 'rotate(180deg)'
-                }} />
-                <Typography 
-                  variant="caption" 
-                  color={trend > 0 ? 'success.main' : 'error.main'}
-                  fontWeight="600"
-                >
-                  {trend > 0 ? '+' : ''}{trend}% this week
-                </Typography>
-              </Box>
-            )}
-          </Box>
-          <Box sx={{ 
-            color: `${color}.main`,
-            background: alpha(theme.palette[color].main, 0.1),
-            borderRadius: 3,
-            p: 1.5
-          }}>
-            {React.cloneElement(icon, { sx: { fontSize: 32 } })}
-          </Box>
-        </Box>
-      </CardContent>
-    </Card>
+  // KPI Card Component (same as ManagerDashboard)
+  const KPICard = ({ 
+    title, 
+    value, 
+    subtitle, 
+    icon, 
+    color = 'primary', 
+    trend, 
+    trendPositive,
+    onClick 
+  }) => {
+    const colorClasses = {
+      primary: 'bg-blue-100 text-blue-800 border-blue-200',
+      warning: 'bg-amber-100 text-amber-800 border-amber-200',
+      error: 'bg-red-100 text-red-800 border-red-200',
+      success: 'bg-green-100 text-green-800 border-green-200',
+      info: 'bg-cyan-100 text-cyan-800 border-cyan-200'
+    };
+
+    return (
+      <div 
+        className={`bg-white p-6 rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-all duration-200 ${
+          onClick ? 'cursor-pointer hover:border-blue-300' : ''
+        }`}
+        onClick={onClick}
+      >
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center">
+            <div className={`p-3 rounded-lg ${colorClasses[color]}`}>
+              {icon}
+            </div>
+            <h3 className="text-lg font-semibold ml-3 text-gray-800">{title}</h3>
+          </div>
+          {trend && (
+            <span className={`text-sm font-medium px-2 py-1 rounded-full ${
+              trendPositive 
+                ? 'bg-green-100 text-green-800' 
+                : 'bg-red-100 text-red-800'
+            }`}>
+              {trend}
+            </span>
+          )}
+        </div>
+        
+        <p className="text-2xl font-bold text-gray-900">{value}</p>
+        <p className="text-sm text-gray-600 mt-2">{subtitle}</p>
+      </div>
+    );
+  };
+
+  // Priority Badge Component (same as ManagerDashboard)
+  const PriorityBadge = ({ priority }) => {
+    const config = {
+      HIGH: { color: 'bg-red-100 text-red-800', icon: <AlertTriangle size={12} className="flex-shrink-0" /> },
+      MEDIUM: { color: 'bg-yellow-100 text-yellow-800', icon: <Clock size={12} className="flex-shrink-0" /> },
+      LOW: { color: 'bg-green-100 text-green-800', icon: <CheckCircle size={12} className="flex-shrink-0" /> },
+      URGENT: { color: 'bg-red-600 text-white', icon: <AlertTriangle size={12} className="flex-shrink-0" /> }
+    };
+    
+    const { color, icon } = config[priority] || config.MEDIUM;
+    
+    return (
+      <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium whitespace-nowrap ${color}`}>
+        {icon}
+        <span className="whitespace-nowrap">{priority}</span>
+      </span>
+    );
+  };
+
+  // Status Badge Component (adapted from ManagerDashboard)
+  const StatusBadge = ({ status }) => {
+    const config = {
+      'IN_PROGRESS': { color: 'bg-blue-100 text-blue-800' },
+      'NOT_STARTED': { color: 'bg-gray-100 text-gray-800' },
+      'COMPLETED': { color: 'bg-green-100 text-green-800' },
+      'OVERDUE': { color: 'bg-red-100 text-red-800' },
+      'PENDING': { color: 'bg-purple-100 text-purple-800' }
+    };
+    
+    const { color } = config[status] || config['NOT_STARTED'];
+    
+    return (
+      <span className={`px-2 py-1 rounded-full text-xs font-medium whitespace-nowrap ${color}`}>
+        {status.replace('_', ' ')}
+      </span>
+    );
+  };
+
+  // Project Badge Component
+  const ProjectBadge = ({ project }) => (
+    <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800 border border-gray-300">
+      {project}
+    </span>
   );
 
-  const getStatusColor = (status) => {
-    switch (status) {
-      case 'IN_PROGRESS': return 'primary';
-      case 'COMPLETED': return 'success';
-      case 'OVERDUE': return 'error';
-      default: return 'default';
-    }
-  };
+  // Metric Row Component (same as ManagerDashboard)
+  const MetricRow = ({ label, value, subtext, progress, trend, alert }) => (
+    <div className="flex justify-between items-center py-3 border-b border-gray-100 last:border-b-0">
+      <div className="flex-1">
+        <p className="font-medium text-gray-700">{label}</p>
+        <p className="text-sm text-gray-500">{subtext}</p>
+        {progress && (
+          <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
+            <div 
+              className={`h-2 rounded-full ${
+                progress > 80 ? 'bg-green-500' : 
+                progress > 60 ? 'bg-yellow-500' : 'bg-blue-500'
+              }`}
+              style={{ width: `${progress}%` }}
+            ></div>
+          </div>
+        )}
+      </div>
+      <div className="text-right">
+        <p className={`text-lg font-semibold ${
+          alert ? 'text-red-600' : 'text-gray-900'
+        }`}>
+          {value}
+          {trend === 'up' && <TrendingUp className="inline ml-1 text-green-500" size={16} />}
+          {trend === 'down' && <TrendingDown className="inline ml-1 text-red-500" size={16} />}
+        </p>
+      </div>
+    </div>
+  );
 
-  const getPriorityColor = (priority) => {
-    switch (priority) {
-      case 'URGENT': return 'error';
-      case 'HIGH': return 'error';
-      case 'MEDIUM': return 'warning';
-      default: return 'default';
-    }
-  };
+    
+  const dataToUse = dashboardData || generateFallbackData();
 
   if (loading) {
     return (
-      <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
-        <Box textAlign="center">
-          <Box className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></Box>
-          <Typography variant="h6" color="textSecondary">Loading Officer Dashboard...</Typography>
-        </Box>
-      </Box>
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <RefreshCw className="animate-spin h-12 w-12 text-blue-600 mx-auto mb-4" />
+          <h2 className="text-xl font-semibold text-gray-800">Loading Officer Dashboard...</h2>
+          <p className="text-gray-600 mt-2">Connecting to procurement database</p>
+        </div>
+      </div>
     );
   }
 
   if (error && !dashboardData) {
     return (
-      <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
-        <Box textAlign="center" maxWidth="400px">
-          <WifiOffIcon sx={{ fontSize: 48, color: 'error.main', mb: 2 }} />
-          <Typography variant="h6" color="textPrimary" gutterBottom>
-            Connection Issue
-          </Typography>
-          <Typography variant="body2" color="textSecondary" gutterBottom>
-            {error}
-          </Typography>
-          <Button 
-            variant="contained" 
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center max-w-md">
+          <AlertTriangle className="mx-auto text-red-500 mb-4" size={48} />
+          <h2 className="text-xl font-semibold text-gray-800 mb-2">Unable to load dashboard</h2>
+          <p className="text-gray-600 mb-4">Please check your backend connection</p>
+          <button
             onClick={handleRetry}
-            sx={{ mt: 2 }}
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
           >
             Retry Connection
-          </Button>
-        </Box>
-      </Box>
+          </button>
+        </div>
+      </div>
     );
   }
 
   return (
-    <Box sx={{ p: 3, background: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)', minHeight: '100vh' }}>
+    <div className="p-6 space-y-6 bg-gray-50 min-h-screen">
       {/* Header with Data Source Indicator */}
-      <Box sx={{ mb: 3 }}>
-        <Box display="flex" justifyContent="space-between" alignItems="flex-start" sx={{ mb: 2 }}>
-          <Box>
-            <Typography variant="h4" fontWeight="bold" gutterBottom>
-              Procurement Officer Dashboard
-            </Typography>
-            <Typography variant="body1" color="textSecondary" gutterBottom>
-              Your tasks, deadlines, and performance metrics
-            </Typography>
+      <div className="flex justify-between items-start">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-800">Officer Dashboard</h1>
+          <p className="text-gray-600 mt-1">Your tasks, deadlines, and performance metrics</p>
+          <div className="flex items-center gap-2 mt-2">
             <DataSourceIndicator />
-          </Box>
-          <Button
-            startIcon={<RefreshIcon />}
-            onClick={fetchDashboardData}
-            variant="outlined"
-          >
-            Refresh
-          </Button>
-        </Box>
+          </div>
+        </div>
+        <div className="flex items-center space-x-4">          
+        </div>
+      </div>
 
-        {/* Data Status Alert */}
-        {dataSource === 'fallback' && (
-          <Alert 
-            severity="warning" 
-            sx={{ mb: 2, borderRadius: 2 }}
-            action={
-              <Button color="inherit" size="small" onClick={handleRetry}>
-                RETRY
-              </Button>
-            }
-          >
-            Database connection issue. Showing sample data for demonstration.
-          </Alert>
-        )}
-      </Box>
+      {/* Data Status Alert */}
+      {dataSource === 'fallback' && (
+        <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+          <div className="flex items-center gap-3">
+            <AlertTriangle className="text-amber-600" size={20} />
+            <div>
+              <p className="text-amber-800 font-medium">Database Connection Issue</p>
+              <p className="text-amber-700 text-sm">
+                Showing sample data. Real-time data will resume when database connection is restored.
+              </p>
+            </div>
+            <button
+              onClick={handleRetry}
+              className="ml-auto px-3 py-1 bg-amber-100 text-amber-800 rounded text-sm hover:bg-amber-200 transition-colors"
+            >
+              Retry
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Personal Metrics KPIs */}
-      <Grid container spacing={3} mb={4}>
-        <Grid item xs={12} sm={6} md={3}>
-          <KPICard
-            title="My Tasks"
-            value={dataToUse.personalMetrics.myTasks}
-            subtitle="Currently assigned"
-            icon={<AssignmentIcon />}
-            color="primary"
-            trend={12.5}
-          />
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <KPICard
-            title="Upcoming Deadlines"
-            value={dataToUse.personalMetrics.upcomingDeadlines}
-            subtitle="Next 7 days"
-            icon={<ScheduleIcon />}
-            color="warning"
-            trend={-8.3}
-          />
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <KPICard
-            title="Pending Review"
-            value={dataToUse.personalMetrics.pendingSubmissions}
-            subtitle="Awaiting manager approval"
-            icon={<WarningIcon />}
-            color="error"
-            trend={5.7}
-          />
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <KPICard
-            title="Completed This Week"
-            value={dataToUse.personalMetrics.completedThisWeek}
-            subtitle="Your weekly progress"
-            icon={<CheckCircleIcon />}
-            color="success"
-            trend={15.2}
-          />
-        </Grid>
-      </Grid>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <KPICard
+          icon={<FileText className="text-blue-500" size={24} />}
+          title="My Tasks"
+          value={dataToUse.personalMetrics?.myTasks || 0}
+          subtitle="Currently assigned"
+          color="primary"
+          trend="+12.5%"
+          trendPositive={true}
+        />
+        
+        <KPICard
+          icon={<Clock className="text-amber-500" size={24} />}
+          title="Upcoming Deadlines"
+          value={dataToUse.personalMetrics?.upcomingDeadlines || 0}
+          subtitle="Next 7 days"
+          color="warning"
+          trend="-8.3%"
+          trendPositive={false}
+        />
+        
+        <KPICard
+          icon={<AlertTriangle className="text-red-500" size={24} />}
+          title="Pending Review"
+          value={dataToUse.personalMetrics?.pendingSubmissions || 0}
+          subtitle="Awaiting manager approval"
+          color="error"
+          trend="+5.7%"
+          trendPositive={true}
+        />
+        
+        <KPICard
+          icon={<CheckCircle className="text-green-500" size={24} />}
+          title="Completed This Week"
+          value={dataToUse.personalMetrics?.completedThisWeek || 0}
+          subtitle="Your weekly progress"
+          color="success"
+          trend="+15.2%"
+          trendPositive={true}
+        />
+      </div>
 
       {/* Main Content */}
-      <Grid container spacing={3}>
-        {/* Assigned Work & Performance */}
-        <Grid item xs={12} md={8}>
-          <Card sx={{ borderRadius: 3, boxShadow: '0 8px 32px rgba(0,0,0,0.08)' }}>
-            <CardContent sx={{ p: 0 }}>
-              <Box sx={{ 
-                p: 3, 
-                borderBottom: 1, 
-                borderColor: 'divider',
-                background: 'linear-gradient(to right, #f8fafc, #ffffff)'
-              }}>
-                <Typography variant="h6" fontWeight="600">
-                  Your Assigned Work
-                </Typography>
-                <Typography variant="body2" color="textSecondary">
-                  Active tasks and current assignments
-                </Typography>
-              </Box>
-              
-              <TableContainer>
-                <Table>
-                  <TableHead>
-                    <TableRow>
-                      <TableCell>Task / Deliverable</TableCell>
-                      <TableCell>Project</TableCell>
-                      <TableCell>Due Date</TableCell>
-                      <TableCell>Priority</TableCell>
-                      <TableCell>Progress</TableCell>
-                      <TableCell>Status</TableCell>
-                      <TableCell>Action</TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {dataToUse.assignedWork.map((task) => (
-                      <TableRow key={task.id} hover sx={{
-                        backgroundColor: task.priority === 'URGENT' ? alpha(theme.palette.error.main, 0.05) : 'inherit'
-                      }}>
-                        <TableCell>
-                          <Box>
-                            <Typography variant="body2" fontWeight="600">
-                              {task.title}
-                            </Typography>
-                            <Typography variant="caption" color="textSecondary">
-                              {task.taskType?.replace(/_/g, ' ')}
-                            </Typography>
-                          </Box>
-                        </TableCell>
-                        <TableCell>
-                          <Chip 
-                            label={task.project} 
-                            size="small" 
-                            variant="outlined"
-                          />
-                        </TableCell>
-                        <TableCell>
-                          <Typography variant="body2">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Assigned Work - LEFT COLUMN (2/3 width) */}
+        <div className="lg:col-span-2">
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200">
+            <div className="p-6 border-b border-gray-200">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-xl font-semibold text-gray-800">Your Assigned Work</h3>
+                  <p className="text-gray-600 text-sm">Active tasks and current assignments</p>
+                </div>
+                <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium">
+                  {dataToUse.assignedWork?.length || 0} tasks
+                </span>
+              </div>
+            </div>
+            
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-gray-200">
+                    <th className="text-left py-3 px-6 text-sm font-medium text-gray-500">Task / Deliverable</th>
+                    <th className="text-left py-3 px-6 text-sm font-medium text-gray-500">Project</th>
+                    <th className="text-left py-3 px-6 text-sm font-medium text-gray-500">Due Date</th>
+                    <th className="text-left py-3 px-6 text-sm font-medium text-gray-500">Priority</th>
+                    <th className="text-left py-3 px-6 text-sm font-medium text-gray-500">Progress</th>
+                    <th className="text-left py-3 px-6 text-sm font-medium text-gray-500">Status</th>
+                    <th className="text-left py-3 px-6 text-sm font-medium text-gray-500">Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {dataToUse.assignedWork?.map((task) => (
+                    <tr key={task.id} className="border-b border-gray-100 hover:bg-gray-50">
+                      <td className="py-4 px-6">
+                        <div>
+                          <p className="font-medium text-gray-800">{task.title}</p>
+                          <p className="text-xs text-gray-500 capitalize">
+                            {task.taskType?.replace(/_/g, ' ')}
+                          </p>
+                        </div>
+                      </td>
+                      <td className="py-4 px-6">
+                        <ProjectBadge project={task.project} />
+                      </td>
+                      <td className="py-4 px-6">
+                        <div>
+                          <p className="text-gray-700">
                             {new Date(task.dueDate).toLocaleDateString()}
-                          </Typography>
+                          </p>
                           {new Date(task.dueDate) < new Date() && task.status !== 'COMPLETED' && (
-                            <Chip 
-                              label="Overdue" 
-                              size="small" 
-                              color="error"
-                              sx={{ height: 20, fontSize: '0.7rem', mt: 0.5 }}
-                            />
+                            <span className="inline-block mt-1 px-2 py-1 bg-red-100 text-red-800 text-xs rounded-full">
+                              Overdue
+                            </span>
                           )}
-                        </TableCell>
-                        <TableCell>
-                          <Chip 
-                            label={task.priority}
-                            size="small"
-                            color={getPriorityColor(task.priority)}
-                          />
-                        </TableCell>
-                        <TableCell>
-                          <Box display="flex" alignItems="center" gap={1}>
-                            <LinearProgress 
-                              variant="determinate" 
-                              value={task.progress || 0} 
-                              color={task.progress >= 80 ? 'success' : task.progress >= 50 ? 'primary' : 'warning'}
-                              sx={{ flex: 1, height: 6, borderRadius: 3 }}
-                            />
-                            <Typography variant="caption" fontWeight="600" minWidth={35}>
-                              {task.progress || 0}%
-                            </Typography>
-                          </Box>
-                        </TableCell>
-                        <TableCell>
-                          <Chip 
-                            label={task.status?.replace('_', ' ')}
-                            size="small"
-                            color={getStatusColor(task.status)}
-                            variant={task.status === 'NOT_STARTED' ? 'outlined' : 'filled'}
-                          />
-                        </TableCell>
-                        <TableCell>
-                          <Button
-                            variant="contained"
-                            size="small"
-                            startIcon={<PlayArrowIcon />}
-                            sx={{
-                              background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
-                              '&:hover': {
-                                transform: 'translateY(-1px)',
-                                boxShadow: `0 4px 12px ${alpha(theme.palette.primary.main, 0.4)}`
-                              },
-                              transition: 'all 0.3s ease'
-                            }}
-                          >
-                            {task.status === 'NOT_STARTED' ? 'Start' : 'Continue'}
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </TableContainer>
-            </CardContent>
-          </Card>
-        </Grid>
+                        </div>
+                      </td>
+                      <td className="py-4 px-6">
+                        <PriorityBadge priority={task.priority} />
+                      </td>
+                      <td className="py-4 px-6">
+                        <div className="flex items-center gap-3">
+                          <div className="w-24 bg-gray-200 rounded-full h-2">
+                            <div 
+                              className={`h-2 rounded-full ${
+                                task.progress >= 80 ? 'bg-green-500' : 
+                                task.progress >= 50 ? 'bg-blue-500' : 'bg-yellow-500'
+                              }`}
+                              style={{ width: `${task.progress}%` }}
+                            ></div>
+                          </div>
+                          <span className="text-sm font-semibold">{task.progress}%</span>
+                        </div>
+                      </td>
+                      <td className="py-4 px-6">
+                        <StatusBadge status={task.status} />
+                      </td>
+                      <td className="py-4 px-6">
+                        <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2">
+                          <Play size={14} />
+                          {task.status === 'NOT_STARTED' ? 'Start' : 'Continue'}
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
 
-        {/* Performance Overview & Quick Stats */}
-        <Grid item xs={12} md={4}>
-          <Grid container spacing={3}>
-            {/* Performance Overview */}
-            <Grid item xs={12}>
-              <Card sx={{ borderRadius: 3, boxShadow: '0 8px 32px rgba(0,0,0,0.08)' }}>
-                <CardContent>
-                  <Typography variant="h6" gutterBottom fontWeight="600">
-                    Performance Overview
-                  </Typography>
-                  
-                  <Box mb={3}>
-                    <Box display="flex" justifyContent="space-between" mb={1}>
-                      <Typography variant="body2">On-Time Completion</Typography>
-                      <Typography variant="body2" fontWeight="bold" color="success.main">
-                        {dataToUse.performance.onTimeRate}%
-                      </Typography>
-                    </Box>
-                    <LinearProgress 
-                      variant="determinate" 
-                      value={dataToUse.performance.onTimeRate} 
-                      color="success"
-                      sx={{ height: 8, borderRadius: 4 }}
-                    />
-                  </Box>
+        {/* Performance & Stats - RIGHT COLUMN (1/3 width) */}
+        <div className="space-y-6">
+          {/* Performance Overview */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <h3 className="text-xl font-semibold text-gray-800 mb-6">Performance Overview</h3>
+            
+            <div className="space-y-6">
+              <MetricRow 
+                label="On-Time Completion"
+                value={`${dataToUse.performance?.onTimeRate || 0}%`}
+                subtext="Tasks completed by deadline"
+                progress={dataToUse.performance?.onTimeRate || 0}
+                trend="up"
+              />
+              
+              <MetricRow 
+                label="Efficiency Score"
+                value={`${dataToUse.performance?.efficiencyScore || 0}%`}
+                subtext="Based on task completion rate"
+                progress={dataToUse.performance?.efficiencyScore || 0}
+                trend="up"
+              />
+              
+              <MetricRow 
+                label="Quality Rating"
+                value={`${dataToUse.performance?.qualityScore || 0}%`}
+                subtext="Manager feedback score"
+                progress={dataToUse.performance?.qualityScore || 0}
+                trend="up"
+              />
+              
+              <div className="grid grid-cols-2 gap-4 pt-4">
+                <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-center">
+                  <p className="text-2xl font-bold text-green-800">{dataToUse.performance?.tasksCompleted || 0}</p>
+                  <p className="text-sm text-green-700">Completed</p>
+                </div>
+                <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-center">
+                  <p className="text-2xl font-bold text-red-800">{dataToUse.performance?.overdueTasks || 0}</p>
+                  <p className="text-sm text-red-700">Overdue</p>
+                </div>
+              </div>
+            </div>
+          </div>
 
-                  <Box mb={3}>
-                    <Box display="flex" justifyContent="space-between" mb={1}>
-                      <Typography variant="body2">Efficiency Score</Typography>
-                      <Typography variant="body2" fontWeight="bold" color="primary.main">
-                        {dataToUse.performance.efficiencyScore}%
-                      </Typography>
-                    </Box>
-                    <LinearProgress 
-                      variant="determinate" 
-                      value={dataToUse.performance.efficiencyScore} 
-                      color="primary"
-                      sx={{ height: 8, borderRadius: 4 }}
-                    />
-                  </Box>
+          {/* Weekly Activity */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <h3 className="text-xl font-semibold text-gray-800 mb-6">Weekly Activity</h3>
+            
+            <div className="space-y-4">
+            {(dataToUse.weeklyActivity || []).map((day, index) => (
+                <div key={index} className="flex items-center justify-between">
+                  <span className="text-sm font-medium text-gray-700 w-12">{day.day}</span>
+                  <div className="flex-1 mx-4">
+                    <div className="flex items-center h-6">
+                      <div 
+                        className="bg-blue-500 h-2 rounded-l"
+                        style={{ width: `${Math.min((day.assigned / 5) * 100, 100)}%` }}
+                        title={`Assigned: ${day.assigned}`}
+                      ></div>
+                      <div 
+                        className="bg-green-500 h-2 rounded-r"
+                        style={{ width: `${Math.min((day.completed / 5) * 100, 100)}%` }}
+                        title={`Completed: ${day.completed}`}
+                      ></div>
+                    </div>
+                  </div>
+                  <div className="text-right w-20">
+                    <span className="text-sm font-medium">{day.completed}/{day.assigned}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+            
+            <div className="flex items-center justify-center gap-4 mt-6">
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 bg-blue-500 rounded"></div>
+                <span className="text-sm text-gray-600">Assigned</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 bg-green-500 rounded"></div>
+                <span className="text-sm text-gray-600">Completed</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
 
-                  <Box mb={3}>
-                    <Box display="flex" justifyContent="space-between" mb={1}>
-                      <Typography variant="body2">Quality Rating</Typography>
-                      <Typography variant="body2" fontWeight="bold" color="info.main">
-                        {dataToUse.performance.qualityScore}%
-                      </Typography>
-                    </Box>
-                    <LinearProgress 
-                      variant="determinate" 
-                      value={dataToUse.performance.qualityScore} 
-                      color="info"
-                      sx={{ height: 8, borderRadius: 4 }}
-                    />
-                  </Box>
-
-                  <Grid container spacing={2}>
-                    <Grid item xs={6}>
-                      <Box textAlign="center" p={2} bgcolor="success.light" borderRadius={2}>
-                        <Typography variant="h6" fontWeight="bold" color="success.dark">
-                          {dataToUse.performance.tasksCompleted}
-                        </Typography>
-                        <Typography variant="caption" color="success.dark">
-                          Completed
-                        </Typography>
-                      </Box>
-                    </Grid>
-                    <Grid item xs={6}>
-                      <Box textAlign="center" p={2} bgcolor="error.light" borderRadius={2}>
-                        <Typography variant="h6" fontWeight="bold" color="error.dark">
-                          {dataToUse.performance.overdueTasks}
-                        </Typography>
-                        <Typography variant="caption" color="error.dark">
-                          Overdue
-                        </Typography>
-                      </Box>
-                    </Grid>
-                  </Grid>
-                </CardContent>
-              </Card>
-            </Grid>
-
-            {/* Weekly Activity Chart */}
-            <Grid item xs={12}>
-              <Card sx={{ borderRadius: 3, boxShadow: '0 8px 32px rgba(0,0,0,0.08)' }}>
-                <CardContent>
-                  <Typography variant="h6" gutterBottom fontWeight="600">
-                    Weekly Activity
-                  </Typography>
-                  <ResponsiveContainer width="100%" height={200}>
-                    <BarChart data={weeklyData}>
-                      <CartesianGrid strokeDasharray="3 3" stroke={alpha(theme.palette.divider, 0.5)} />
-                      <XAxis dataKey="day" stroke={theme.palette.text.secondary} />
-                      <YAxis stroke={theme.palette.text.secondary} />
-                      <RechartsTooltip 
-                        contentStyle={{ 
-                          borderRadius: 8,
-                          border: `1px solid ${theme.palette.divider}`,
-                          boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
-                        }}
-                      />
-                      <Legend />
-                      <Bar 
-                        dataKey="completed" 
-                        fill={theme.palette.success.main} 
-                        name="Completed"
-                        radius={[4, 4, 0, 0]}
-                      />
-                      <Bar 
-                        dataKey="assigned" 
-                        fill={theme.palette.primary.main} 
-                        name="Assigned"
-                        radius={[4, 4, 0, 0]}
-                      />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </CardContent>
-              </Card>
-            </Grid>
-          </Grid>
-        </Grid>
-      </Grid>
-    </Box>
+      {/* Quick Stats */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <h3 className="text-xl font-semibold text-gray-800 mb-6">Quick Stats</h3>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+          <div className="text-center">
+            <div className="text-3xl font-bold text-blue-600 mb-2">{dataToUse.quickStats?.vendorsProcessed || 0}</div>
+            <p className="text-sm text-gray-600">Vendors Processed</p>
+          </div>
+          <div className="text-center">
+            <div className="text-3xl font-bold text-green-600 mb-2">{dataToUse.quickStats?.rfqsEvaluated || 0}</div>
+            <p className="text-sm text-gray-600">RFQs Evaluated</p>
+          </div>
+          <div className="text-center">
+            <div className="text-3xl font-bold text-purple-600 mb-2">{dataToUse.quickStats?.contractsReviewed || 0}</div>
+            <p className="text-sm text-gray-600">Contracts Reviewed</p>
+          </div>
+          <div className="text-center">
+            <div className="text-3xl font-bold text-amber-600 mb-2">
+              SAR {(dataToUse.quickStats?.savingsIdentified || 0).toLocaleString()}
+            </div>
+            <p className="text-sm text-gray-600">Savings Identified</p>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 };
 
