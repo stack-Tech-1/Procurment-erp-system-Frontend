@@ -692,13 +692,7 @@ const alertsToShow = dashboardData?.alerts || realAlerts; // Use real alerts if 
               {timeRange === 'month' && 'This Month'}
               {timeRange === 'quarter' && 'This Quarter'}
               {timeRange === 'year' && 'This Year'}
-            </div>
-            {analyticsLoading && (
-              <div className="flex items-center gap-2 text-blue-600 bg-blue-50 px-3 py-1 rounded-full text-sm">
-                <RefreshCw className="animate-spin" size={14} />
-                Loading Analytics...
-              </div>
-            )}
+            </div>            
           </div>
                 
         <div className="flex items-center space-x-4">
