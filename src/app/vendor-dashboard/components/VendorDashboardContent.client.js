@@ -16,7 +16,7 @@ const VendorDashboardContent = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [dataSource, setDataSource] = useState('unknown');
-
+  
 
   const checkPermission = (actionId) => {
     if (actionId === 'submit-proposal' && data.vendorInfo.status === 'BLOCKED') {
@@ -187,7 +187,7 @@ const VendorDashboardContent = () => {
       }
 
       console.log('🔄 Fetching vendor dashboard data from API...');
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/dashboard/vendor`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/dashboard`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -202,6 +202,7 @@ const VendorDashboardContent = () => {
       
       if (result.success) {
         console.log('✅ Successfully loaded real vendor data from API');
+        //console.log('Dashboard data structure:', result.data);
         setDashboardData(result.data);
         setDataSource('api');
       } else {
@@ -220,6 +221,8 @@ const VendorDashboardContent = () => {
   useEffect(() => {
     fetchDashboardData();
   }, []);
+
+  
 
   const handleRetry = () => {
     fetchDashboardData();
@@ -278,21 +281,23 @@ const VendorDashboardContent = () => {
     return null;
   };
 
-  const getProposalStatusColor = (status) => {
-    switch (status) {
-      case 'Pending Review':
-      case 'Technical Evaluation':
-        return 'text-amber-700 bg-amber-100 border-amber-200';
-      case 'Approved':
-      case 'Contract Negotiation':
-        return 'text-green-700 bg-green-100 border-green-200';
-      case 'Rejected':
-        return 'text-red-700 bg-red-100 border-red-200';
-      case 'Draft':
-      default:
-        return 'text-gray-700 bg-gray-100 border-gray-200';
-    }
-  };
+          const getProposalStatusColor = (status) => {
+            switch (status) {
+              case 'Draft':
+              case 'Submitted':
+              case 'Pending Review':
+              case 'Technical Evaluation':
+                return 'text-amber-700 bg-amber-100 border-amber-200';
+              case 'Approved':
+              case 'Contract Negotiation':
+              case 'Awarded':
+                return 'text-green-700 bg-green-100 border-green-200';
+              case 'Rejected':
+                return 'text-red-700 bg-red-100 border-red-200';
+              default:
+                return 'text-gray-700 bg-gray-100 border-gray-200';
+            }
+          };
 
   const getVendorStatusBadge = (status) => {
     const config = {
@@ -342,7 +347,13 @@ const VendorDashboardContent = () => {
         <div>
           <h1 className="text-3xl font-bold text-gray-800">Welcome, {data.vendorInfo.companyName}</h1>
           <p className="text-gray-600 mt-2">Vendor Portal - Track your proposals, performance, and compliance</p>
-          <DataSourceIndicator />                    
+          <DataSourceIndicator />  
+          {dataSource === 'api' && data.vendorInfo?.lastUpdated && (
+            <div className="flex items-center gap-2 mt-2 text-sm text-gray-500">
+              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+              <span>Data updated: {new Date(data.vendorInfo.lastUpdated).toLocaleTimeString()}</span>
+            </div>
+          )}                 
           <div className="flex items-center gap-4 mt-3">
             <div className="flex items-center gap-2">
               <span className="text-sm text-gray-500">Vendor Class:</span>
@@ -445,74 +456,80 @@ const VendorDashboardContent = () => {
 
       {/* Key Metrics */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <MetricCard
+      <MetricCard
           icon={<FileText className="text-blue-500" size={24} />}
           title="Active Proposals"
           value={data.proposals.filter(p => p.status === 'Pending Review').length}
           subtitle="Under evaluation"
-          trend="+2 this month"
+          trend={data.proposals.length > 0 ? "+2 this month" : "No proposals yet"}  // Dynamic
         />
+
         <MetricCard
           icon={<CheckCircle2 className="text-green-500" size={24} />}
           title="Win Rate"
           value={`${data.performance.winRate}%`}
           subtitle="Successful bids"
-          trend="+5% improvement"
+          trend={data.performance.winRate > 0 ? "+5% improvement" : "No wins yet"}  // Dynamic
         />
+
         <MetricCard
           icon={<DollarSign className="text-purple-500" size={24} />}
           title="Total Revenue"
           value={`SAR ${(data.performance.totalRevenue / 1000000).toFixed(1)}M`}
           subtitle="YTD contract value"
-          trend="+12% growth"
+          trend={data.performance.totalRevenue > 0 ? "+12% growth" : "No revenue"}  // Dynamic
         />
         <MetricCard
           icon={<Shield className="text-orange-500" size={24} />}
           title="Profile Score"
           value={`${data.vendorInfo.qualificationScore}/100`}
           subtitle="Qualification rating"
-          trend="Class B Vendor"
+          trend={`Class ${data.vendorInfo.vendorClass} Vendor`}  // ← Use real data!
         />
       </div>
 
-      {/* Alerts & Notifications */}
-      {data.alerts.length > 0 && (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <h3 className="text-xl font-semibold text-gray-800 mb-4 flex items-center gap-2">
-            <AlertTriangle className="text-amber-500" size={20} />
-            Important Alerts & Notifications
-          </h3>
-          <div className="space-y-3">
-            {data.alerts.map((alert, index) => (
-              <div key={index} className={`flex items-center justify-between p-4 rounded-lg border ${
-                alert.type === 'warning' ? 'bg-amber-50 border-amber-200' :
-                alert.type === 'info' ? 'bg-blue-50 border-blue-200' :
-                'bg-green-50 border-green-200'
-              }`}>
-                <div className="flex items-center gap-3">
-                  {alert.type === 'warning' && <Clock className="text-amber-500" size={18} />}
-                  {alert.type === 'info' && <Eye className="text-blue-500" size={18} />}
-                  {alert.type === 'success' && <CheckCircle2 className="text-green-500" size={18} />}
-                  <span className={`font-medium ${
-                    alert.type === 'warning' ? 'text-amber-800' :
-                    alert.type === 'info' ? 'text-blue-800' : 'text-green-800'
+      {/* Alerts & Notifications - Updated with real data and proper links */}
+          {data.alerts.length > 0 && (
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+              <h3 className="text-xl font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                <AlertTriangle className="text-amber-500" size={20} />
+                Important Alerts & Notifications
+              </h3>
+              <div className="space-y-3">
+                {data.alerts.map((alert, index) => (
+                  <div key={index} className={`flex items-center justify-between p-4 rounded-lg border ${
+                    alert.type === 'warning' ? 'bg-amber-50 border-amber-200' :
+                    alert.type === 'info' ? 'bg-blue-50 border-blue-200' :
+                    'bg-green-50 border-green-200'
                   }`}>
-                    {alert.message}
-                  </span>
-                </div>
-                <button className={`px-3 py-1 rounded text-sm font-medium ${
-                  alert.type === 'warning' ? 'bg-amber-100 text-amber-700 hover:bg-amber-200' :
-                  alert.type === 'info' ? 'bg-blue-100 text-blue-700 hover:bg-blue-200' :
-                  'bg-green-100 text-green-700 hover:bg-green-200'
-                }`}>
-                  {alert.action}
-                </button>
+                    <div className="flex items-center gap-3">
+                      {alert.type === 'warning' && <Clock className="text-amber-500" size={18} />}
+                      {alert.type === 'info' && <Eye className="text-blue-500" size={18} />}
+                      {alert.type === 'success' && <CheckCircle2 className="text-green-500" size={18} />}
+                      <span className={`font-medium ${
+                        alert.type === 'warning' ? 'text-amber-800' :
+                        alert.type === 'info' ? 'text-blue-800' : 'text-green-800'
+                      }`}>
+                        {alert.message}
+                      </span>
+                    </div>
+                    <button 
+                      onClick={() => alert.actionPath ? navigateToPage(alert.action, alert.actionPath) : null}
+                      className={`px-3 py-1 rounded text-sm font-medium ${
+                        alert.type === 'warning' ? 'bg-amber-100 text-amber-700 hover:bg-amber-200' :
+                        alert.type === 'info' ? 'bg-blue-100 text-blue-700 hover:bg-blue-200' :
+                        'bg-green-100 text-green-700 hover:bg-green-200'
+                      }`}
+                    >
+                      {alert.action}
+                    </button>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
-        </div>
-      )}
+            </div>
+          )}
 
+          
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 ">
       {/* Filter and Sort Controls */}
       <div className="flex flex-wrap gap-3 mb-6">
@@ -520,10 +537,11 @@ const VendorDashboardContent = () => {
           <span className="text-sm text-gray-600">Filter Pipeline by:</span>
           <select className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm">
             <option value="all">All Status</option>
-            <option value="pending">Pending Review</option>
+            <option value="draft">Draft</option>
+            <option value="submitted">Submitted</option>
+            <option value="under_evaluation">Under Evaluation</option>
             <option value="approved">Approved</option>
             <option value="rejected">Rejected</option>
-            <option value="draft">Draft</option>
           </select>
           <select className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm">
             <option value="newest">Newest First</option>
@@ -611,63 +629,96 @@ const VendorDashboardContent = () => {
           </div>
           
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-            <div className="p-4 border border-gray-200 rounded-lg">
-              <div className="text-sm text-gray-500 mb-1">Delivery Compliance</div>
-              <div className="text-2xl font-bold text-gray-800">94.7%</div>
-              <div className="flex items-center gap-1 mt-1">
-                <TrendingUp className="text-green-500" size={14} />
-                <span className="text-xs text-green-600">+2.1%</span>
-              </div>
+          <div className="p-4 border border-gray-200 rounded-lg">
+            <div className="text-sm text-gray-500 mb-1">Delivery Compliance</div>
+            <div className="text-2xl font-bold text-gray-800">
+              {data.advancedKPIs?.deliveryCompliance?.toFixed(1) || '0'}%
             </div>
-            
-            <div className="p-4 border border-gray-200 rounded-lg">
-              <div className="text-sm text-gray-500 mb-1">Technical Score</div>
-              <div className="text-2xl font-bold text-gray-800">8.7/10</div>
-              <div className="text-xs text-gray-500">Based on 12 evaluations</div>
-            </div>
-            
-            <div className="p-4 border border-gray-200 rounded-lg">
-              <div className="text-sm text-gray-500 mb-1">Financial Score</div>
-              <div className="text-2xl font-bold text-gray-800">9.1/10</div>
-              <div className="text-xs text-gray-500">Payment & credit rating</div>
-            </div>
-            
-            <div className="p-4 border border-gray-200 rounded-lg">
-              <div className="text-sm text-gray-500 mb-1">Contract Value Trend</div>
-              <div className="text-2xl font-bold text-gray-800">↑ 18%</div>
-              <div className="text-xs text-gray-500">YTD growth</div>
+            <div className="text-xs text-gray-500 mt-1">
+              {data.advancedKPIs?.deliveryCompliance >= 90 ? 'Excellent' : 'Needs Improvement'}
             </div>
           </div>
           
+          <div className="p-4 border border-gray-200 rounded-lg">
+            <div className="text-sm text-gray-500 mb-1">Technical Score</div>
+            <div className="text-2xl font-bold text-gray-800">
+              {data.advancedKPIs?.technicalScore?.toFixed(1) || '0'}/10
+            </div>
+            <div className="text-xs text-gray-500">
+              Based on {data.performance.totalProposals || 0} evaluations
+            </div>
+          </div>
+          
+          <div className="p-4 border border-gray-200 rounded-lg">
+            <div className="text-sm text-gray-500 mb-1">Financial Score</div>
+            <div className="text-2xl font-bold text-gray-800">
+              {data.advancedKPIs?.financialScore?.toFixed(1) || '0'}/10
+            </div>
+            <div className="text-xs text-gray-500">Payment & credit rating</div>
+          </div>
+          
+          <div className="p-4 border border-gray-200 rounded-lg">
+            <div className="text-sm text-gray-500 mb-1">Contract Trend</div>
+            <div className={`text-2xl font-bold ${
+              (data.advancedKPIs?.contractTrend || 0) >= 0 ? 'text-green-600' : 'text-red-600'
+            }`}>
+              {data.advancedKPIs?.contractTrend >= 0 ? '↑' : '↓'} {Math.abs(data.advancedKPIs?.contractTrend || 0)}%
+            </div>
+            <div className="text-xs text-gray-500">YTD growth</div>
+          </div>
+        </div>
+          
           {/* Mini chart placeholder */}
           <div className="border-t border-gray-200 pt-4">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium text-gray-700">12-Month Rating Trend</span>
-              <span className="text-xs text-gray-500">Class B average: 7.5/10</span>
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-sm font-medium text-gray-700">Performance Metrics</span>
+            <span className="text-xs text-gray-500">Based on {data.performance.totalProposals || 0} proposals</span>
+          </div>
+          
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="p-3 border border-gray-200 rounded-lg bg-gray-50">
+              <div className="text-xs text-gray-500 mb-1">Avg. Response Time</div>
+              <div className="text-lg font-bold text-gray-800">
+                {data.performance.averageResponseTime || '0 days'}
+              </div>
             </div>
-            <div className="h-20 bg-gray-50 rounded-lg flex items-end justify-between p-2">
-              {[65, 70, 72, 75, 78, 82, 80, 85, 87, 85, 88, 90].map((value, index) => (
-                <div key={index} className="flex flex-col items-center">
-                  <div 
-                    className="w-4 bg-blue-500 rounded-t-sm"
-                    style={{ height: `${value * 0.6}px` }}
-                  ></div>
-                  <span className="text-xs text-gray-500 mt-1">{['J', 'F', 'M', 'A', 'M', 'J', 'J', 'A', 'S', 'O', 'N', 'D'][index]}</span>
-                </div>
-              ))}
+            
+            <div className="p-3 border border-gray-200 rounded-lg bg-gray-50">
+              <div className="text-xs text-gray-500 mb-1">Satisfaction Score</div>
+              <div className="text-lg font-bold text-gray-800">
+                {data.performance.satisfactionScore?.toFixed(1) || '0'}/5
+              </div>
+            </div>
+            
+            <div className="p-3 border border-gray-200 rounded-lg bg-gray-50">
+              <div className="text-xs text-gray-500 mb-1">Active Contracts</div>
+              <div className="text-lg font-bold text-gray-800">
+                {data.performance.activeContracts || 0}
+              </div>
+            </div>
+            
+            <div className="p-3 border border-gray-200 rounded-lg bg-gray-50">
+              <div className="text-xs text-gray-500 mb-1">Total Revenue</div>
+              <div className="text-lg font-bold text-gray-800">
+                SAR {(data.performance.totalRevenue / 1000000).toFixed(1)}M
+              </div>
             </div>
           </div>
         </div>
+      </div>
 
           {/* Document Compliance */}
-                  <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
           <div className="flex justify-between items-center mb-4">
             <h3 className="text-xl font-semibold text-gray-800 flex items-center gap-2">
               <FileCheck className="text-blue-500" size={20} />
-              Document Compliance Matrix
+              Document Compliance
             </h3>
-            <button className="text-blue-600 hover:text-blue-700 font-medium text-sm">
-              View Details →
+            <button 
+              onClick={() => navigateToPage('Documents', '/vendor-dashboard/documents')}
+              className="text-blue-600 hover:text-blue-700 font-medium text-sm"
+            >
+              Manage Documents →
             </button>
           </div>
           
@@ -691,10 +742,13 @@ const VendorDashboardContent = () => {
               </div>
               <p className="text-xs text-amber-600">Within 30 days</p>
               {data.documents.expiring > 0 && (
-                <div className="flex items-center gap-1 mt-1 text-xs">
+                <button 
+                  onClick={() => navigateToPage('Expiring Documents', '/vendor-dashboard/documents?filter=expiring')}
+                  className="mt-1 text-xs text-amber-700 underline flex items-center gap-1"
+                >
                   <Clock size={12} />
-                  <span>Renew soon</span>
-                </div>
+                  <span>View {data.documents.expiring} document(s)</span>
+                </button>
               )}
             </div>
             
@@ -707,7 +761,12 @@ const VendorDashboardContent = () => {
               </div>
               <p className="text-xs text-red-600">Immediate action</p>
               {data.documents.expired > 0 && (
-                <button className="mt-1 text-xs text-red-700 underline">View list</button>
+                <button 
+                  onClick={() => navigateToPage('Expired Documents', '/vendor-dashboard/documents?filter=expired')}
+                  className="mt-1 text-xs text-red-700 underline"
+                >
+                  View list
+                </button>
               )}
             </div>
             
@@ -719,17 +778,32 @@ const VendorDashboardContent = () => {
                 </span>
               </div>
               <p className="text-xs text-gray-600">Required documents</p>
+              {data.documents.missing > 0 && (
+                <button 
+                  onClick={() => navigateToPage('Missing Documents', '/vendor-dashboard/documents?filter=missing')}
+                  className="mt-1 text-xs text-gray-700 underline"
+                >
+                  See requirements
+                </button>
+              )}
             </div>
           </div>
           
           <div className="flex justify-between items-center">
             <div className="text-sm">
-              <span className="text-gray-500">Required for: </span>
-              <span className="font-medium">RFQ Response, Contract Renewal</span>
+              <span className="text-gray-500">Next review date: </span>
+              <span className="font-medium">
+                {data.vendorInfo.nextReviewDate 
+                  ? new Date(data.vendorInfo.nextReviewDate).toLocaleDateString() 
+                  : 'Not scheduled'}
+              </span>
             </div>
-            <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium flex items-center gap-2">
+            <button 
+              onClick={() => navigateToPage('Upload Documents', '/vendor-dashboard/documents/upload')}
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium flex items-center gap-2"
+            >
               <Upload size={16} />
-              Update Documents
+              Upload Documents
             </button>
           </div>
         </div>
@@ -740,37 +814,49 @@ const VendorDashboardContent = () => {
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
           <h3 className="text-xl font-semibold text-gray-800 mb-4">Quick Actions</h3>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {quickActionsConfig.map((action) => (
-              <button
-                key={action.id}
-                onClick={() => navigateToPage(action.label, action.path)}
-                className="flex flex-col items-center justify-center p-4 border border-gray-200 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-all duration-200 group text-center relative"
-                title={action.tooltip}
-              >
-                <div className="text-gray-600 group-hover:text-blue-600 mb-2">
-                  {action.icon}
+          {quickActionsConfig.map((action) => (
+            <button
+              key={action.id}
+              onClick={() => navigateToPage(action.label, action.path)}
+              className="flex flex-col items-center justify-center p-4 border border-gray-200 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-all duration-200 group text-center relative"
+              title={action.tooltip}
+            >
+              <div className="text-gray-600 group-hover:text-blue-600 mb-2">
+                {action.icon}
+              </div>
+              <span className="font-medium text-gray-700 group-hover:text-blue-700 mb-1">
+                {action.label}
+              </span>
+              <span className="text-xs text-gray-500 group-hover:text-gray-600">
+                {action.description}
+              </span>
+              
+              {/* Status indicators with REAL data */}
+              {action.id === 'update-profile' && data.vendorInfo.profileCompletion < 100 && (
+                <div className="absolute -top-1 -right-1 w-6 h-6 bg-yellow-500 text-white text-xs rounded-full flex items-center justify-center animate-pulse">
+                  !
                 </div>
-                <span className="font-medium text-gray-700 group-hover:text-blue-700 mb-1">
-                  {action.label}
-                </span>
-                <span className="text-xs text-gray-500 group-hover:text-gray-600">
-                  {action.description}
-                </span>
-                
-                {/* Status indicators */}
-                {action.id === 'update-profile' && data.vendorInfo.profileCompletion < 100 && (
-                  <div className="absolute -top-1 -right-1 w-6 h-6 bg-yellow-500 text-white text-xs rounded-full flex items-center justify-center animate-pulse">
-                    !
-                  </div>
-                )}
-                
-                {action.id === 'submit-proposal' && data.newRFQs > 0 && (
-                  <div className="absolute -top-1 -right-1 w-6 h-6 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
-                    {data.newRFQs}
-                  </div>
-                )}
-              </button>
-            ))}
+              )}
+              
+              {action.id === 'submit-proposal' && data.newRFQs > 0 && (
+                <div className="absolute -top-1 -right-1 w-6 h-6 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
+                  {data.newRFQs}
+                </div>
+              )}
+              
+              {action.id === 'view-performance' && data.performance.activeContracts > 0 && (
+                <div className="absolute -top-1 -right-1 w-6 h-6 bg-green-500 text-white text-xs rounded-full flex items-center justify-center">
+                  {data.performance.activeContracts}
+                </div>
+              )}
+              
+              {action.id === 'download-reports' && data.documents.expiring > 0 && (
+                <div className="absolute -top-1 -right-1 w-6 h-6 bg-orange-500 text-white text-xs rounded-full flex items-center justify-center">
+                  {data.documents.expiring}
+                </div>
+              )}
+            </button>
+          ))}
           </div>
           
           {/* Help text */}

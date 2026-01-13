@@ -1,23 +1,10 @@
-// frontend/src/app/vendor-dashboard/layout.js - UPDATED WITH KUN BRANDING
+// frontend/src/app/vendor-dashboard/layout.js
 "use client";
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { 
-  Home, 
-  Send, 
-  ListOrdered, 
-  Briefcase, 
-  LogOut, 
-  Menu, 
-  X,
-  Bell,
-  UserCircle2,
-  ChevronDown,
-  Building,
-  FileText,
-  BarChart3,
-  CheckCircle,
-  AlertCircle
+  Home, Send, ListOrdered, Briefcase, LogOut, Menu, X,
+  Bell, UserCircle2, ChevronDown, FileText, BarChart3
 } from 'lucide-react';
 
 export default function VendorLayout({ children }) {
@@ -25,35 +12,131 @@ export default function VendorLayout({ children }) {
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [vendorData, setVendorData] = useState(null);
+  const [quickStats, setQuickStats] = useState(null); // Just for quick stats
+  const [loadingStats, setLoadingStats] = useState(false);
 
   // Detect screen size
   useEffect(() => {
     const checkScreenSize = () => {
       setIsMobile(window.innerWidth < 1024);
     };
-
     checkScreenSize();
     window.addEventListener('resize', checkScreenSize);
     return () => window.removeEventListener('resize', checkScreenSize);
   }, []);
 
-  // Mock vendor data - replace with actual API call
+  
   useEffect(() => {
-    const storedVendor = localStorage.getItem("vendorData");
-    if (storedVendor) {
-      setVendorData(JSON.parse(storedVendor));
-    } else {
-      // Fallback mock data
-      setVendorData({
-        companyName: "Global Supply Co.",
-        email: "contact@globalsupply.com",
-        status: "APPROVED",
-        qualificationScore: 85,
-        vendorClass: "B"
-      });
-    }
+    const fetchQuickStats = async () => {
+      try {
+        console.log('🔄 Starting to fetch quick stats...');
+        const token = localStorage.getItem('authToken');
+        console.log('🔐 Token exists:', !!token);
+        if (!token) return;
+        
+        setLoadingStats(true);
+        
+        const apiUrl = `${process.env.NEXT_PUBLIC_API_URL}/api/dashboard`;
+        console.log('🌐 Fetching from:', apiUrl);
+        
+        const response = await fetch(apiUrl, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        console.log('📥 Response status:', response.status);
+        console.log('📥 Response ok:', response.ok);
+        
+        if (response.ok) {
+          const result = await response.json();
+          console.log('📊 Full API response:', result);
+          console.log('📊 result.success:', result.success);
+          console.log('📊 result.data:', result.data);
+          
+          if (result.success && result.data) {
+            const data = result.data;
+            console.log('📦 Data structure:', {
+              vendorInfo: data.vendorInfo,
+              proposals: data.proposals,
+              documents: data.documents,
+              performance: data.performance
+            });
+            
+            // Extract vendor info
+            const vendorInfo = {
+              companyName: data.vendorInfo?.companyName || data.vendorInfo?.companyLegalName || 'Vendor',
+              email: data.vendorInfo?.email || 'vendor@company.com',
+              status: data.vendorInfo?.status || 'NEEDS_RENEWAL',
+              qualificationScore: data.vendorInfo?.qualificationScore || 0,
+              vendorClass: data.vendorInfo?.vendorClass || 'D'
+            };
+            console.log('👤 Vendor info extracted:', vendorInfo);
+            
+            // Calculate active proposals (real logic)
+            const activeProposals = Array.isArray(data.proposals) 
+              ? data.proposals.filter(p => {
+                  console.log('📝 Proposal:', p);
+                  const status = p.status?.toLowerCase();
+                  const isActive = status === 'pending review' || 
+                                 status === 'submitted' ||
+                                 status === 'under evaluation' ||
+                                 status === 'technical evaluation';
+                  console.log(`🔍 Proposal ${p.id} status: ${status}, isActive: ${isActive}`);
+                  return isActive;
+                }).length
+              : 0;
+            
+            console.log('📋 Active proposals count:', activeProposals);
+            
+            // Get expiring documents
+            const expiringDocs = data.documents?.expiring || 0;
+            console.log('📄 Expiring documents:', expiringDocs);
+            
+            setVendorData(vendorInfo);
+            setQuickStats({
+              activeProposals,
+              expiringDocs: data.documents?.expiring || 0,
+              expiredDocs: data.documents?.expired || 0,  
+              qualificationScore: data.vendorInfo?.qualificationScore || 0,
+              vendorClass: data.vendorInfo?.vendorClass || 'D'
+            });
+            
+            console.log('✅ Quick stats set:', {
+              activeProposals,
+              expiringDocs,
+              qualificationScore: data.vendorInfo?.qualificationScore,
+              vendorClass: data.vendorInfo?.vendorClass
+            });
+          } else {
+            console.log('❌ API success is false or data is missing');
+          }
+        } else {
+          console.log('❌ API response not ok');
+          const errorText = await response.text();
+          console.log('❌ Error response:', errorText);
+        }
+      } catch (error) {
+        console.error('🚨 Error fetching quick stats:', error);
+        
+        // Set fallback data
+        setQuickStats({
+          activeProposals: 0,
+          expiringDocs: 0,
+          qualificationScore: 0,
+          vendorClass: 'D'
+        });
+      } finally {
+        setLoadingStats(false);
+        console.log('🏁 Loading stats finished');
+      }
+    };
+    
+    fetchQuickStats();
   }, []);
 
+  // Rest of your component remains the same...
   const navItems = [
     { 
       name: 'Dashboard', 
@@ -123,15 +206,14 @@ export default function VendorLayout({ children }) {
           : 'w-80 min-h-screen'
         }
       `}>
-        {/* Sidebar Header with KUN Logo - Matching Executive Dashboard */}
+        {/* Sidebar Header with KUN Logo */}
         <div className="p-6 border-b border-slate-700">
           <div className="flex flex-col items-center text-center space-y-4">
-            {/* KUN Logo Container - Matching Executive Dashboard */}
+            {/* KUN Logo Container */}
             <div className="w-20 h-20 bg-gradient-to-br from-yellow-400 to-yellow-600 rounded-2xl flex items-center justify-center shadow-2xl shadow-yellow-500/30 mb-2">
               <span className="text-white font-bold text-2xl">KUN</span>
             </div>
             
-            {/* Company Info - Matching Executive Dashboard */}
             <div className="space-y-1">
               <h1 className="text-xl font-bold text-white leading-tight">
                 KUN Real Estate
@@ -149,7 +231,7 @@ export default function VendorLayout({ children }) {
             </button>
           )}
           
-          {/* Vendor Quick Info - KEPT INTACT as requested */}
+          {/* Vendor Quick Info */}
           {vendorData && (
             <div className="mt-6 p-3 bg-slate-700/50 rounded-lg border border-slate-600">
               <div className="flex items-center justify-between mb-2">
@@ -223,7 +305,7 @@ export default function VendorLayout({ children }) {
                 </button>
               )}
               
-              {/* KUN Logo & Page Title - Matching Executive Dashboard */}
+              {/* KUN Logo & Page Title */}
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 bg-gradient-to-br from-yellow-400 to-yellow-600 rounded-xl flex items-center justify-center shadow-lg shadow-yellow-500/20 mr-3">
                   <span className="text-white font-bold text-base">KUN</span>
@@ -348,30 +430,66 @@ export default function VendorLayout({ children }) {
               </div>
             </div>
           </div>
-
-          {/* Quick Stats Bar - Desktop Only */}
-          {!isMobile && vendorData && (
-            <div className="px-8 pb-4">
-              <div className="grid grid-cols-4 gap-4">
-                <div className="text-center p-3 bg-blue-50 rounded-lg border border-blue-100">
-                  <div className="text-2xl font-bold text-blue-600">12</div>
-                  <div className="text-xs text-blue-800">Active Proposals</div>
-                </div>
-                <div className="text-center p-3 bg-green-50 rounded-lg border border-green-100">
-                  <div className="text-2xl font-bold text-green-600">{vendorData.qualificationScore || 0}%</div>
-                  <div className="text-xs text-green-800">Qualification Score</div>
-                </div>
-                <div className="text-center p-3 bg-orange-50 rounded-lg border border-orange-100">
-                  <div className="text-2xl font-bold text-orange-600">3</div>
-                  <div className="text-xs text-orange-800">Expiring Docs</div>
-                </div>
-                <div className="text-center p-3 bg-purple-50 rounded-lg border border-purple-100">
-                  <div className="text-2xl font-bold text-purple-600">{vendorData.vendorClass || "A"}</div>
-                  <div className="text-xs text-purple-800">Vendor Class</div>
-                </div>
+          
+           {/* Quick Stats Bar - Desktop Only */}
+           {!isMobile && (
+              <div className="px-8 pb-4">
+                {loadingStats ? (
+                  // Loading skeleton
+                  <div className="grid grid-cols-5 gap-4">
+                    {[...Array(5)].map((_, index) => (
+                      <div key={index} className="text-center p-3 bg-gray-100 rounded-lg border border-gray-200 animate-pulse">
+                        <div className="h-8 w-12 bg-gray-300 rounded mx-auto mb-2"></div>
+                        <div className="h-4 w-16 bg-gray-300 rounded mx-auto"></div>
+                      </div>
+                    ))}
+                  </div>
+                ) : vendorData ? (
+                  // Real data when loaded
+                  <div className="grid grid-cols-5 gap-4">
+                    {/* Active Proposals */}
+                    <div className="text-center p-3 bg-blue-50 rounded-lg border border-blue-100">
+                      <div className="text-2xl font-bold text-blue-600">
+                        {quickStats?.activeProposals || 0}
+                      </div>
+                      <div className="text-xs text-blue-800">Active Proposals</div>
+                    </div>
+                    
+                    {/* Qualification Score */}
+                    <div className="text-center p-3 bg-green-50 rounded-lg border border-green-100">
+                      <div className="text-2xl font-bold text-green-600">
+                        {vendorData.qualificationScore || 0}%
+                      </div>
+                      <div className="text-xs text-green-800">Qualification Score</div>
+                    </div>
+                    
+                    {/* Expiring Docs */}
+                    <div className="text-center p-3 bg-amber-50 rounded-lg border border-amber-100">
+                      <div className="text-2xl font-bold text-amber-600">
+                        {quickStats?.expiringDocs || 0}
+                      </div>
+                      <div className="text-xs text-amber-800">Expiring Soon</div>
+                    </div>
+                    
+                    {/* Expired Docs - NEW */}
+                    <div className="text-center p-3 bg-red-50 rounded-lg border border-red-100">
+                      <div className="text-2xl font-bold text-red-600">
+                        {quickStats?.expiredDocs || 0}
+                      </div>
+                      <div className="text-xs text-red-800">Expired Docs</div>
+                    </div>
+                    
+                    {/* Vendor Class */}
+                    <div className="text-center p-3 bg-purple-50 rounded-lg border border-purple-100">
+                      <div className="text-2xl font-bold text-purple-600">
+                        {vendorData.vendorClass || "D"}
+                      </div>
+                      <div className="text-xs text-purple-800">Vendor Class</div>
+                    </div>
+                  </div>
+                ) : null}
               </div>
-            </div>
-          )}
+            )}
         </header>
 
         {/* Page Content */}
