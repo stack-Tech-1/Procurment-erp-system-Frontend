@@ -73,16 +73,7 @@ export default function ManagerPage() {
   };
 
   return (
-    <ResponsiveLayout>
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-800 sm:text-3xl">
-          Manager Dashboard
-        </h1>
-        <p className="text-gray-600 mt-2 text-sm sm:text-base">
-          Team oversight and workflow management
-        </p>
-      </div>
-
+    <ResponsiveLayout>      
       {renderContent()}
     </ResponsiveLayout>
   );
