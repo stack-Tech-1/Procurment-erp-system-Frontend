@@ -8,7 +8,8 @@ import {
   Bell,
   UserCircle2,
   ChevronDown,
-  Building
+  Building,
+  RefreshCw
 } from 'lucide-react';
 import Link from 'next/link';
 import { getNavigationItems } from '@/utils/navigation';
@@ -225,22 +226,32 @@ export default function ResponsiveLayout({ children }) {
             <div className="flex items-center gap-3">
               {dashboardInfo.icon}
               <div>
-                <h1 className={`font-semibold text-gray-800 ${isMobile ? 'text-lg' : 'text-xl'}`}>
-                  {dashboardInfo.title}
-                </h1>
-                <p className={`text-gray-500 mt-1 ${isMobile ? 'text-xs' : 'text-sm'}`}>
-                  {userData?.department || "Procurement Department"}
-                </p>
+                  <h1 className={`font-semibold text-gray-800 ${isMobile ? 'text-lg' : 'text-xl'}`}>
+                    {dashboardInfo.title}
+                  </h1>
+                  <p className={`text-gray-500 mt-1 ${isMobile ? 'text-xs' : 'text-sm'}`}>
+                    {/* Update to exactly match the requirement */}
+                    {"Procurement Manager Dashboard"}
+                  </p>
               </div>
             </div>
           </div>
           
           {/* Right Section */}
-          <div className={`flex items-center gap-3 ${isMobile ? 'px-4 py-3' : 'px-8 py-4'}`}>
-            {/* Notifications */}
-            <button className="p-2 text-gray-600 hover:text-indigo-500 hover:bg-indigo-50 rounded-lg transition-all">
-              <Bell size={20} />
-            </button>
+            <div className={`flex items-center gap-3 ${isMobile ? 'px-4 py-3' : 'px-8 py-4'}`}>
+              {/* Refresh Button - NEW */}
+              <button 
+                onClick={() => window.location.reload()}
+                className="p-2 text-gray-600 hover:text-indigo-500 hover:bg-indigo-50 rounded-lg transition-all"
+                title="Refresh Dashboard"
+              >
+                <RefreshCw size={20} />
+              </button>
+
+              {/* Notifications */}
+              <button className="p-2 text-gray-600 hover:text-indigo-500 hover:bg-indigo-50 rounded-lg transition-all">
+                <Bell size={20} />
+              </button>
 
             {/* User Menu - Desktop: Full | Mobile: Compact */}
             <div className="relative">
@@ -257,7 +268,8 @@ export default function ResponsiveLayout({ children }) {
                       {userData?.name || "User Name"}
                     </p>
                     <p className="text-xs text-gray-500">
-                      {userData?.department || "Procurement"}
+                      {/* Updated to show role instead of department */}
+                      {ROLE_NAMES[userData?.roleId] || "Procurement Manager"}
                     </p>
                   </div>
                 )}
@@ -269,7 +281,8 @@ export default function ResponsiveLayout({ children }) {
                 />
               </button>
 
-              {/* User Dropdown */}
+
+              {/* User Dropdown - Optional: update role display here too */}
               {userMenuOpen && (
                 <div className={`absolute right-0 top-full mt-2 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50 ${
                   isMobile ? 'w-48' : 'w-64'
@@ -278,9 +291,10 @@ export default function ResponsiveLayout({ children }) {
                     <div className="px-4 py-2 border-b border-gray-100">
                       <p className="font-medium text-gray-800 text-sm">{userData.name}</p>
                       <p className="text-xs text-gray-500 truncate">{userData.email}</p>
-                      {!isMobile && userData.jobTitle && (
-                        <p className="text-xs text-gray-400 mt-1">{userData.jobTitle}</p>
-                      )}
+                      {/* Show role in dropdown */}
+                      <p className="text-xs text-gray-400 mt-1">
+                        {ROLE_NAMES[userData.roleId] || "Procurement Manager"}
+                      </p>
                     </div>
                   )}
                   
