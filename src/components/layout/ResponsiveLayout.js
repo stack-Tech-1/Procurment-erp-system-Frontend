@@ -52,50 +52,58 @@ export default function ResponsiveLayout({ children }) {
     window.location.href = "/login";
   };
 
-  const getDashboardTitle = () => {
-    if (!userData) return { title: "Dashboard", icon: (
+const getDashboardTitle = () => {
+  if (!userData) return { 
+    title: "Dashboard", 
+    subtitle: "Loading...",
+    icon: (
       <div className="w-10 h-10 bg-gradient-to-br from-yellow-400 to-yellow-600 rounded-xl flex items-center justify-center shadow-lg shadow-yellow-500/20 mr-3">
         <span className="text-white font-bold text-base">KUN</span>
       </div>
-    ) };
-    
-    const roles = {
-      1: { 
-        title: "Executive Dashboard", 
-        icon: (
-          <div className="w-10 h-10 bg-gradient-to-br from-yellow-400 to-yellow-600 rounded-xl flex items-center justify-center shadow-lg shadow-yellow-500/20 mr-3">
-            <span className="text-white font-bold text-base">KUN</span>
-          </div>
-        ) 
-      },
-      2: { 
-        title: "Manager Dashboard", 
-        icon: (
-          <div className="w-10 h-10 bg-gradient-to-br from-gray-800 to-gray-900 rounded-xl flex items-center justify-center shadow-lg shadow-gray-500/20 mr-3">
-            <span className="text-white font-bold text-base">KUN</span>
-          </div>
-        ) 
-      },
-      3: { 
-        title: "Officer Dashboard", 
-        icon: (
-          <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/20 mr-3">
-            <span className="text-white font-bold text-base">KUN</span>
-          </div>
-        ) 
-      },
-      4: { 
-        title: "Vendor Portal", 
-        icon: (
-          <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg shadow-purple-500/20 mr-3">
-            <span className="text-white font-bold text-base">KUN</span>
-          </div>
-        ) 
-      }
-    };
-    
-    return roles[userData.roleId] || roles[3];
+    ) 
   };
+  
+  const roles = {
+    1: { 
+      title: "Executive Dashboard", 
+      subtitle: "Executive Overview",
+      icon: (
+        <div className="w-10 h-10 bg-gradient-to-br from-yellow-400 to-yellow-600 rounded-xl flex items-center justify-center shadow-lg shadow-yellow-500/20 mr-3">
+          <span className="text-white font-bold text-base">KUN</span>
+        </div>
+      ) 
+    },
+    2: { 
+      title: "Manager Dashboard", 
+      subtitle: "Procurement Manager Dashboard",
+      icon: (
+        <div className="w-10 h-10 bg-gradient-to-br from-gray-800 to-gray-900 rounded-xl flex items-center justify-center shadow-lg shadow-gray-500/20 mr-3">
+          <span className="text-white font-bold text-base">KUN</span>
+        </div>
+      ) 
+    },
+    3: { 
+      title: "Officer Dashboard", 
+      subtitle: "Procurement Officer Dashboard",
+      icon: (
+        <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/20 mr-3">
+          <span className="text-white font-bold text-base">KUN</span>
+        </div>
+      ) 
+    },
+    4: { 
+      title: "Vendor Portal", 
+      subtitle: "Vendor Dashboard",
+      icon: (
+        <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg shadow-purple-500/20 mr-3">
+          <span className="text-white font-bold text-base">KUN</span>
+        </div>
+      ) 
+    }
+  };
+  
+  return roles[userData.roleId] || roles[3];
+};
 
   const dashboardInfo = getDashboardTitle();
 
@@ -226,13 +234,12 @@ export default function ResponsiveLayout({ children }) {
             <div className="flex items-center gap-3">
               {dashboardInfo.icon}
               <div>
-                  <h1 className={`font-semibold text-gray-800 ${isMobile ? 'text-lg' : 'text-xl'}`}>
-                    {dashboardInfo.title}
-                  </h1>
-                  <p className={`text-gray-500 mt-1 ${isMobile ? 'text-xs' : 'text-sm'}`}>
-                    {/* Update to exactly match the requirement */}
-                    {"Procurement Manager Dashboard"}
-                  </p>
+                <h1 className={`font-semibold text-gray-800 ${isMobile ? 'text-lg' : 'text-xl'}`}>
+                  {dashboardInfo.title}
+                </h1>
+                <p className={`text-gray-500 mt-1 ${isMobile ? 'text-xs' : 'text-sm'}`}>
+                  {dashboardInfo.subtitle}  
+                </p>
               </div>
             </div>
           </div>
