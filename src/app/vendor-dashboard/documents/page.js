@@ -1,7 +1,6 @@
 // frontend/src/app/vendor-dashboard/documents/page.js
 "use client";
 import React, { useState, useEffect } from 'react';
-//import VendorLayout from '../layout';
 import { 
   FileText, Calendar, CheckCircle, AlertTriangle, XCircle, 
   Download, Eye, Upload, Filter, Search, RefreshCw, Clock,

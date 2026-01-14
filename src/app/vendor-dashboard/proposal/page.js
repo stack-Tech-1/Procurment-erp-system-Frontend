@@ -547,69 +547,72 @@ const DocumentRow = ({ doc, onChange, file, expiryDate, docNumber, isEditable, i
           }
         };
 
-   // 2. 🔑 ADD useEffect TO POPULATE STATE FROM initialData
-useEffect(() => {
-  if (initialData) {
-      // A. Populate formData (Map API object to flat form state)
-      setFormData(prev => ({
-          ...prev,
-          // Section A: Company Information (Updated keys)
-          companyLegalName: initialData.companyLegalName || initialData.name || '', // Use new key, fallback to old key 'name'
-          vendorId: initialData.vendorId || '', // Read-only
-          vendorType: initialData.vendorType || '',
-          businessType: initialData.businessType || '',
-          licenseNumber: initialData.licenseNumber || '',
-          yearsInBusiness: initialData.yearsInBusiness || '',
-          gosiEmployeeCount: initialData.gosiEmployeeCount || '',
-          chamberClass: initialData.chamberClass || '',
-          chamberRegion: initialData.chamberRegion || '',
-          mainCategory: initialData.mainCategory?.join(', ') || '', // Convert array to comma-separated string for Text Input
-          subCategory: initialData.subCategory || '',
-          productsAndServices: initialData.productsAndServices?.join(', ') || '',
-          csiSpecialization: initialData.csiSpecializationId || '', // Use the ID for lookup
-          
-          // Section B: Contact Information (Updated keys)
-          contactPerson: initialData.contactPerson || '',
-          contactPhone: initialData.contactPhone || '',
-          contactEmail: initialData.contactEmail || '',
-          website: initialData.website || '',
-          addressStreet: initialData.addressStreet || '',
-          addressCity: initialData.addressCity || '',
-          addressRegion: initialData.addressRegion || '',
-          addressCountry: initialData.addressCountry || '',
-          primaryContactName: initialData.primaryContactName || '',
-          primaryContactTitle: initialData.primaryContactTitle || '',
-          technicalContactName: initialData.technicalContactName || '', // NEW FIELD
-          technicalContactEmail: initialData.technicalContactEmail || '', // NEW FIELD
-          financialContactName: initialData.financialContactName || '', // NEW FIELD
-          financialContactEmail: initialData.financialContactEmail || '', // NEW FIELD
-          
-          // Old generic fields are now deprecated/removed
-      }));
-
-      // B. Populate projectExperience
-      setProjectExperience(initialData.projectExperience || []);
-
-      // C. Populate documentData
-      const mappedDocs = (initialData.documents || []).reduce((acc, doc) => {
-          acc[doc.docType] = {
-              file: doc.url ? { name: doc.url.split('/').pop(), url: doc.url } : null,
-              expiry: doc.expiryDate ? doc.expiryDate.split('T')[0] : '',
-              number: doc.documentNumber || '',
-              // Capture new fields from Document model
-              isoType: doc.isoType || '', 
-              existingUrl: doc.url,
-          };
-          return acc;
-      }, {});
-      setDocumentData(mappedDocs);
-
-          // Handle logo from initial data if exists
-        if (initialData.logo) {
-          // If logo is a URL (from existing vendor), set as preview
-          setLogoPreview(initialData.logo);
-        }
-        }
+        useEffect(() => {
+          if (initialData) {
+            // Helper function to safely convert to comma-separated string
+            const safeJoin = (value, fallback = '') => {
+              if (!value) return fallback;
+              if (Array.isArray(value)) return value.join(', ');
+              if (typeof value === 'string') return value; // Already a string
+              return String(value); // Fallback for other types
+            };
+        
+            // A. Populate formData (Map API object to flat form state)
+            setFormData(prev => ({
+              ...prev,
+              // Section A: Company Information (Updated keys)
+              companyLegalName: initialData.companyLegalName || initialData.name || '',
+              vendorId: initialData.vendorId || '',
+              vendorType: initialData.vendorType || '',
+              businessType: initialData.businessType || '',
+              licenseNumber: initialData.licenseNumber || '',
+              yearsInBusiness: initialData.yearsInBusiness || '',
+              gosiEmployeeCount: initialData.gosiEmployeeCount || '',
+              chamberClass: initialData.chamberClass || '',
+              chamberRegion: initialData.chamberRegion || '',
+              mainCategory: safeJoin(initialData.mainCategory), // Fixed: Safe join
+              subCategory: initialData.subCategory || '',
+              productsAndServices: safeJoin(initialData.productsAndServices), // Also fix this one
+              csiSpecialization: initialData.csiSpecializationId || '',
+              
+              // Section B: Contact Information (Updated keys)
+              contactPerson: initialData.contactPerson || '',
+              contactPhone: initialData.contactPhone || '',
+              contactEmail: initialData.contactEmail || '',
+              website: initialData.website || '',
+              addressStreet: initialData.addressStreet || '',
+              addressCity: initialData.addressCity || '',
+              addressRegion: initialData.addressRegion || '',
+              addressCountry: initialData.addressCountry || '',
+              primaryContactName: initialData.primaryContactName || '',
+              primaryContactTitle: initialData.primaryContactTitle || '',
+              technicalContactName: initialData.technicalContactName || '',
+              technicalContactEmail: initialData.technicalContactEmail || '',
+              financialContactName: initialData.financialContactName || '',
+              financialContactEmail: initialData.financialContactEmail || '',
+            }));
+        
+            // B. Populate projectExperience
+            setProjectExperience(initialData.projectExperience || []);
+        
+            // C. Populate documentData
+            const mappedDocs = (initialData.documents || []).reduce((acc, doc) => {
+              acc[doc.docType] = {
+                file: doc.url ? { name: doc.url.split('/').pop(), url: doc.url } : null,
+                expiry: doc.expiryDate ? doc.expiryDate.split('T')[0] : '',
+                number: doc.documentNumber || '',
+                isoType: doc.isoType || '',
+                existingUrl: doc.url,
+              };
+              return acc;
+            }, {});
+            setDocumentData(mappedDocs);
+        
+            // Handle logo from initial data if exists
+            if (initialData.logo) {
+              setLogoPreview(initialData.logo);
+            }
+          }
         }, [initialData]);
 
 

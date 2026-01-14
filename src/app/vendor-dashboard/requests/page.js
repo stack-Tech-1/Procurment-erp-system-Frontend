@@ -5,7 +5,6 @@ import React, { useState, useEffect } from 'react';
 import { 
   Filter, 
   Search, 
-  Plus, 
   Download, 
   Bell, 
   AlertCircle,
@@ -13,14 +12,13 @@ import {
   CheckCircle,
   Clock,
   Calendar,
-  TrendingUp
+  RefreshCw
 } from 'lucide-react';
 import RequestCard from '@/components/requests/RequestCard';
 import EmptyState from '@/components/requests/EmptyState';
 import RequestFilters from '@/components/requests/RequestFilters';
-import mockRequestService from '@/services/mockRequestService';
-import { REQUEST_TYPES, REQUEST_STATUS, PRIORITY_LEVELS } from '@/utils/mockRequests';
-import { formatDate, getRelativeTime } from '@/utils/dateUtils';
+import informationRequestService from '@/services/informationRequestService';
+import { formatDate } from '@/utils/dateUtils';
 
 export default function VendorRequestsPage() {
   const [requests, setRequests] = useState([]);
@@ -36,8 +34,33 @@ export default function VendorRequestsPage() {
     dateRange: null
   });
 
-  // Mock vendor ID - in real app, this would come from auth/session
-  const vendorId = 'vendor-001';
+  const fetchRequests = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      // Fetch both requests and stats in parallel
+      const [requestsResponse, statsResponse] = await Promise.all([
+        informationRequestService.getVendorRequests(activeFilters),
+        informationRequestService.getRequestStats()
+      ]);
+      
+      if (requestsResponse.success) {
+        setRequests(requestsResponse.data || []);
+        setFilteredRequests(requestsResponse.data || []);
+      }
+      
+      if (statsResponse.success) {
+        setStats(statsResponse.data);
+      }
+      
+    } catch (err) {
+      console.error('Error fetching requests:', err);
+      setError(err.message || 'Failed to fetch requests');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     fetchRequests();
@@ -46,27 +69,6 @@ export default function VendorRequestsPage() {
   useEffect(() => {
     applyFilters();
   }, [requests, activeFilters]);
-
-  const fetchRequests = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      
-      const response = await mockRequestService.getVendorRequests(vendorId);
-      
-      if (response.success) {
-        setRequests(response.data);
-        setStats(response.stats);
-      } else {
-        throw new Error('Failed to fetch requests');
-      }
-    } catch (err) {
-      console.error('Error fetching requests:', err);
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const applyFilters = () => {
     let filtered = [...requests];
@@ -90,9 +92,9 @@ export default function VendorRequestsPage() {
     if (activeFilters.search) {
       const searchTerm = activeFilters.search.toLowerCase();
       filtered = filtered.filter(req => 
-        req.title.toLowerCase().includes(searchTerm) ||
-        req.description.toLowerCase().includes(searchTerm) ||
-        req.requestType.toLowerCase().includes(searchTerm)
+        req.title?.toLowerCase().includes(searchTerm) ||
+        req.description?.toLowerCase().includes(searchTerm) ||
+        req.requestType?.toLowerCase().includes(searchTerm)
       );
     }
 
@@ -126,20 +128,24 @@ export default function VendorRequestsPage() {
     setActiveFilters(prev => ({ ...prev, search: searchTerm }));
   };
 
+  const handleRefresh = () => {
+    fetchRequests();
+  };
+
   const getPendingCount = () => {
-    return stats ? stats.pending + stats.overdue : 0;
+    return stats ? (stats.pending || 0) + (stats.overdue || 0) : 0;
   };
 
   const exportToCSV = () => {
     // Simple CSV export implementation
     const headers = ['Title', 'Type', 'Status', 'Priority', 'Due Date', 'Created Date', 'Response Date'];
     const csvData = filteredRequests.map(req => [
-      req.title,
-      REQUEST_TYPES[req.requestType]?.label || req.requestType,
-      REQUEST_STATUS[req.status]?.label || req.status,
-      PRIORITY_LEVELS[req.priority]?.label || req.priority,
-      formatDate(req.dueDate, 'short'),
-      formatDate(req.createdAt, 'short'),
+      req.title || 'N/A',
+      req.requestType || 'N/A',
+      req.status || 'N/A',
+      req.priority || 'N/A',
+      req.dueDate ? formatDate(req.dueDate, 'short') : 'N/A',
+      req.createdAt ? formatDate(req.createdAt, 'short') : 'N/A',
       req.responseDate ? formatDate(req.responseDate, 'short') : 'Not responded'
     ]);
 
@@ -159,8 +165,9 @@ export default function VendorRequestsPage() {
 
   if (loading) {
     return (
-      <div className="p-8">
-        <EmptyState type="loading" />
+      <div className="p-8 flex flex-col items-center justify-center min-h-[60vh]">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
+        <p className="text-gray-600">Loading requests...</p>
       </div>
     );
   }
@@ -199,6 +206,14 @@ export default function VendorRequestsPage() {
           
           <div className="flex items-center gap-3">
             <button
+              onClick={handleRefresh}
+              className="p-2 text-gray-600 hover:text-blue-600 transition-colors"
+              title="Refresh"
+            >
+              <RefreshCw size={20} />
+            </button>
+            
+            <button
               onClick={exportToCSV}
               className="flex items-center gap-2 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
             >
@@ -229,7 +244,7 @@ export default function VendorRequestsPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-gray-500">Total Requests</p>
-                  <p className="text-2xl font-bold text-gray-800">{stats.total}</p>
+                  <p className="text-2xl font-bold text-gray-800">{stats.total || 0}</p>
                 </div>
                 <FileText className="text-blue-500" size={20} />
               </div>
@@ -239,7 +254,7 @@ export default function VendorRequestsPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-gray-500">Pending</p>
-                  <p className="text-2xl font-bold text-yellow-600">{stats.pending}</p>
+                  <p className="text-2xl font-bold text-yellow-600">{stats.pending || 0}</p>
                 </div>
                 <Clock className="text-yellow-500" size={20} />
               </div>
@@ -249,7 +264,7 @@ export default function VendorRequestsPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-gray-500">Submitted</p>
-                  <p className="text-2xl font-bold text-blue-600">{stats.submitted}</p>
+                  <p className="text-2xl font-bold text-blue-600">{stats.submitted || 0}</p>
                 </div>
                 <FileText className="text-blue-500" size={20} />
               </div>
@@ -259,7 +274,7 @@ export default function VendorRequestsPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-gray-500">Approved</p>
-                  <p className="text-2xl font-bold text-green-600">{stats.approved}</p>
+                  <p className="text-2xl font-bold text-green-600">{stats.approved || 0}</p>
                 </div>
                 <CheckCircle className="text-green-500" size={20} />
               </div>
@@ -269,7 +284,7 @@ export default function VendorRequestsPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-gray-500">Overdue</p>
-                  <p className="text-2xl font-bold text-red-600">{stats.overdue}</p>
+                  <p className="text-2xl font-bold text-red-600">{stats.overdue || 0}</p>
                 </div>
                 <AlertCircle className="text-red-500" size={20} />
               </div>
@@ -295,8 +310,8 @@ export default function VendorRequestsPage() {
           <div className="flex items-center justify-between">
             <p className="text-sm text-gray-600">
               Showing {filteredRequests.length} of {requests.length} requests
-              {activeFilters.status && ` • Filtered by: ${REQUEST_STATUS[activeFilters.status]?.label}`}
-              {activeFilters.type && ` • ${REQUEST_TYPES[activeFilters.type]?.label}`}
+              {activeFilters.status && ` • Filtered by: ${activeFilters.status}`}
+              {activeFilters.type && ` • ${activeFilters.type}`}
             </p>
             
             <div className="text-sm text-gray-500">
@@ -307,9 +322,10 @@ export default function VendorRequestsPage() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {filteredRequests.map(request => (
               <RequestCard 
-                key={request.id} 
+                key={request.id || request.uuid} 
                 request={request}
                 isVendorView={true}
+                onResponseSubmit={() => fetchRequests()} // Refresh after response
               />
             ))}
           </div>

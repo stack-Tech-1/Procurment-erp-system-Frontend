@@ -16,11 +16,15 @@ import {
 } from 'lucide-react';
 import RequestStatusBadge from './RequestStatusBadge';
 import { formatDate, getRelativeTime, isOverdue } from '@/utils/dateUtils';
-import { REQUEST_TYPES, PRIORITY_LEVELS } from '@/utils/mockRequests';
+import { REQUEST_TYPES, PRIORITY_LEVELS, REQUEST_STATUS } from '@/utils/requestConstants';
 
 const RequestCard = ({ request, isVendorView = true, onClick }) => {
+
+  const requestType = request.requestType || 'OTHER';
   const requestTypeConfig = REQUEST_TYPES[request.requestType] || REQUEST_TYPES.OTHER;
+  const priority = request.priority || 'NORMAL';
   const priorityConfig = PRIORITY_LEVELS[request.priority] || PRIORITY_LEVELS.NORMAL;
+  const dueDate = request.dueDate ? new Date(request.dueDate) : new Date();
   const isDueSoon = !isOverdue(request.dueDate) && new Date(request.dueDate) < new Date(Date.now() + 3 * 24 * 60 * 60 * 1000);
   const hasAttachment = request.responseFiles && request.responseFiles.length > 0;
   

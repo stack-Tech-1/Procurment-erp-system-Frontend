@@ -5,10 +5,11 @@ import {
   Building2, Mail, Phone, MapPin, Globe, Calendar, 
   Shield, FileText, CheckCircle, AlertCircle, Edit,
   Download, Eye, Users, Briefcase, Package, Clock, 
-  RefreshCw, Loader2, TrendingUp, Award, Star
+  RefreshCw, Loader2, TrendingUp, Award, Star, Image
 } from 'lucide-react';
 import VendorLayout from '../../../vendor-dashboard/layout';
 import { useRouter } from 'next/navigation';
+
 
 const VendorProfilePage = () => {
   const [vendorData, setVendorData] = useState(null);
@@ -195,29 +196,52 @@ const VendorProfilePage = () => {
   return (
     <VendorLayout>
       <div className="max-w-6xl mx-auto p-4 sm:p-6">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
-          <div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-gray-800">Company Profile</h1>
-            <p className="text-gray-600 mt-2">View and manage your company information</p>
+        {/* Header with Logo */}
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
+            <div className="flex items-center gap-3">
+              {vendorData.logo ? (
+                <div className="w-16 h-16 rounded-lg border-2 border-blue-200 bg-white p-1 shadow-sm">
+                  <img 
+                    src={vendorData.logo} 
+                    alt={`${vendorData.companyLegalName} Logo`} 
+                    className="w-full h-full object-contain"
+                    onError={(e) => {
+                      e.target.style.display = 'none';
+                      e.target.parentElement.innerHTML = `
+                        <div class="w-full h-full bg-gradient-to-br from-gray-100 to-gray-200 rounded flex items-center justify-center">
+                          <Building2 class="w-8 h-8 text-gray-400" />
+                        </div>
+                      `;
+                    }}
+                  />
+                </div>
+              ) : (
+                <div className="w-16 h-16 rounded-lg border-2 border-dashed border-gray-300 bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
+                  <Building2 className="w-8 h-8 text-gray-400" />
+                </div>
+              )}
+              <div>
+                <h1 className="text-2xl sm:text-3xl font-bold text-gray-800">Company Profile</h1>
+                <p className="text-gray-600 mt-2">View and manage your company information</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={handleRefresh}
+                className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors"
+                title="Refresh data"
+              >
+                <RefreshCw size={20} />
+              </button>
+              <button
+                onClick={handleEditProfile}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
+              >
+                <Edit size={18} />
+                Edit Profile
+              </button>
+            </div>
           </div>
-          <div className="flex items-center gap-3">
-            <button
-              onClick={handleRefresh}
-              className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors"
-              title="Refresh data"
-            >
-              <RefreshCw size={20} />
-            </button>
-            <button
-              onClick={handleEditProfile}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
-            >
-              <Edit size={18} />
-              Edit Profile
-            </button>
-          </div>
-        </div>
 
         {/* Status Banner */}
         <div className={`mb-8 p-4 rounded-xl border-l-4 ${
@@ -281,6 +305,106 @@ const VendorProfilePage = () => {
             </div>
           </div>
         )}
+
+        {/* Company Logo Section */}
+<div className="mb-8 p-6 bg-white rounded-xl border border-gray-200 shadow-sm">
+  <div className="flex items-center gap-3 mb-6">
+    <Image className="text-blue-600" size={24} />
+    <h2 className="text-xl font-semibold text-gray-800">Company Identity</h2>
+  </div>
+  
+  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+    {/* Logo Upload/Preview */}
+    <div>
+      <div className="mb-4">
+        <h4 className="text-sm font-medium text-gray-700 mb-2">Company Logo</h4>
+        {vendorData.logo ? (
+          <div className="flex flex-col items-center">
+            <div className="w-48 h-48 rounded-lg border-2 border-blue-200 bg-white p-2 shadow-inner mb-4">
+              <img 
+                src={vendorData.logo} 
+                alt={`${vendorData.companyLegalName} Logo`}
+                className="w-full h-full object-contain"
+                onError={(e) => {
+                  e.target.style.display = 'none';
+                  e.target.parentElement.innerHTML = `
+                    <div class="w-full h-full bg-gradient-to-br from-gray-100 to-gray-200 rounded flex items-center justify-center">
+                      <Image class="w-12 h-12 text-gray-400" />
+                    </div>
+                  `;
+                }}
+              />
+            </div>
+            <p className="text-sm text-green-600 mb-2">✓ Logo uploaded successfully</p>
+            <button
+              onClick={() => window.open(vendorData.logo, '_blank')}
+              className="text-sm text-blue-600 hover:text-blue-800 flex items-center gap-1"
+            >
+              <Eye size={14} />
+              View Full Size
+            </button>
+          </div>
+        ) : (
+          <div className="text-center py-8 border-2 border-dashed border-gray-300 rounded-lg bg-gray-50">
+            <Image className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+            <p className="text-gray-500 mb-2">No logo uploaded</p>
+            <p className="text-xs text-gray-400">
+              Upload your logo in the qualification form
+            </p>
+          </div>
+        )}
+      </div>
+    </div>
+    
+    {/* Logo Requirements */}
+    <div>
+      <h4 className="text-sm font-medium text-gray-700 mb-3">Logo Requirements</h4>
+      <div className="space-y-3">
+        <div className="flex items-start gap-2">
+          <CheckCircle className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
+          <span className="text-sm text-gray-600">
+            Square format recommended (1:1 aspect ratio)
+          </span>
+        </div>
+        <div className="flex items-start gap-2">
+          <CheckCircle className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
+          <span className="text-sm text-gray-600">
+            Minimum 300×300 pixels
+          </span>
+        </div>
+        <div className="flex items-start gap-2">
+          <CheckCircle className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
+          <span className="text-sm text-gray-600">
+            Maximum file size: 5MB
+          </span>
+        </div>
+        <div className="flex items-start gap-2">
+          <CheckCircle className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
+          <span className="text-sm text-gray-600">
+            Supported formats: JPG, PNG, SVG
+          </span>
+        </div>
+        
+        <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+          <p className="text-xs text-blue-700">
+            <span className="font-medium">Note:</span> Your logo is displayed in your vendor profile header, 
+            admin review panel, and on awarded contracts for brand recognition.
+          </p>
+        </div>
+        
+        <div className="mt-4">
+          <button
+            onClick={handleEditProfile}
+            className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium flex items-center justify-center gap-2"
+          >
+            <Edit size={16} />
+            Edit Logo & Profile
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
 
         {/* Main Content Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
