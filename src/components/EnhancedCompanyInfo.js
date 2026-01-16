@@ -1,8 +1,10 @@
 "use client";
 import React from 'react';
+import { useTranslation } from 'react-i18next'; // ADD THIS IMPORT
 import { Building2, MapPin, Calendar, Users, Award, Globe, Hash } from 'lucide-react';
 
-const EnhancedCompanyInfo = ({ vendor }) => {
+const EnhancedCompanyInfo = ({ vendor }) => {  
+  const { t } = useTranslation(); // ADD THIS HOOK
   // Ownership types from your specifications
   const OWNERSHIP_TYPES = ['Local', 'Foreign', 'Joint Venture', 'Government'];
   
@@ -20,18 +22,18 @@ const EnhancedCompanyInfo = ({ vendor }) => {
           <div>
             <h4 className="font-semibold text-blue-800 flex items-center">
               <Building2 className="w-5 h-5 mr-2" />
-              Company Profile Summary
+              {t('companyProfileSummary')}
             </h4>
             <p className="text-sm text-blue-600 mt-1">
-              Complete business information for procurement assessment
+              {t('completeBusinessInformation')}
             </p>
           </div>
           <div className="text-right">
             <p className="text-sm font-medium text-blue-800">
-              {vendor.yearsInBusiness || 0} Years in Business
+              {vendor.yearsInBusiness || 0} {t('yearsInBusiness')}
             </p>
             <p className="text-xs text-blue-600">
-              {vendor.gosiEmployeeCount || 0} GOSI Employees
+              {vendor.gosiEmployeeCount || 0} {t('gosiEmployees')}
             </p>
           </div>
         </div>
@@ -41,34 +43,34 @@ const EnhancedCompanyInfo = ({ vendor }) => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {/* Ownership & Business Type */}
         <div className="space-y-4">
-          <h5 className="font-semibold text-gray-700 border-b pb-2">Business Structure</h5>
+          <h5 className="font-semibold text-gray-700 border-b pb-2">{t('businessStructure')}</h5>
           
           <div className="space-y-3">
             <div>
-              <label className="block text-xs font-medium text-gray-500 mb-1">Ownership Type</label>
+              <label className="block text-xs font-medium text-gray-500 mb-1">{t('ownershipType')}</label>
               <div className="flex items-center space-x-2 p-2 bg-gray-50 rounded border">
                 <Users className="w-4 h-4 text-gray-400" />
                 <span className="text-sm font-medium text-gray-800">
-                  {vendor.ownershipType || 'Not specified'}
+                  {vendor.ownershipType || t('notSpecified')}
                 </span>
               </div>
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-gray-500 mb-1">Business Type</label>
+              <label className="block text-xs font-medium text-gray-500 mb-1">{t('businessType')}</label>
               <div className="flex items-center space-x-2 p-2 bg-gray-50 rounded border">
                 <Building2 className="w-4 h-4 text-gray-400" />
                 <span className="text-sm font-medium text-gray-800">
-                  {vendor.businessType || 'Not specified'}
+                  {vendor.businessType || t('notSpecified')}
                 </span>
               </div>
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-gray-500 mb-1">Vendor Type</label>
+              <label className="block text-xs font-medium text-gray-500 mb-1">{t('vendorType')}</label>
               <div className="p-2 bg-gray-50 rounded border">
                 <span className="text-sm font-medium text-gray-800 capitalize">
-                  {vendor.vendorType?.replace(/([A-Z])/g, ' $1').trim() || 'Not specified'}
+                  {vendor.vendorType?.replace(/([A-Z])/g, ' $1').trim() || t('notSpecified')}
                 </span>
               </div>
             </div>
@@ -77,31 +79,31 @@ const EnhancedCompanyInfo = ({ vendor }) => {
 
         {/* Chamber & Legal Information */}
         <div className="space-y-4">
-          <h5 className="font-semibold text-gray-700 border-b pb-2">Legal & Chamber</h5>
+          <h5 className="font-semibold text-gray-700 border-b pb-2">{t('legalChamber')}</h5>
           
           <div className="space-y-3">
             <div>
-              <label className="block text-xs font-medium text-gray-500 mb-1">Chamber Classification</label>
+              <label className="block text-xs font-medium text-gray-500 mb-1">{t('chamberClassification')}</label>
               <div className="flex items-center space-x-2 p-2 bg-gray-50 rounded border">
                 <Award className="w-4 h-4 text-gray-400" />
                 <span className="text-sm font-medium text-gray-800">
-                  {vendor.chamberClass || 'Not classified'}
+                  {vendor.chamberClass || t('notClassified')}
                 </span>
               </div>
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-gray-500 mb-1">Chamber Region</label>
+              <label className="block text-xs font-medium text-gray-500 mb-1">{t('chamberRegion')}</label>
               <div className="p-2 bg-gray-50 rounded border">
                 <span className="text-sm text-gray-800">
-                  {vendor.chamberRegion || 'Not specified'}
+                  {vendor.chamberRegion || t('notSpecified')}
                 </span>
               </div>
             </div>
 
             {vendor.chamberExpiryDate && (
               <div>
-                <label className="block text-xs font-medium text-gray-500 mb-1">Chamber Expiry</label>
+                <label className="block text-xs font-medium text-gray-500 mb-1">{t('chamberExpiry')}</label>
                 <div className="flex items-center space-x-2 p-2 bg-gray-50 rounded border">
                   <Calendar className="w-4 h-4 text-gray-400" />
                   <span className="text-sm text-gray-800">
@@ -115,16 +117,16 @@ const EnhancedCompanyInfo = ({ vendor }) => {
 
         {/* Location & Contact */}
         <div className="space-y-4">
-          <h5 className="font-semibold text-gray-700 border-b pb-2">Location & Operations</h5>
+          <h5 className="font-semibold text-gray-700 border-b pb-2">{t('locationOperations')}</h5>
           
           <div className="space-y-3">
             <div>
-              <label className="block text-xs font-medium text-gray-500 mb-1">Head Office</label>
+              <label className="block text-xs font-medium text-gray-500 mb-1">{t('headOffice')}</label>
               <div className="flex items-start space-x-2 p-2 bg-gray-50 rounded border">
                 <MapPin className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
                 <div>
                   <span className="text-sm font-medium text-gray-800 block">
-                    {vendor.headOfficeLocation || 'Not specified'}
+                    {vendor.headOfficeLocation || t('notSpecified')}
                   </span>
                   {vendor.addressStreet && (
                     <span className="text-xs text-gray-600 block mt-1">
@@ -137,21 +139,21 @@ const EnhancedCompanyInfo = ({ vendor }) => {
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-gray-500 mb-1">Years in Business</label>
+              <label className="block text-xs font-medium text-gray-500 mb-1">{t('yearsInBusiness')}</label>
               <div className="flex items-center space-x-2 p-2 bg-gray-50 rounded border">
                 <Calendar className="w-4 h-4 text-gray-400" />
                 <span className="text-sm font-medium text-gray-800">
-                  {vendor.yearsInBusiness || 0} years
+                  {vendor.yearsInBusiness || 0} {t('years')}
                 </span>
               </div>
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-gray-500 mb-1">GOSI Employees</label>
+              <label className="block text-xs font-medium text-gray-500 mb-1">{t('gosiEmployees')}</label>
               <div className="flex items-center space-x-2 p-2 bg-gray-50 rounded border">
                 <Users className="w-4 h-4 text-gray-400" />
                 <span className="text-sm font-medium text-gray-800">
-                  {vendor.gosiEmployeeCount || 0} employees
+                  {vendor.gosiEmployeeCount || 0} {t('employees')}
                 </span>
               </div>
             </div>
@@ -162,27 +164,27 @@ const EnhancedCompanyInfo = ({ vendor }) => {
       {/* Tax & Registration Numbers */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4 border-t">
         <div>
-          <label className="block text-xs font-medium text-gray-500 mb-1">Commercial Registration (CR)</label>
+          <label className="block text-xs font-medium text-gray-500 mb-1">{t('commercialRegistrationCr')}</label>
           <div className="flex items-center space-x-2 p-2 bg-gray-50 rounded border">
             <Hash className="w-4 h-4 text-gray-400" />
             <span className="text-sm font-mono text-gray-800">
-              {vendor.crNumber || vendor.licenseNumber || 'Not provided'}
+              {vendor.crNumber || vendor.licenseNumber || t('notProvided')}
             </span>
           </div>
         </div>
 
         <div>
-          <label className="block text-xs font-medium text-gray-500 mb-1">VAT Number</label>
+          <label className="block text-xs font-medium text-gray-500 mb-1">{t('vatNumber')}</label>
           <div className="flex items-center space-x-2 p-2 bg-gray-50 rounded border">
             <Hash className="w-4 h-4 text-gray-400" />
             <span className="text-sm font-mono text-gray-800">
-              {vendor.vatNumber || 'Not provided'}
+              {vendor.vatNumber || t('notProvided')}
             </span>
           </div>
         </div>
 
         <div>
-          <label className="block text-xs font-medium text-gray-500 mb-1">Website</label>
+          <label className="block text-xs font-medium text-gray-500 mb-1">{t('website')}</label>
           <div className="flex items-center space-x-2 p-2 bg-gray-50 rounded border">
             <Globe className="w-4 h-4 text-gray-400" />
             {vendor.website ? (
@@ -195,7 +197,7 @@ const EnhancedCompanyInfo = ({ vendor }) => {
                 {vendor.website}
               </a>
             ) : (
-              <span className="text-sm text-gray-500">Not provided</span>
+              <span className="text-sm text-gray-500">{t('notProvided')}</span>
             )}
           </div>
         </div>
@@ -204,7 +206,7 @@ const EnhancedCompanyInfo = ({ vendor }) => {
       {/* Linked Projects Section */}
       {vendor.linkedProjects && vendor.linkedProjects.length > 0 && (
         <div className="pt-4 border-t">
-          <h5 className="font-semibold text-gray-700 mb-3">Linked Projects</h5>
+          <h5 className="font-semibold text-gray-700 mb-3">{t('linkedProjects')}</h5>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {vendor.linkedProjects.map((project, index) => (
               <div key={index} className="p-3 bg-green-50 border border-green-200 rounded-lg">
@@ -219,7 +221,7 @@ const EnhancedCompanyInfo = ({ vendor }) => {
                 </div>
                 {project.value && (
                   <p className="text-xs text-green-600 mt-2">
-                    Value: {project.value.toLocaleString()} SAR
+                    {t('value')}: {project.value.toLocaleString()} SAR
                   </p>
                 )}
               </div>
@@ -231,7 +233,7 @@ const EnhancedCompanyInfo = ({ vendor }) => {
       {/* CSI Categories Summary */}
       {vendor.categories && vendor.categories.length > 0 && (
         <div className="pt-4 border-t">
-          <h5 className="font-semibold text-gray-700 mb-3">CSI Specializations</h5>
+          <h5 className="font-semibold text-gray-700 mb-3">{t('csiSpecializations')}</h5>
           <div className="flex flex-wrap gap-2">
             {vendor.categories.map((category, index) => (
               <span

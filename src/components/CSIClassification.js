@@ -1,5 +1,6 @@
 "use client";
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next'; // ADD THIS IMPORT
 import { Search, X, Plus, Building, Hash, Tag, Save, Loader2 } from 'lucide-react';
 import { CSI_MAIN_CATEGORIES, CSI_SUBCATEGORIES, VENDOR_SPECIALIZATIONS } from '@/data/csiClassifications';
 
@@ -25,6 +26,7 @@ const transformFrontendToBackend = (frontendCategories = []) => {
 };
 
 const CSIClassification = ({ selectedCategories = [], onCategoriesChange, vendorType, vendorId, onSave }) => {
+  const { t } = useTranslation(); // ADD THIS HOOK
   const [searchTerm, setSearchTerm] = useState('');
   const [showSubcategories, setShowSubcategories] = useState({});
   const [internalCategories, setInternalCategories] = useState([]);
@@ -36,6 +38,7 @@ const CSIClassification = ({ selectedCategories = [], onCategoriesChange, vendor
     const transformedCategories = transformBackendToFrontend(selectedCategories);
     setInternalCategories(transformedCategories);
   }, [selectedCategories]);
+
 
   // Notify parent when internal categories change
   useEffect(() => {
@@ -132,18 +135,18 @@ const CSIClassification = ({ selectedCategories = [], onCategoriesChange, vendor
           <div>
             <h4 className="font-semibold text-blue-800 flex items-center">
               <Building className="w-5 h-5 mr-2" />
-              CSI Classification System
+              {t('csiClassificationSystem')}
             </h4>
             <p className="text-sm text-blue-600 mt-1">
-              Classify vendor by trade specialties for automatic RFQ matching
+              {t('csiSystemDescription')}
             </p>
           </div>
           <div className="text-right">
             <p className="text-sm font-medium text-blue-800">
-              {internalCategories.filter(cat => cat.mainCategory).length} Categories
+              {internalCategories.filter(cat => cat.mainCategory).length} {t('categories')}
             </p>
             <p className="text-xs text-blue-600">
-              {internalCategories.reduce((total, cat) => total + (cat.subcategories?.length || 0), 0)} Subcategories
+              {internalCategories.reduce((total, cat) => total + (cat.subcategories?.length || 0), 0)} {t('subcategories')}
             </p>
           </div>
         </div>
@@ -161,7 +164,7 @@ const CSIClassification = ({ selectedCategories = [], onCategoriesChange, vendor
               ) : (
                 <Save className="w-4 h-4" />
               )}
-              <span>{isSaving ? 'Saving...' : 'Save to Database'}</span>
+              <span>{isSaving ? t('saving') : t('saveToDatabase')}</span>
             </button>
           </div>
         )}
@@ -183,7 +186,7 @@ const CSIClassification = ({ selectedCategories = [], onCategoriesChange, vendor
         {internalCategories.map((category, index) => (
           <div key={index} className="border border-gray-200 rounded-lg p-4 bg-white">
             <div className="flex justify-between items-start mb-4">
-              <h5 className="font-semibold text-gray-800">Category {index + 1}</h5>
+              <h5 className="font-semibold text-gray-800">{t('category')} {index + 1}</h5>
               {internalCategories.length > 1 && (
                 <button
                   onClick={() => handleRemoveCategory(index)}
@@ -197,13 +200,13 @@ const CSIClassification = ({ selectedCategories = [], onCategoriesChange, vendor
             {/* Main Category Selection */}
             <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Main CSI Category *
+                {t('mainCsiCategory')} *
               </label>
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <input
                   type="text"
-                  placeholder="Search CSI categories (e.g., 'Electrical', '26')"
+                  placeholder={t('searchCsiCategories')}
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
@@ -250,7 +253,7 @@ const CSIClassification = ({ selectedCategories = [], onCategoriesChange, vendor
                     onClick={() => toggleSubcategoryVisibility(index)}
                     className="text-green-600 hover:text-green-800 text-sm font-medium"
                   >
-                    {showSubcategories[index] ? 'Hide' : 'Show'} Subcategories
+                    {showSubcategories[index] ? t('hide') : t('show')} {t('subcategories')}
                   </button>
                 </div>
               </div>
@@ -260,7 +263,7 @@ const CSIClassification = ({ selectedCategories = [], onCategoriesChange, vendor
             {category.mainCategory && showSubcategories[index] && (
               <div className="mb-4">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  CSI Subcategories
+                  {t('csiSubcategories')}
                 </label>
                 <div className="grid grid-cols-1 gap-2 max-h-48 overflow-y-auto">
                   {getSubcategoriesForMain(category.mainCategory).map((subcat) => (
@@ -284,7 +287,7 @@ const CSIClassification = ({ selectedCategories = [], onCategoriesChange, vendor
             {/* Specializations */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Specializations & Keywords
+                {t('specializationsKeywords')}
               </label>
               <div className="flex flex-wrap gap-2 mb-2">
                 {category.specializations?.map((spec) => (
@@ -331,13 +334,13 @@ const CSIClassification = ({ selectedCategories = [], onCategoriesChange, vendor
         className="w-full py-3 border-2 border-dashed border-gray-300 rounded-lg text-gray-500 hover:text-gray-700 hover:border-gray-400 transition-colors flex items-center justify-center"
       >
         <Plus className="w-5 h-5 mr-2" />
-        Add Another Category
+        {t('addAnotherCategory')}
       </button>
 
       {/* Summary */}
       {internalCategories.some(cat => cat.mainCategory) && (
         <div className="bg-gray-50 p-4 rounded-lg border">
-          <h6 className="font-semibold text-gray-700 mb-2">Classification Summary</h6>
+          <h6 className="font-semibold text-gray-700 mb-2">{t('classificationSummary')}</h6>
           <div className="space-y-2 text-sm">
             {internalCategories
               .filter(cat => cat.mainCategory)
@@ -349,12 +352,12 @@ const CSIClassification = ({ selectedCategories = [], onCategoriesChange, vendor
                   <div className="flex space-x-2">
                     {cat.subcategories?.length > 0 && (
                       <span className="text-xs bg-blue-100 text-blue-600 px-2 py-1 rounded">
-                        {cat.subcategories.length} subcategories
+                        {cat.subcategories.length} {t('subcategoriesLower')}
                       </span>
                     )}
                     {cat.specializations?.length > 0 && (
                       <span className="text-xs bg-green-100 text-green-600 px-2 py-1 rounded">
-                        {cat.specializations.length} specializations
+                        {cat.specializations.length} {t('specializationsLower')}
                       </span>
                     )}
                   </div>

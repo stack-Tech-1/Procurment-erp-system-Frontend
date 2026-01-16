@@ -1,28 +1,33 @@
 "use client";
 import React from 'react';
+import { useTranslation } from 'react-i18next'; // ADD THIS IMPORT
 import { CheckCircle, XCircle, AlertTriangle, FileText, Calendar, Download } from 'lucide-react';
 
-const DOCUMENT_TYPES = [
-  { key: 'COMMERCIAL_REGISTRATION', label: 'Commercial Registration (CR)', hasExpiry: true, isMandatory: true },
-  { key: 'ZAKAT_CERTIFICATE', label: 'Zakat Certificate', hasExpiry: true, isMandatory: true },
-  { key: 'VAT_CERTIFICATE', label: 'VAT Certificate', hasExpiry: false, isMandatory: true },
-  { key: 'GOSI_CERTIFICATE', label: 'GOSI Certificate', hasExpiry: true, isMandatory: true },
-  { key: 'ISO_CERTIFICATE', label: 'ISO Certificate', hasExpiry: true, isMandatory: true },
-  { key: 'SASO_SABER_CERTIFICATE', label: 'SASO/SABER Certificate', hasExpiry: true, isMandatory: false },
-  { key: 'HSE_PLAN', label: 'HSE Plan', hasExpiry: false, isMandatory: false, condition: 'For Contractors' },
-  { key: 'WARRANTY_CERTIFICATE', label: 'Warranty Certificate', hasExpiry: false, isMandatory: true },
-  { key: 'QUALITY_PLAN', label: 'Quality Plan', hasExpiry: false, isMandatory: true },
-  { key: 'BANK_LETTER', label: 'Bank Letter/IBAN', hasExpiry: false, isMandatory: true },
-  { key: 'COMPANY_PROFILE', label: 'Company Profile (PDF)', hasExpiry: false, isMandatory: true },
-  { key: 'TECHNICAL_FILE', label: 'Technical File', hasExpiry: false, isMandatory: true },
-  { key: 'FINANCIAL_FILE', label: 'Financial File (Audited + Bank)', hasExpiry: false, isMandatory: true },
-  { key: 'INSURANCE_CERTIFICATE', label: 'Insurance Certificates', hasExpiry: true, isMandatory: true },
-  { key: 'INDUSTRY_LICENSE', label: 'Industry Licenses/Permits', hasExpiry: true, isMandatory: false },
-  { key: 'VENDOR_CODE_OF_CONDUCT', label: 'Vendor Code of Conduct', hasExpiry: false, isMandatory: true },
-  { key: 'ORGANIZATION_CHART', label: 'Organization Chart', hasExpiry: false, isMandatory: true },
-];
 
+  
 const DocumentChecklist = ({ documents = [], vendorType = 'Supplier' }) => {
+  const { t } = useTranslation(); 
+
+  // Update DOCUMENT_TYPES to use translations
+  const DOCUMENT_TYPES = [
+    { key: 'COMMERCIAL_REGISTRATION', label: t('commercialRegistration'), hasExpiry: true, isMandatory: true },
+    { key: 'ZAKAT_CERTIFICATE', label: t('zakatCertificate'), hasExpiry: true, isMandatory: true },
+    { key: 'VAT_CERTIFICATE', label: t('vatCertificate'), hasExpiry: false, isMandatory: true },
+    { key: 'GOSI_CERTIFICATE', label: t('gosiCertificate'), hasExpiry: true, isMandatory: true },
+    { key: 'ISO_CERTIFICATE', label: t('isoCertificate'), hasExpiry: true, isMandatory: true },
+    { key: 'SASO_SABER_CERTIFICATE', label: t('sasoSaberCertificate'), hasExpiry: true, isMandatory: false },
+    { key: 'HSE_PLAN', label: t('hsePlan'), hasExpiry: false, isMandatory: false, condition: t('forContractors') },
+    { key: 'WARRANTY_CERTIFICATE', label: t('warrantyCertificate'), hasExpiry: false, isMandatory: true },
+    { key: 'QUALITY_PLAN', label: t('qualityPlan'), hasExpiry: false, isMandatory: true },
+    { key: 'BANK_LETTER', label: t('bankLetter'), hasExpiry: false, isMandatory: true },
+    { key: 'COMPANY_PROFILE', label: t('companyProfile'), hasExpiry: false, isMandatory: true },
+    { key: 'TECHNICAL_FILE', label: t('technicalFile'), hasExpiry: false, isMandatory: true },
+    { key: 'FINANCIAL_FILE', label: t('financialFile'), hasExpiry: false, isMandatory: true },
+    { key: 'INSURANCE_CERTIFICATE', label: t('insuranceCertificate'), hasExpiry: true, isMandatory: true },
+    { key: 'INDUSTRY_LICENSE', label: t('industryLicense'), hasExpiry: true, isMandatory: false },
+    { key: 'VENDOR_CODE_OF_CONDUCT', label: t('vendorCodeOfConduct'), hasExpiry: false, isMandatory: true },
+    { key: 'ORGANIZATION_CHART', label: t('organizationChart'), hasExpiry: false, isMandatory: true },
+  ];
   const getDocumentStatus = (docKey) => {
     const doc = documents.find(d => d.docType === docKey);
     if (!doc) return { status: 'missing', document: null };
@@ -69,14 +74,14 @@ const DocumentChecklist = ({ documents = [], vendorType = 'Supplier' }) => {
       <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
         <div className="flex justify-between items-center">
           <div>
-            <h4 className="font-semibold text-blue-800">Document Compliance Summary</h4>
+            <h4 className="font-semibold text-blue-800">{t('documentComplianceSummary')}</h4>
             <p className="text-sm text-blue-600">
-              Valid: {summary.valid} • Expired: {summary.expired} • Expiring Soon: {summary.expiring} • Missing: {summary.missing}
+              {t('valid')}: {summary.valid} • {t('expired')}: {summary.expired} • {t('expiringSoon')}: {summary.expiring} • {t('missing')}: {summary.missing}
             </p>
           </div>
           <div className="text-right">
             <p className="text-sm font-medium text-blue-800">
-              Completion: {Math.round((summary.valid / DOCUMENT_TYPES.length) * 100)}%
+              {t('completion')}: {Math.round((summary.valid / DOCUMENT_TYPES.length) * 100)}%
             </p>
             <div className="w-32 bg-blue-200 rounded-full h-2 mt-1">
               <div 
@@ -111,7 +116,7 @@ const DocumentChecklist = ({ documents = [], vendorType = 'Supplier' }) => {
                       )}
                       {docType.isMandatory && (
                         <span className="text-xs bg-red-100 text-red-600 px-2 py-1 rounded-full">
-                          Mandatory
+                          {t('mandatory')}
                         </span>
                       )}
                     </div>
@@ -119,17 +124,17 @@ const DocumentChecklist = ({ documents = [], vendorType = 'Supplier' }) => {
                     {document && (
                       <div className="text-sm mt-1 space-y-1">
                         {document.documentNumber && (
-                          <p>Number: {document.documentNumber}</p>
+                          <p>{t('number')}: {document.documentNumber}</p>
                         )}
                         {document.expiryDate && (
                           <p className="flex items-center space-x-1">
                             <Calendar className="w-4 h-4" />
-                            <span>Expires: {new Date(document.expiryDate).toLocaleDateString()}</span>
+                            <span>{t('expires')}: {new Date(document.expiryDate).toLocaleDateString()}</span>
                           </p>
                         )}
                         {document.verifiedBy && (
                           <p className="text-gray-600">
-                            Verified by: {document.verifiedBy} on {document.verificationDate ? new Date(document.verificationDate).toLocaleDateString() : 'N/A'}
+                            {t('verifiedBy')}: {document.verifiedBy} {t('on')} {document.verificationDate ? new Date(document.verificationDate).toLocaleDateString() : t('na')}
                           </p>
                         )}
                       </div>
@@ -144,7 +149,7 @@ const DocumentChecklist = ({ documents = [], vendorType = 'Supplier' }) => {
                       target="_blank"
                       rel="noopener noreferrer"
                       className="p-2 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors"
-                      title="View Document"
+                      title={t('viewDocument')}
                     >
                       <Download className="w-4 h-4" />
                     </a>
