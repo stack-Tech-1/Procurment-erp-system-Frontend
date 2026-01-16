@@ -286,7 +286,46 @@ const enTranslations = {
   executive: "Executive",
   procurementManager: "Procurement Manager",
   procurementOfficer: "Procurement Officer",
-  vendor: "Vendor"
+  vendor: "Vendor",
+
+
+   // Analytics Insights
+   analyticsInsights: "Analytics Insights",
+   refreshAnalytics: "Refresh analytics",
+   spendForecast: "Spend Forecast",
+   trend: "trend",
+   confidence: "confidence",
+   insufficientDataForForecast: "Insufficient data for forecast",
+   savingsOpportunities: "Savings Opportunities",
+   savingsAnalysis: "Savings Analysis",
+   uncategorized: "Uncategorized",
+   potential: "Potential",
+   moreOpportunities: "more opportunities",
+   noSavingsOpportunities: "No savings opportunities identified",
+   allSpendCategoriesOptimized: "All spend categories optimized",
+   performanceAlert: "Performance Alert",
+   efficiency: "Efficiency",
+   onTimeDelivery: "On-time Delivery",
+   noPerformanceData: "No performance data available",
+   systemMetricsLoading: "System metrics loading",
+   analyticsDataWillPopulate: "Analytics data will populate as you add contracts, vendors, and transactions to the system.",
+   
+   // Financial & Vendor Overview
+   financialOverview: "Financial Overview",
+   vendorOverview: "Vendor Overview",
+   
+   // Risk & Compliance Alerts
+   unapprovedVendor: "Unapproved Vendor",
+   requireQualificationReview: "Require qualification review",
+   pendingApproval: "Pending Approval",
+   awaitingAuthorization: "Awaiting authorization",
+   potentialBudgetConcern: "Potential Budget Concern",
+   reviewProjectSpending: "Review project spending",
+   project: "Project",
+   below50PercentProgress: "Below 50% Progress",
+   mayRequireAttention: "May require attention",
+   overdueTask: "Overdue Task",
+   requireImmediateAction: "Require immediate action",
 };
 
 // Arabic translations
@@ -573,6 +612,44 @@ const arTranslations = {
   procurementManager: "مدير المشتريات",
   procurementOfficer: "موظف المشتريات",
   vendor: "مورد",
+
+// Analytics Insights in Arabic
+  analyticsInsights: "رؤى التحليلات",
+  refreshAnalytics: "تحديث التحليلات",
+  spendForecast: "توقع الإنفاق",
+  trend: "اتجاه",
+  confidence: "ثقة",
+  insufficientDataForForecast: "بيانات غير كافية للتوقع",
+  savingsOpportunities: "فرص التوفير",
+  savingsAnalysis: "تحليل التوفير",
+  uncategorized: "غير مصنف",
+  potential: "إمكانية",
+  moreOpportunities: "المزيد من الفرص",
+  noSavingsOpportunities: "لم يتم تحديد فرص توفير",
+  allSpendCategoriesOptimized: "جميع فئات الإنفاق مُحسّنة",
+  performanceAlert: "تنبيه الأداء",
+  efficiency: "كفاءة",
+  onTimeDelivery: "التسليم في الوقت المحدد",
+  noPerformanceData: "لا توجد بيانات أداء متاحة",
+  systemMetricsLoading: "جاري تحميل مقاييس النظام",
+  analyticsDataWillPopulate: "ستظهر بيانات التحليلات عند إضافة عقود وموردين ومعاملات إلى النظام.",
+  
+  // Financial & Vendor Overview in Arabic
+  financialOverview: "نظرة عامة مالية",
+  vendorOverview: "نظرة عامة على الموردين",
+  
+  // Risk & Compliance Alerts in Arabic
+  unapprovedVendor: "مورد غير معتمد",
+  requireQualificationReview: "تتطلب مراجعة التأهيل",
+  pendingApproval: "موافقة معلقة",
+  awaitingAuthorization: "في انتظار التصريح",
+  potentialBudgetConcern: "مشكلة محتملة في الميزانية",
+  reviewProjectSpending: "مراجعة إنفاق المشروع",
+  project: "مشروع",
+  below50PercentProgress: "أقل من 50% تقدم",
+  mayRequireAttention: "قد تتطلب اهتمام",
+  overdueTask: "مهمة متأخرة",
+  requireImmediateAction: "تتطلب إجراءً فورياً",
 };
 
 // Add a function to set HTML direction
