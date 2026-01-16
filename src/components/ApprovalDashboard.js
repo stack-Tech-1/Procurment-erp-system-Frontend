@@ -1,5 +1,6 @@
 // frontend/src/components/ApprovalDashboard.js
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next'; // ADD THIS IMPORT
 import {
   Card,
   CardContent,
@@ -31,6 +32,7 @@ import {
 } from '@mui/icons-material';
 
 const ApprovalDashboard = ({ pendingApprovals: initialPendingApprovals, onRefresh, loading: externalLoading }) => {
+  const { t } = useTranslation(); // ADD THIS HOOK
   const [pendingApprovals, setPendingApprovals] = useState(initialPendingApprovals || []);
   const [selectedTab, setSelectedTab] = useState(0);
   const [openDialog, setOpenDialog] = useState(false);
@@ -150,7 +152,7 @@ const ApprovalDashboard = ({ pendingApprovals: initialPendingApprovals, onRefres
 
   // Format date
   const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
+    return new Date(dateString).toLocaleDateString(i18n.language === 'ar' ? 'ar-SA' : 'en-US', {
       year: 'numeric',
       month: 'short',
       day: 'numeric',
@@ -168,27 +170,13 @@ const ApprovalDashboard = ({ pendingApprovals: initialPendingApprovals, onRefres
 
   return (
     <Box sx={{ p: 3 }}>
-      {/*<Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h4" fontWeight="bold">
-          Approval Dashboard
-        </Typography>
-        <Button
-          variant="outlined"
-          startIcon={<RefreshIcon />}
-          onClick={loadPendingApprovals}
-          disabled={loading}
-        >
-          Refresh
-        </Button>
-      </Box> */}
-
       {/* Tabs */}
       <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
         <Tabs value={selectedTab} onChange={(e, newValue) => setSelectedTab(newValue)}>
           <Tab 
             label={
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <Typography>Pending Approvals</Typography>
+                <Typography>{t('pendingApprovals')}</Typography>
                 {pendingApprovals.length > 0 && (
                   <Chip 
                     label={pendingApprovals.length} 
@@ -199,7 +187,7 @@ const ApprovalDashboard = ({ pendingApprovals: initialPendingApprovals, onRefres
               </Box>
             } 
           />
-          <Tab label="Approval History" />
+          <Tab label={t('approvalHistory')} />
         </Tabs>
       </Box>
 
@@ -212,10 +200,10 @@ const ApprovalDashboard = ({ pendingApprovals: initialPendingApprovals, onRefres
                 <CardContent sx={{ textAlign: 'center', py: 4 }}>
                   <CheckCircleIcon sx={{ fontSize: 48, color: 'success.main', mb: 2 }} />
                   <Typography variant="h6" color="textSecondary">
-                    No pending approvals
+                    {t('noPendingApprovals')}
                   </Typography>
                   <Typography variant="body2" color="textSecondary">
-                    You're all caught up! There are no approvals waiting for your review.
+                    {t('noPendingApprovalsDescription')}
                   </Typography>
                 </CardContent>
               </Card>
@@ -237,18 +225,18 @@ const ApprovalDashboard = ({ pendingApprovals: initialPendingApprovals, onRefres
                         <Box sx={{ display: 'flex', gap: 1, mb: 2, flexWrap: 'wrap' }}>
                           <Chip 
                             icon={getStatusIcon(step.status)}
-                            label={`Step ${step.stepNumber}: ${step.stepName}`}
+                            label={`${t('step')} ${step.stepNumber}: ${step.stepName}`}
                             color={getStatusColor(step.status)}
                             variant="outlined"
                           />
                           <Chip 
-                            label={`SLA: ${formatDate(step.slaDeadline)}`}
+                            label={`${t('sla')}: ${formatDate(step.slaDeadline)}`}
                             color={isStepOverdue(step.slaDeadline) ? 'error' : 'default'}
                             variant="outlined"
                             size="small"
                           />
                           <Chip 
-                            label={`Requested by: ${step.approval.requestedBy?.name}`}
+                            label={`${t('requestedBy')}: ${step.approval.requestedBy?.name}`}
                             variant="outlined"
                             size="small"
                           />
@@ -258,10 +246,10 @@ const ApprovalDashboard = ({ pendingApprovals: initialPendingApprovals, onRefres
                         <Box sx={{ mb: 2 }}>
                           <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
                             <Typography variant="body2" color="textSecondary">
-                              Approval Progress
+                              {t('approvalProgress')}
                             </Typography>
                             <Typography variant="body2" fontWeight="bold">
-                              {step.approval.currentStep} of {step.approval.totalSteps} steps
+                              {step.approval.currentStep} {t('of')} {step.approval.totalSteps} {t('steps')}
                             </Typography>
                           </Box>
                           <LinearProgress 
@@ -280,7 +268,7 @@ const ApprovalDashboard = ({ pendingApprovals: initialPendingApprovals, onRefres
                           onClick={() => handleApproveStep(step)}
                           disabled={loading}
                         >
-                          Approve
+                          {t('approve')}
                         </Button>
                         <Button
                           variant="outlined"
@@ -294,7 +282,7 @@ const ApprovalDashboard = ({ pendingApprovals: initialPendingApprovals, onRefres
                           }}
                           disabled={loading}
                         >
-                          Reject
+                          {t('reject')}
                         </Button>
                       </Box>
                     </Box>
@@ -302,7 +290,7 @@ const ApprovalDashboard = ({ pendingApprovals: initialPendingApprovals, onRefres
                     {/* Workflow Steps Overview */}
                     <Box sx={{ mt: 2 }}>
                       <Typography variant="subtitle2" gutterBottom>
-                        Workflow Steps:
+                        {t('workflowSteps')}:
                       </Typography>
                       <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
                         {step.approval.workflow?.steps.map((workflowStep, index) => (
@@ -311,7 +299,7 @@ const ApprovalDashboard = ({ pendingApprovals: initialPendingApprovals, onRefres
                             label={`${workflowStep.stepNumber}. ${workflowStep.stepName}`}
                             color={
                               workflowStep.stepNumber < step.approval.currentStep ? 'success' :
-                              workflowFlow.stepNumber === step.approval.currentStep ? 'primary' : 'default'
+                              workflowStep.stepNumber === step.approval.currentStep ? 'primary' : 'default'
                             }
                             variant={
                               workflowStep.stepNumber === step.stepNumber ? 'filled' : 'outlined'
@@ -334,12 +322,11 @@ const ApprovalDashboard = ({ pendingApprovals: initialPendingApprovals, onRefres
         <Card>
           <CardContent>
             <Typography variant="h6" gutterBottom>
-              Approval History
+              {t('approvalHistory')}
             </Typography>
             <Typography variant="body2" color="textSecondary">
-              Your recent approval activities will appear here.
+              {t('approvalHistoryDescription')}
             </Typography>
-            {/* TODO: Implement approval history table */}
           </CardContent>
         </Card>
       )}
@@ -347,7 +334,7 @@ const ApprovalDashboard = ({ pendingApprovals: initialPendingApprovals, onRefres
       {/* Approval Dialog */}
       <Dialog open={openDialog} onClose={() => setOpenDialog(false)} maxWidth="sm" fullWidth>
         <DialogTitle>
-          {decision === 'APPROVED' ? 'Approve Step' : 'Reject Step'}
+          {decision === 'APPROVED' ? t('approveStep') : t('rejectStep')}
         </DialogTitle>
         <DialogContent>
           {selectedStep && (
@@ -356,18 +343,18 @@ const ApprovalDashboard = ({ pendingApprovals: initialPendingApprovals, onRefres
                 {selectedStep.stepName}
               </Typography>
               <Typography variant="body2" color="textSecondary" gutterBottom>
-                Step {selectedStep.stepNumber} of {selectedStep.approval?.totalSteps}
+                {t('step')} {selectedStep.stepNumber} {t('of')} {selectedStep.approval?.totalSteps}
               </Typography>
               
               <FormControl fullWidth sx={{ mt: 2 }}>
-                <InputLabel>Decision</InputLabel>
+                <InputLabel>{t('decision')}</InputLabel>
                 <Select
                   value={decision}
-                  label="Decision"
+                  label={t('decision')}
                   onChange={(e) => setDecision(e.target.value)}
                 >
-                  <MenuItem value="APPROVED">Approve</MenuItem>
-                  <MenuItem value="REJECTED">Reject</MenuItem>
+                  <MenuItem value="APPROVED">{t('approve')}</MenuItem>
+                  <MenuItem value="REJECTED">{t('reject')}</MenuItem>
                 </Select>
               </FormControl>
 
@@ -375,23 +362,23 @@ const ApprovalDashboard = ({ pendingApprovals: initialPendingApprovals, onRefres
                 fullWidth
                 multiline
                 rows={3}
-                label="Comments"
+                label={t('comments')}
                 value={comments}
                 onChange={(e) => setComments(e.target.value)}
                 sx={{ mt: 2 }}
-                placeholder="Add any comments or notes about your decision..."
+                placeholder={t('commentsPlaceholder')}
               />
 
               {decision === 'REJECTED' && (
                 <Alert severity="warning" sx={{ mt: 2 }}>
-                  Rejecting this step will stop the entire approval process and mark it as rejected.
+                  {t('rejectionWarning')}
                 </Alert>
               )}
             </Box>
           )}
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setOpenDialog(false)}>Cancel</Button>
+          <Button onClick={() => setOpenDialog(false)}>{t('cancel')}</Button>
           <Button
             variant="contained"
             color={decision === 'APPROVED' ? 'success' : 'error'}
@@ -399,7 +386,7 @@ const ApprovalDashboard = ({ pendingApprovals: initialPendingApprovals, onRefres
             disabled={loading}
             startIcon={decision === 'APPROVED' ? <CheckCircleIcon /> : <CancelIcon />}
           >
-            {decision === 'APPROVED' ? 'Approve' : 'Reject'} Step
+            {decision === 'APPROVED' ? t('approve') : t('reject')} {t('step')}
           </Button>
         </DialogActions>
       </Dialog>

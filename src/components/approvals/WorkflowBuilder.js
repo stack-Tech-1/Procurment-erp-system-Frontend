@@ -1,5 +1,6 @@
 // frontend/src/components/approvals/WorkflowBuilder.jsx
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next'; // ADD THIS IMPORT
 import {
   Card,
   CardContent,
@@ -36,6 +37,7 @@ import {
 } from '@mui/icons-material';
 
 const WorkflowBuilder = () => {
+  const { t } = useTranslation(); // ADD THIS HOOK
   const [workflows, setWorkflows] = useState([]);
   const [openDialog, setOpenDialog] = useState(false);
   const [editingWorkflow, setEditingWorkflow] = useState(null);
@@ -55,20 +57,20 @@ const WorkflowBuilder = () => {
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
 
-  // Role options
+  // Role options - using translations
   const roleOptions = [
-    { value: 1, label: 'Director' },
-    { value: 2, label: 'Procurement Manager' },
-    { value: 3, label: 'Procurement Officer' }
+    { value: 1, label: t('director') },
+    { value: 2, label: t('procurementManager') },
+    { value: 3, label: t('procurementOfficer') }
   ];
 
-  // Entity type options
+  // Entity type options - using translations
   const entityTypeOptions = [
-    { value: 'VENDOR', label: 'Vendor Qualification' },
-    { value: 'RFQ', label: 'RFQ Approval' },
-    { value: 'CONTRACT', label: 'Contract Approval' },
-    { value: 'PO', label: 'Purchase Order' },
-    { value: 'IPC', label: 'IPC Approval' }
+    { value: 'VENDOR', label: t('vendorQualification') },
+    { value: 'RFQ', label: t('rfqApproval') },
+    { value: 'CONTRACT', label: t('contractApproval') },
+    { value: 'PO', label: t('purchaseOrder') },
+    { value: 'IPC', label: t('ipcApproval') }
   ];
 
   // Load workflows
@@ -86,11 +88,11 @@ const WorkflowBuilder = () => {
         const result = await response.json();
         setWorkflows(result.data);
       } else {
-        throw new Error('Failed to load workflows');
+        throw new Error(t('failedToLoadWorkflows'));
       }
     } catch (error) {
       console.error('Error loading workflows:', error);
-      setError('Failed to load workflows');
+      setError(t('failedToLoadWorkflows'));
     } finally {
       setLoading(false);
     }
@@ -123,14 +125,14 @@ const WorkflowBuilder = () => {
           steps: []
         });
         setOpenDialog(false);
-        setSuccess('Workflow created successfully!');
+        setSuccess(t('workflowCreatedSuccessfully'));
         setTimeout(() => setSuccess(null), 3000);
       } else {
-        throw new Error('Failed to create workflow');
+        throw new Error(t('failedToCreateWorkflow'));
       }
     } catch (error) {
       console.error('Error creating workflow:', error);
-      setError('Failed to create workflow');
+      setError(t('failedToCreateWorkflow'));
     } finally {
       setLoading(false);
     }
@@ -192,14 +194,14 @@ const WorkflowBuilder = () => {
 
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
         <Typography variant="h4" fontWeight="bold">
-          Approval Workflow Builder
+          {t('workflowBuilder')}
         </Typography>
         <Button
           variant="contained"
           startIcon={<AddIcon />}
           onClick={() => setOpenDialog(true)}
         >
-          Create Workflow
+          {t('createWorkflow')}
         </Button>
       </Box>
 
@@ -218,7 +220,7 @@ const WorkflowBuilder = () => {
                       {workflow.description}
                     </Typography>
                     <Chip 
-                      label={workflow.entityType} 
+                      label={entityTypeOptions.find(e => e.value === workflow.entityType)?.label || workflow.entityType}
                       size="small" 
                       color="primary" 
                       variant="outlined"
@@ -231,7 +233,7 @@ const WorkflowBuilder = () => {
                 </Box>
 
                 <Typography variant="subtitle2" sx={{ mt: 2, mb: 1 }}>
-                  Approval Steps ({workflow.steps.length})
+                  {t('approvalSteps')} ({workflow.steps.length})
                 </Typography>
                 
                 <Box sx={{ maxHeight: 200, overflow: 'auto' }}>
@@ -249,10 +251,10 @@ const WorkflowBuilder = () => {
                     >
                       <Box>
                         <Typography variant="body2" fontWeight="medium">
-                          {step.stepNumber}. {step.stepName}
+                          {t('step')} {step.stepNumber}. {step.stepName}
                         </Typography>
                         <Typography variant="caption" color="textSecondary">
-                          {roleOptions.find(r => r.value === step.approverRole)?.label} • {step.slaHours}h SLA
+                          {roleOptions.find(r => r.value === step.approverRole)?.label} • {step.slaHours}h {t('sla')}
                         </Typography>
                       </Box>
                     </Box>
@@ -262,7 +264,7 @@ const WorkflowBuilder = () => {
                 {workflow.conditions && workflow.conditions.length > 0 && (
                   <Box sx={{ mt: 2 }}>
                     <Typography variant="caption" color="textSecondary">
-                      Conditions: {workflow.conditions.map(c => `${c.type}: ${c.threshold}`).join(', ')}
+                      {t('conditions')}: {workflow.conditions.map(c => `${c.type}: ${c.threshold}`).join(', ')}
                     </Typography>
                   </Box>
                 )}
@@ -275,36 +277,36 @@ const WorkflowBuilder = () => {
       {/* Create Workflow Dialog */}
       <Dialog open={openDialog} onClose={() => setOpenDialog(false)} maxWidth="md" fullWidth>
         <DialogTitle>
-          Create New Approval Workflow
+          {t('createNewWorkflow')}
         </DialogTitle>
         <DialogContent>
           <Grid container spacing={2} sx={{ mt: 1 }}>
             <Grid item xs={12}>
               <TextField
                 fullWidth
-                label="Workflow Name"
+                label={t('workflowName')}
                 value={newWorkflow.name}
                 onChange={(e) => setNewWorkflow({ ...newWorkflow, name: e.target.value })}
-                placeholder="e.g., High Value Contract Approval"
+                placeholder={t('workflowNamePlaceholder')}
               />
             </Grid>
             <Grid item xs={12}>
               <TextField
                 fullWidth
-                label="Description"
+                label={t('description')}
                 multiline
                 rows={2}
                 value={newWorkflow.description}
                 onChange={(e) => setNewWorkflow({ ...newWorkflow, description: e.target.value })}
-                placeholder="Describe the purpose of this workflow..."
+                placeholder={t('workflowDescriptionPlaceholder')}
               />
             </Grid>
             <Grid item xs={12}>
               <FormControl fullWidth>
-                <InputLabel>Entity Type</InputLabel>
+                <InputLabel>{t('entityType')}</InputLabel>
                 <Select
                   value={newWorkflow.entityType}
-                  label="Entity Type"
+                  label={t('entityType')}
                   onChange={(e) => setNewWorkflow({ ...newWorkflow, entityType: e.target.value })}
                 >
                   {entityTypeOptions.map((option) => (
@@ -319,7 +321,7 @@ const WorkflowBuilder = () => {
             {/* Steps Section */}
             <Grid item xs={12}>
               <Typography variant="h6" sx={{ mb: 2 }}>
-                Approval Steps
+                {t('approvalSteps')}
               </Typography>
               
               {/* Add Step Form */}
@@ -328,18 +330,18 @@ const WorkflowBuilder = () => {
                   <Grid item xs={4}>
                     <TextField
                       fullWidth
-                      label="Step Name"
+                      label={t('stepName')}
                       value={newStep.stepName}
                       onChange={(e) => setNewStep({ ...newStep, stepName: e.target.value })}
-                      placeholder="e.g., Legal Review"
+                      placeholder={t('stepNamePlaceholder')}
                     />
                   </Grid>
                   <Grid item xs={3}>
                     <FormControl fullWidth>
-                      <InputLabel>Approver Role</InputLabel>
+                      <InputLabel>{t('approverRole')}</InputLabel>
                       <Select
                         value={newStep.approverRole}
-                        label="Approver Role"
+                        label={t('approverRole')}
                         onChange={(e) => setNewStep({ ...newStep, approverRole: e.target.value })}
                       >
                         {roleOptions.map((option) => (
@@ -353,7 +355,7 @@ const WorkflowBuilder = () => {
                   <Grid item xs={3}>
                     <TextField
                       fullWidth
-                      label="SLA Hours"
+                      label={t('slaHours')}
                       type="number"
                       value={newStep.slaHours}
                       onChange={(e) => setNewStep({ ...newStep, slaHours: e.target.value })}
@@ -367,7 +369,7 @@ const WorkflowBuilder = () => {
                       onClick={handleAddStep}
                       disabled={!newStep.stepName || !newStep.approverRole}
                     >
-                      Add
+                      {t('add')}
                     </Button>
                   </Grid>
                 </Grid>
@@ -379,17 +381,17 @@ const WorkflowBuilder = () => {
                   <Table size="small">
                     <TableHead>
                       <TableRow>
-                        <TableCell>Step</TableCell>
-                        <TableCell>Name</TableCell>
-                        <TableCell>Approver</TableCell>
-                        <TableCell>SLA</TableCell>
-                        <TableCell>Actions</TableCell>
+                        <TableCell>{t('step')}</TableCell>
+                        <TableCell>{t('name')}</TableCell>
+                        <TableCell>{t('approver')}</TableCell>
+                        <TableCell>{t('sla')}</TableCell>
+                        <TableCell>{t('actions')}</TableCell>
                       </TableRow>
                     </TableHead>
                     <TableBody>
                       {newWorkflow.steps.map((step, index) => (
                         <TableRow key={index}>
-                          <TableCell>{step.stepNumber}</TableCell>
+                          <TableCell>{t('step')} {step.stepNumber}</TableCell>
                           <TableCell>{step.stepName}</TableCell>
                           <TableCell>
                             {roleOptions.find(r => r.value === step.approverRole)?.label}
@@ -414,14 +416,14 @@ const WorkflowBuilder = () => {
           </Grid>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setOpenDialog(false)}>Cancel</Button>
+          <Button onClick={() => setOpenDialog(false)}>{t('cancel')}</Button>
           <Button
             variant="contained"
             onClick={handleCreateWorkflow}
             disabled={!newWorkflow.name || newWorkflow.steps.length === 0 || loading}
             startIcon={<SaveIcon />}
           >
-            {loading ? 'Creating...' : 'Create Workflow'}
+            {loading ? t('creating') : t('createWorkflow')}
           </Button>
         </DialogActions>
       </Dialog>

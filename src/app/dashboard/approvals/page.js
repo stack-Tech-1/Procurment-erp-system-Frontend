@@ -1,10 +1,11 @@
-// frontend/src/app/dashboard/approvals/page.js - MOBILE OPTIMIZED
 "use client";
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next'; // ADD THIS IMPORT
 import ApprovalDashboard from '@/components/ApprovalDashboard';
 import ResponsiveLayout from '@/components/layout/ResponsiveLayout';
 
 export default function ApprovalsPage() {
+  const { t } = useTranslation(); // ADD THIS HOOK
   const [pendingApprovals, setPendingApprovals] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -20,7 +21,7 @@ export default function ApprovalsPage() {
       
       const token = localStorage.getItem('authToken');
       if (!token) {
-        throw new Error('No authentication token found');
+        throw new Error(t('authenticationRequired'));
       }
 
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/advanced-approvals/my-pending`, {
@@ -31,7 +32,7 @@ export default function ApprovalsPage() {
       });
       
       if (!response.ok) {
-        throw new Error(`Failed to fetch pending approvals: ${response.status}`);
+        throw new Error(`${t('failedToFetchApprovals')}: ${response.status}`);
       }
       
       const result = await response.json();
@@ -39,7 +40,7 @@ export default function ApprovalsPage() {
       if (result.success) {
         setPendingApprovals(result.data);
       } else {
-        throw new Error(result.message || 'Failed to fetch approvals');
+        throw new Error(result.message || t('failedToFetchApprovals'));
       }
     } catch (error) {
       console.error('Failed to fetch pending approvals:', error);
@@ -59,7 +60,7 @@ export default function ApprovalsPage() {
         <div className="flex items-center justify-center min-h-64 py-8">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-            <div className="text-lg text-gray-600">Loading pending approvals...</div>
+            <div className="text-lg text-gray-600">{t('loadingApprovals')}</div>
           </div>
         </div>
       );
@@ -69,13 +70,13 @@ export default function ApprovalsPage() {
       return (
         <div className="flex items-center justify-center min-h-64 py-8">
           <div className="text-center max-w-md mx-auto">
-            <div className="text-red-600 text-lg mb-2">Error loading approvals</div>
+            <div className="text-red-600 text-lg mb-2">{t('errorLoadingApprovals')}</div>
             <div className="text-gray-600 mb-4 text-sm">{error}</div>
             <button
               onClick={fetchPendingApprovals}
               className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors w-full sm:w-auto"
             >
-              Retry
+              {t('retry')}
             </button>
           </div>
         </div>
@@ -97,9 +98,9 @@ export default function ApprovalsPage() {
       <div className="mb-6">
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900 sm:text-3xl">Approval Dashboard</h1>
+            <h1 className="text-2xl font-bold text-gray-900 sm:text-3xl">{t('approvalDashboard')}</h1>
             <p className="text-gray-600 mt-2 text-sm sm:text-base">
-              Review and manage multi-step approval workflows
+              {t('approvalDashboardDescription')}
             </p>
           </div>
           
@@ -117,7 +118,7 @@ export default function ApprovalsPage() {
             >
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
             </svg>
-            <span className="text-sm font-medium">Refresh</span>
+            <span className="text-sm font-medium">{t('refresh')}</span>
           </button>
         </div>
         
@@ -125,25 +126,25 @@ export default function ApprovalsPage() {
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mt-6">
           <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
             <div className="text-xl sm:text-2xl font-bold text-blue-600">{pendingApprovals.length}</div>
-            <div className="text-xs sm:text-sm text-gray-600 mt-1">Pending Approvals</div>
+            <div className="text-xs sm:text-sm text-gray-600 mt-1">{t('pendingApprovals')}</div>
           </div>
           <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
             <div className="text-xl sm:text-2xl font-bold text-green-600">
               {pendingApprovals.filter(a => new Date(a.slaDeadline) > new Date()).length}
             </div>
-            <div className="text-xs sm:text-sm text-gray-600 mt-1">Within SLA</div>
+            <div className="text-xs sm:text-sm text-gray-600 mt-1">{t('withinSla')}</div>
           </div>
           <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
             <div className="text-xl sm:text-2xl font-bold text-red-600">
               {pendingApprovals.filter(a => new Date(a.slaDeadline) < new Date()).length}
             </div>
-            <div className="text-xs sm:text-sm text-gray-600 mt-1">Overdue</div>
+            <div className="text-xs sm:text-sm text-gray-600 mt-1">{t('overdue')}</div>
           </div>
           <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
             <div className="text-xl sm:text-2xl font-bold text-purple-600">
               {new Set(pendingApprovals.map(a => a.approval?.entityType)).size}
             </div>
-            <div className="text-xs sm:text-sm text-gray-600 mt-1">Entity Types</div>
+            <div className="text-xs sm:text-sm text-gray-600 mt-1">{t('entityTypes')}</div>
           </div>
         </div>
       </div>
