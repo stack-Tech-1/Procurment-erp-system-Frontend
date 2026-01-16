@@ -130,7 +130,163 @@ const enTranslations = {
   phoneLabel: "Phone:",
   emailValue: "procurement@kunrealestate.com",
   phoneValue: "+966 11 123 4567",
-  or: "or"
+  or: "or",
+
+
+  // New dashboard translations
+  executiveDashboard: "Executive Dashboard",
+  dashboardSubtitle: "Procurement performance and KPIs",
+  loadingDashboard: "Loading executive dashboard...",
+  loadingDashboardFull: "Loading Executive Dashboard...",
+  connectingDatabase: "Connecting to procurement database",
+  dashboardError: "Error loading dashboard",
+  retry: "Retry",
+  retryConnection: "Retry Connection",
+  unableToLoadDashboard: "Unable to load dashboard",
+  checkBackendConnection: "Please check your backend connection",
+  dashboardFetchError: "Failed to fetch dashboard data: {status}",
+  
+  // Time ranges
+  thisMonth: "This Month",
+  thisQuarter: "This Quarter",
+  thisYear: "This Year",
+  
+  // Data source indicators
+  liveData: "Live Data",
+  apiConnected: "API Connected",
+  sampleData: "Sample Data",
+  loadingAnalytics: "Loading Analytics...",
+  refreshAllData: "Refresh all data",
+  
+  // Financial metrics
+  totalSpend: "Total Spend",
+  cumulativeContractValue: "Cumulative contract value",
+  budgetUtilization: "Budget Utilization",
+  basedOnEstimatedBudgets: "Based on estimated project budgets",
+  costSavings: "Cost Savings",
+  throughNegotiation: "Through negotiation and optimization",
+  activeProjects: "Active Projects",
+  projectsInProgress: "projects in progress",
+  
+  // Vendor metrics
+  totalVendors: "Total Vendors",
+  registeredInSystem: "Registered in the system",
+  approvedVendors: "Approved Vendors",
+  vendorsNeedingReview: "Vendors Needing Review",
+  pendingQualificationReview: "Pending qualification review",
+  pendingApprovals: "Pending Approvals",
+  awaitingAuthorization: "Awaiting authorization",
+  
+  // Project metrics
+  projectPerformance: "Project Performance",
+  currentlyInExecution: "Currently in execution phase",
+  noActiveProjects: "No Active Projects",
+  addProjectsToSeeProgress: "Add projects to see progress",
+  teamMembers: "Team Members",
+  activeProcurementTeam: "Active procurement team",
+  
+  // Risk & compliance
+  riskComplianceAlerts: "Risk & Compliance Alerts",
+  activeAlerts: "Active Alerts",
+  allClear: "All Clear",
+  noActiveAlerts: "No active alerts",
+  allSystemsCompliant: "All systems are compliant",
+  
+  // Quick actions
+  quickActions: "Quick Actions",
+  viewReports: "View Reports",
+  vendorAnalysis: "Vendor Analysis",
+  financialSummary: "Financial Summary",
+  performanceReview: "Performance Review",
+  
+  // Database connection
+  databaseConnectionIssue: "Database Connection Issue",
+  showingSampleData: "Showing sample data. Real-time data will resume when database connection is restored.",
+  
+  // Layout translations
+  dashboard: "Dashboard",
+  loading: "Loading...",
+  executiveDashboard: "Executive Dashboard",
+  executiveOverview: "Executive Overview",
+  managerDashboard: "Manager Dashboard",
+  procurementManagerDashboard: "Procurement Manager Dashboard",
+  officerDashboard: "Officer Dashboard",
+  procurementOfficerDashboard: "Procurement Officer Dashboard",
+  vendorPortal: "Vendor Portal",
+  vendorDashboard: "Vendor Dashboard",
+  kunRealEstate: "KUN Real Estate",
+  procurementSystem: "Procurement System",
+  logout: "Logout",
+  signOut: "Sign Out",
+  refreshDashboard: "Refresh Dashboard",
+  procurementManager: "Procurement Manager",
+  accountSettings: "Account Settings",
+  
+  // Navigation items (add these based on your navigation structure)
+  overview: "Overview",
+  vendors: "Vendors",
+  contracts: "Contracts",
+  projects: "Projects",
+  reports: "Reports",
+  settings: "Settings",
+  profile: "Profile",
+  
+  // KPI translations
+  procurementEfficiency: "Procurement Efficiency",
+  processOptimizationScore: "Process optimization score",
+  costSavingsRate: "Cost Savings Rate",
+  againstTotalSpend: "Against total spend",
+  contractCompliance: "Contract Compliance",
+  adherenceToTerms: "Adherence to terms",
+  vendorSatisfaction: "Vendor Satisfaction",
+  partnerFeedbackScore: "Partner feedback score",
+  
+  // Alert types
+  critical: "Critical",
+  warning: "Warning",
+  medium: "Medium",
+
+  // Navigation items
+  dashboard: "Dashboard",
+  financialAnalytics: "Financial Analytics",
+  vendorPerformance: "Vendor Performance",
+  projectPortfolio: "Project Portfolio",
+  complianceDashboard: "Compliance Dashboard",
+  approvals: "Approvals",
+  informationRequests: "Information Requests",
+  userManagement: "User Management",
+  reports: "Reports",
+  systemSettings: "System Settings",
+  accountApprovals: "Account Approvals",
+  workflowBuilder: "Workflow Builder",
+  teamOverview: "Team Overview",
+  approvalQueue: "Approval Queue",
+  materialSubmittals: "Material Submittals",
+  shopDrawings: "Shop Drawings",
+  deliveries: "Deliveries",
+  budgetControl: "Budget Control",
+  supplierPerformance: "Supplier Performance",
+  taskAssignment: "Task Assignment",
+  vendorManagement: "Vendor Management",
+  rfqs: "RFQs",
+  pos: "POs",
+  prs: "PRs",
+  contracts: "Contracts",
+  invoice: "Invoice",
+  ipcs: "IPCs",
+  performanceMetrics: "Performance Metrics",
+  myTasks: "My Tasks",
+  rfos: "RFOs",
+  costControl: "Cost Control",
+  submitProposal: "Submit Proposal",
+  trackSubmissions: "Track Submissions",
+  myProfile: "My Profile",
+  
+  // Role names
+  executive: "Executive",
+  procurementManager: "Procurement Manager",
+  procurementOfficer: "Procurement Officer",
+  vendor: "Vendor"
 };
 
 // Arabic translations
@@ -260,7 +416,163 @@ const arTranslations = {
   phoneLabel: "الهاتف:",
   emailValue: "procurement@kunrealestate.com",
   phoneValue: "+966 11 123 4567",
-  or: "أو"
+  or: "أو",
+
+
+  // New dashboard translations in Arabic
+  executiveDashboard: "لوحة التحكم التنفيذية",
+  dashboardSubtitle: "أداء المشتريات والمؤشرات الرئيسية",
+  loadingDashboard: "جاري تحميل لوحة التحكم التنفيذية...",
+  loadingDashboardFull: "جاري تحميل لوحة التحكم التنفيذية...",
+  connectingDatabase: "جاري الاتصال بقاعدة بيانات المشتريات",
+  dashboardError: "خطأ في تحميل لوحة التحكم",
+  retry: "إعادة المحاولة",
+  retryConnection: "إعادة الاتصال",
+  unableToLoadDashboard: "تعذر تحميل لوحة التحكم",
+  checkBackendConnection: "يرجى التحقق من اتصال الخادم الخلفي",
+  dashboardFetchError: "فشل في جلب بيانات لوحة التحكم: {status}",
+  
+  // Time ranges
+  thisMonth: "هذا الشهر",
+  thisQuarter: "هذا الربع",
+  thisYear: "هذا العام",
+  
+  // Data source indicators
+  liveData: "بيانات حية",
+  apiConnected: "متصل بالواجهة البرمجية",
+  sampleData: "بيانات تجريبية",
+  loadingAnalytics: "جاري تحميل التحليلات...",
+  refreshAllData: "تحديث جميع البيانات",
+  
+  // Financial metrics
+  totalSpend: "إجمالي الإنفاق",
+  cumulativeContractValue: "القيمة التراكمية للعقود",
+  budgetUtilization: "استخدام الميزانية",
+  basedOnEstimatedBudgets: "بناءً على ميزانيات المشاريع المقدرة",
+  costSavings: "توفير التكاليف",
+  throughNegotiation: "من خلال التفاوض والتحسين",
+  activeProjects: "المشاريع النشطة",
+  projectsInProgress: "مشروع قيد التنفيذ",
+  
+  // Vendor metrics
+  totalVendors: "إجمالي الموردين",
+  registeredInSystem: "مسجلين في النظام",
+  approvedVendors: "الموردون المعتمدون",
+  vendorsNeedingReview: "الموردون الذين يحتاجون مراجعة",
+  pendingQualificationReview: "في انتظار مراجعة التأهيل",
+  pendingApprovals: "الموافقات المعلقة",
+  awaitingAuthorization: "في انتظار التصريح",
+  
+  // Project metrics
+  projectPerformance: "أداء المشروع",
+  currentlyInExecution: "حالياً في مرحلة التنفيذ",
+  noActiveProjects: "لا توجد مشاريع نشطة",
+  addProjectsToSeeProgress: "أضف مشاريع لرؤية التقدم",
+  teamMembers: "أعضاء الفريق",
+  activeProcurementTeam: "فريق المشتريات النشط",
+  
+  // Risk & compliance
+  riskComplianceAlerts: "تنبيهات المخاطر والامتثال",
+  activeAlerts: "تنبيهات نشطة",
+  allClear: "جميع الأنظمة تعمل",
+  noActiveAlerts: "لا توجد تنبيهات نشطة",
+  allSystemsCompliant: "جميع الأنظمة متوافقة",
+  
+  // Quick actions
+  quickActions: "إجراءات سريعة",
+  viewReports: "عرض التقارير",
+  vendorAnalysis: "تحليل الموردين",
+  financialSummary: "ملخص مالي",
+  performanceReview: "مراجعة الأداء",
+  
+  // Database connection
+  databaseConnectionIssue: "مشكلة في اتصال قاعدة البيانات",
+  showingSampleData: "عرض بيانات تجريبية. ستستأنف البيانات الفعلية عند استعادة اتصال قاعدة البيانات.",
+  
+  // Layout translations in Arabic
+  dashboard: "لوحة التحكم",
+  loading: "جاري التحميل...",
+  executiveDashboard: "لوحة التحكم التنفيذية",
+  executiveOverview: "نظرة عامة تنفيذية",
+  managerDashboard: "لوحة تحكم المدير",
+  procurementManagerDashboard: "لوحة تحكم مدير المشتريات",
+  officerDashboard: "لوحة تحكم الموظف",
+  procurementOfficerDashboard: "لوحة تحكم موظف المشتريات",
+  vendorPortal: "بوابة الموردين",
+  vendorDashboard: "لوحة تحكم المورد",
+  kunRealEstate: "شركة كون العقارية",
+  procurementSystem: "نظام المشتريات",
+  logout: "تسجيل الخروج",
+  signOut: "تسجيل الخروج",
+  refreshDashboard: "تحديث لوحة التحكم",
+  procurementManager: "مدير المشتريات",
+  accountSettings: "إعدادات الحساب",
+  
+  // Navigation items
+  overview: "نظرة عامة",
+  vendors: "الموردون",
+  contracts: "العقود",
+  projects: "المشاريع",
+  reports: "التقارير",
+  settings: "الإعدادات",
+  profile: "الملف الشخصي",
+  
+  // KPI translations
+  procurementEfficiency: "كفاءة المشتريات",
+  processOptimizationScore: "نتيجة تحسين العملية",
+  costSavingsRate: "معدل توفير التكاليف",
+  againstTotalSpend: "مقابل إجمالي الإنفاق",
+  contractCompliance: "امتثال العقد",
+  adherenceToTerms: "الالتزام بالشروط",
+  vendorSatisfaction: "رضا الموردين",
+  partnerFeedbackScore: "نتيجة ملاحظات الشريك",
+  
+  // Alert types
+  critical: "حرج",
+  warning: "تحذير",
+  medium: "متوسط",
+
+  // Navigation items in Arabic
+  dashboard: "لوحة التحكم",
+  financialAnalytics: "التحليلات المالية",
+  vendorPerformance: "أداء الموردين",
+  projectPortfolio: "محفظة المشاريع",
+  complianceDashboard: "لوحة الامتثال",
+  approvals: "الموافقات",
+  informationRequests: "طلبات المعلومات",
+  userManagement: "إدارة المستخدمين",
+  reports: "التقارير",
+  systemSettings: "إعدادات النظام",
+  accountApprovals: "موافقات الحسابات",
+  workflowBuilder: "منشئ سير العمل",
+  teamOverview: "نظرة عامة على الفريق",
+  approvalQueue: "قائمة انتظار الموافقات",
+  materialSubmittals: "تقديمات المواد",
+  shopDrawings: "رسومات المحل",
+  deliveries: "التسليمات",
+  budgetControl: "مراقبة الميزانية",
+  supplierPerformance: "أداء الموردين",
+  taskAssignment: "تعيين المهام",
+  vendorManagement: "إدارة الموردين",
+  rfqs: "طلبات العروض",
+  pos: "أوامر الشراء",
+  prs: "طلبات الشراء",
+  contracts: "العقود",
+  invoice: "الفواتير",
+  ipcs: "شهادات الدفع المؤقتة",
+  performanceMetrics: "مقاييس الأداء",
+  myTasks: "مهامي",
+  rfos: "عروض الطلبات",
+  costControl: "مراقبة التكاليف",
+  submitProposal: "تقديم مقترح",
+  trackSubmissions: "تتبع التقديمات",
+  myProfile: "ملفي الشخصي",
+  
+  // Role names in Arabic
+  executive: "تنفيذي",
+  procurementManager: "مدير المشتريات",
+  procurementOfficer: "موظف المشتريات",
+  vendor: "مورد",
 };
 
 // Add a function to set HTML direction

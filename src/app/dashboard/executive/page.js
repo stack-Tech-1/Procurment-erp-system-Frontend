@@ -1,10 +1,12 @@
-// frontend/src/app/dashboard/executive/page.js - UPDATED WITH DUAL STRUCTURE
+// frontend/src/app/dashboard/executive/page.js - UPDATED WITH i18n
 "use client";
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next'; 
 import ExecutiveDashboard from '@/components/dashboards/ExecutiveDashboard.js';
-import ResponsiveLayout from '@/components/layout/ResponsiveLayout'; // Updated import
+import ResponsiveLayout from '@/components/layout/ResponsiveLayout';
 
 export default function ExecutivePage() {
+  const { t } = useTranslation(); // ADD THIS HOOK
   const [dashboardData, setDashboardData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -27,7 +29,7 @@ export default function ExecutivePage() {
       });
       
       if (!response.ok) {
-        throw new Error(`Failed to fetch dashboard data: ${response.status}`);
+        throw new Error(t('dashboardFetchError', { status: response.status }));
       }
       
       const data = await response.json();
@@ -46,7 +48,7 @@ export default function ExecutivePage() {
         <div className="flex items-center justify-center min-h-64 py-8">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-            <div className="text-lg text-gray-600">Loading executive dashboard...</div>
+            <div className="text-lg text-gray-600">{t('loadingDashboard')}</div>
           </div>
         </div>
       );
@@ -56,13 +58,13 @@ export default function ExecutivePage() {
       return (
         <div className="flex items-center justify-center min-h-64 py-8">
           <div className="text-center max-w-md mx-auto">
-            <div className="text-red-600 text-lg mb-2">Error loading dashboard</div>
+            <div className="text-red-600 text-lg mb-2">{t('dashboardError')}</div>
             <div className="text-gray-600 mb-4 text-sm">{error}</div>
             <button
               onClick={fetchDashboardData}
               className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors w-full sm:w-auto"
             >
-              Retry
+              {t('retry')}
             </button>
           </div>
         </div>
@@ -71,10 +73,9 @@ export default function ExecutivePage() {
 
     return <ExecutiveDashboard data={dashboardData} />;
   };
+  
   return (
     <ResponsiveLayout>
-      
-
       {renderContent()}
     </ResponsiveLayout>
   );

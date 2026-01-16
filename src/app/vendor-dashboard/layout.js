@@ -399,17 +399,45 @@ export default function VendorLayout({ children }) {
                     )}
                     
                     <div className="space-y-1">
-                      <button className="w-full flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
+                      <button 
+                        onClick={() => {
+                          setUserMenuOpen(false);
+                          window.location.href = "/dashboard/vendors/profile";
+                        }}
+                        className="w-full flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                      >
                         <UserCircle2 size={16} />
                         My Profile
                       </button>
-                      <button className="w-full flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
+                      <button 
+                        onClick={() => {
+                          setUserMenuOpen(false);
+                          window.location.href = "/vendor-dashboard/performance";
+                        }}
+                        className="w-full flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                      >
                         <BarChart3 size={16} />
                         Performance Analytics
                       </button>
-                      <button className="w-full flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
+                      <button 
+                        onClick={() => {
+                          setUserMenuOpen(false);
+                          window.location.href = "/vendor-dashboard/documents";
+                        }}
+                        className="w-full flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                      >
                         <FileText size={16} />
                         Documents & Compliance
+                      </button>
+                      <button 
+                        onClick={() => {
+                          setUserMenuOpen(false);
+                          window.location.href = "/vendor-dashboard/reports";
+                        }}
+                        className="w-full flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                      >
+                        <FileText size={16} />
+                        Reports Center
                       </button>
                     </div>
                     
@@ -503,7 +531,7 @@ export default function VendorLayout({ children }) {
       {/* Overlay for dropdowns */}
       {(userMenuOpen || (isMobile && sidebarOpen)) && (
         <div 
-          className="fixed inset-0 z-40"
+        className="fixed inset-0 z-20"
           onClick={() => {
             setUserMenuOpen(false);
             if (isMobile) setSidebarOpen(false);

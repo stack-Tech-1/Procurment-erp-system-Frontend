@@ -5,3 +5,87 @@
 body {
   @apply bg-gray-50 text-gray-900;
 }
+
+
+/* frontend/src/app/globals.css - ADD THESE RTL SUPPORT STYLES */
+
+/* RTL specific styles */
+[dir="rtl"] .mr-3 {
+  margin-right: 0 !important;
+  margin-left: 0.75rem !important;
+}
+
+[dir="rtl"] .ml-3 {
+  margin-left: 0 !important;
+  margin-right: 0.75rem !important;
+}
+
+[dir="rtl"] .ml-auto {
+  margin-left: 0 !important;
+  margin-right: auto !important;
+}
+
+[dir="rtl"] .mr-auto {
+  margin-right: 0 !important;
+  margin-left: auto !important;
+}
+
+[dir="rtl"] .space-x-4 > * + * {
+  margin-left: 0 !important;
+  margin-right: 1rem !important;
+}
+
+[dir="rtl"] .text-left {
+  text-align: right !important;
+}
+
+[dir="rtl"] .text-right {
+  text-align: left !important;
+}
+
+/* Flexbox RTL adjustments */
+[dir="rtl"] .flex-row {
+  flex-direction: row-reverse;
+}
+
+/* Icon positioning for RTL */
+[dir="rtl"] .lucide-arrow-right,
+[dir="rtl"] .lucide-chevron-right {
+  transform: scaleX(-1);
+}
+
+[dir="rtl"] .lucide-arrow-left,
+[dir="rtl"] .lucide-chevron-left {
+  transform: scaleX(-1);
+}
+
+/* Border adjustments */
+[dir="rtl"] .border-l {
+  border-left: 0 !important;
+  border-right: 1px solid !important;
+}
+
+[dir="rtl"] .border-r {
+  border-right: 0 !important;
+  border-left: 1px solid !important;
+}
+
+/* Padding adjustments */
+[dir="rtl"] .pl-4 {
+  padding-left: 0 !important;
+  padding-right: 1rem !important;
+}
+
+[dir="rtl"] .pr-4 {
+  padding-right: 0 !important;
+  padding-left: 1rem !important;
+}
+
+/* Float adjustments */
+[dir="rtl"] .float-right {
+  float: left !important;
+}
+
+[dir="rtl"] .float-left {
+  float: right !important;
+}

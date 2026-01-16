@@ -1,6 +1,7 @@
-// frontend/src/components/ResponsiveLayout.js
+// frontend/src/components/layout/ResponsiveLayout.js - CORRECTED
 "use client";
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { 
   Menu, 
   X, 
@@ -9,106 +10,196 @@ import {
   UserCircle2,
   ChevronDown,
   Building,
-  RefreshCw
+  RefreshCw,
+  Globe
 } from 'lucide-react';
 import Link from 'next/link';
 import { getNavigationItems } from '@/utils/navigation';
 import { ROLES, ROLE_NAMES } from '@/constants/roles';
 
 export default function ResponsiveLayout({ children }) {
+  const { t, i18n } = useTranslation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [languageMenuOpen, setLanguageMenuOpen] = useState(false);
   const [userData, setUserData] = useState(null);
   const [navItems, setNavItems] = useState([]);
   const [isMobile, setIsMobile] = useState(false);
+  const [currentLanguage, setCurrentLanguage] = useState('en');
 
-  // Detect screen size
+  // Load user data and navigation items
+  useEffect(() => {
+    const storedUser = localStorage.getItem("user");
+    if (storedUser) {
+      try {
+        const user = JSON.parse(storedUser);
+        setUserData(user);
+        setNavItems(getNavigationItems(user.roleId));
+      } catch (error) {
+        console.error('Error parsing user data:', error);
+      }
+    }
+  }, []);
+
+  // Initialize language from localStorage
+  useEffect(() => {
+    const savedLang = localStorage.getItem('preferred-language') || 'en';
+    setCurrentLanguage(savedLang);
+    i18n.changeLanguage(savedLang);
+    
+    // Set initial document direction
+    if (savedLang === 'ar') {
+      document.documentElement.dir = 'rtl';
+      document.documentElement.lang = 'ar';
+    } else {
+      document.documentElement.dir = 'ltr';
+      document.documentElement.lang = savedLang;
+    }
+  }, [i18n]);
+
+  // Detect screen size for mobile
   useEffect(() => {
     const checkScreenSize = () => {
-      setIsMobile(window.innerWidth < 1024); // lg breakpoint
+      setIsMobile(window.innerWidth < 1024);
     };
-
+    
     // Initial check
     checkScreenSize();
-
+    
     // Listen for resize events
     window.addEventListener('resize', checkScreenSize);
     
     return () => window.removeEventListener('resize', checkScreenSize);
   }, []);
 
-  // Load user data
-  useEffect(() => {
-    const storedUser = localStorage.getItem("user");
-    if (storedUser) {
-      const user = JSON.parse(storedUser);
-      setUserData(user);
-      setNavItems(getNavigationItems(user.roleId));
+  // Language change handler
+  const handleLanguageChange = (lang) => {
+    i18n.changeLanguage(lang);
+    setCurrentLanguage(lang);
+    localStorage.setItem('preferred-language', lang);
+    setLanguageMenuOpen(false);
+    
+    // Update document direction for RTL languages
+    if (lang === 'ar') {
+      document.documentElement.dir = 'rtl';
+      document.documentElement.lang = 'ar';
+    } else {
+      document.documentElement.dir = 'ltr';
+      document.documentElement.lang = lang;
     }
-  }, []);
+  };
 
+  // Logout handler
   const handleLogout = () => {
     localStorage.clear();
     window.location.href = "/login";
   };
 
-const getDashboardTitle = () => {
-  if (!userData) return { 
-    title: "Dashboard", 
-    subtitle: "Loading...",
-    icon: (
-      <div className="w-10 h-10 bg-gradient-to-br from-yellow-400 to-yellow-600 rounded-xl flex items-center justify-center shadow-lg shadow-yellow-500/20 mr-3">
-        <span className="text-white font-bold text-base">KUN</span>
-      </div>
-    ) 
-  };
-  
-  const roles = {
-    1: { 
-      title: "Executive Dashboard", 
-      subtitle: "Executive Overview",
+  // Get dashboard title with translations
+  const getDashboardTitle = () => {
+    if (!userData) return { 
+      title: t('dashboard'), 
+      subtitle: t('loading'),
       icon: (
         <div className="w-10 h-10 bg-gradient-to-br from-yellow-400 to-yellow-600 rounded-xl flex items-center justify-center shadow-lg shadow-yellow-500/20 mr-3">
           <span className="text-white font-bold text-base">KUN</span>
         </div>
       ) 
-    },
-    2: { 
-      title: "Manager Dashboard", 
-      subtitle: "Procurement Manager Dashboard",
-      icon: (
-        <div className="w-10 h-10 bg-gradient-to-br from-gray-800 to-gray-900 rounded-xl flex items-center justify-center shadow-lg shadow-gray-500/20 mr-3">
-          <span className="text-white font-bold text-base">KUN</span>
-        </div>
-      ) 
-    },
-    3: { 
-      title: "Officer Dashboard", 
-      subtitle: "Procurement Officer Dashboard",
-      icon: (
-        <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/20 mr-3">
-          <span className="text-white font-bold text-base">KUN</span>
-        </div>
-      ) 
-    },
-    4: { 
-      title: "Vendor Portal", 
-      subtitle: "Vendor Dashboard",
-      icon: (
-        <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg shadow-purple-500/20 mr-3">
-          <span className="text-white font-bold text-base">KUN</span>
-        </div>
-      ) 
-    }
+    };
+    
+    const roles = {
+      1: { 
+        title: t('executiveDashboard'), 
+        subtitle: t('executiveOverview'),
+        icon: (
+          <div className="w-10 h-10 bg-gradient-to-br from-yellow-400 to-yellow-600 rounded-xl flex items-center justify-center shadow-lg shadow-yellow-500/20 mr-3">
+            <span className="text-white font-bold text-base">KUN</span>
+          </div>
+        ) 
+      },
+      2: { 
+        title: t('managerDashboard'), 
+        subtitle: t('procurementManagerDashboard'),
+        icon: (
+          <div className="w-10 h-10 bg-gradient-to-br from-gray-800 to-gray-900 rounded-xl flex items-center justify-center shadow-lg shadow-gray-500/20 mr-3">
+            <span className="text-white font-bold text-base">KUN</span>
+          </div>
+        ) 
+      },
+      3: { 
+        title: t('officerDashboard'), 
+        subtitle: t('procurementOfficerDashboard'),
+        icon: (
+          <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/20 mr-3">
+            <span className="text-white font-bold text-base">KUN</span>
+          </div>
+        ) 
+      },
+      4: { 
+        title: t('vendorPortal'), 
+        subtitle: t('vendorDashboard'),
+        icon: (
+          <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg shadow-purple-500/20 mr-3">
+            <span className="text-white font-bold text-base">KUN</span>
+          </div>
+        ) 
+      }
+    };
+    
+    return roles[userData.roleId] || roles[3];
   };
-  
-  return roles[userData.roleId] || roles[3];
-};
+
+  // Add language switcher component
+  const LanguageSwitcher = () => (
+    <div className="relative">
+      <button
+        className="flex items-center gap-2 p-2 text-gray-600 hover:text-indigo-500 hover:bg-indigo-50 rounded-lg transition-all"
+        onClick={() => setLanguageMenuOpen(!languageMenuOpen)}
+      >
+        <Globe size={20} />
+        <span className="text-sm font-medium">
+          {currentLanguage === 'en' ? 'EN' : 'عربي'}
+        </span>
+        <ChevronDown size={16} className={`transition-transform ${languageMenuOpen ? 'rotate-180' : ''}`} />
+      </button>
+      
+      {languageMenuOpen && (
+        <div className="absolute right-0 top-full mt-2 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50 w-32">
+          <button
+            onClick={() => handleLanguageChange('en')}
+            className={`flex items-center gap-2 w-full px-4 py-2 text-sm hover:bg-gray-50 transition-colors ${
+              currentLanguage === 'en' ? 'text-indigo-600 bg-indigo-50' : 'text-gray-700'
+            }`}
+          >
+            <span className={`w-6 h-4 rounded border flex items-center justify-center ${
+              currentLanguage === 'en' ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-gray-100 border-gray-300'
+            }`}>
+              EN
+            </span>
+            English
+          </button>
+          <button
+            onClick={() => handleLanguageChange('ar')}
+            className={`flex items-center gap-2 w-full px-4 py-2 text-sm hover:bg-gray-50 transition-colors ${
+              currentLanguage === 'ar' ? 'text-indigo-600 bg-indigo-50' : 'text-gray-700'
+            }`}
+          >
+            <span className={`w-6 h-4 rounded border flex items-center justify-center ${
+              currentLanguage === 'ar' ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-gray-100 border-gray-300'
+            }`}>
+              ع
+            </span>
+            العربية
+          </button>
+        </div>
+      )}
+    </div>
+  );
 
   const dashboardInfo = getDashboardTitle();
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
+    <div className="flex min-h-screen bg-gray-50" dir={currentLanguage === 'ar' ? 'rtl' : 'ltr'}>
       {/* Mobile Overlay */}
       {isMobile && sidebarOpen && (
         <div 
@@ -117,8 +208,7 @@ const getDashboardTitle = () => {
         />
       )}
 
-      {/* SIDEBAR - DUAL STRUCTURE */}
-      {/* Desktop: Always visible | Mobile: Slide-in overlay */}
+      {/* SIDEBAR */}
       <aside className={`
         bg-slate-900 text-gray-100 flex flex-col
         ${isMobile 
@@ -128,19 +218,18 @@ const getDashboardTitle = () => {
           : 'w-64 min-h-screen'
         }
       `}>
-        {/* Header - Improved Logo Section */}
+        {/* Header */}
         <div className="p-6 border-b border-slate-700">
           <div className="flex flex-col items-center text-center space-y-4">
-            {/* Enhanced Logo Container */}
             <div className="w-20 h-20 bg-gradient-to-br from-yellow-400 to-yellow-600 rounded-2xl flex items-center justify-center shadow-2xl shadow-yellow-500/30 mb-2">
               <span className="text-white font-bold text-2xl">KUN</span>
             </div>
             
-            {/* Company Info - Simplified */}
             <div className="space-y-1">
               <h1 className="text-xl font-bold text-white leading-tight">
-                KUN Real Estate
+                {t('kunRealEstate')}
               </h1>
+              <p className="text-sm text-gray-300">{t('procurementSystem')}</p>
             </div>
           </div>
           
@@ -154,18 +243,6 @@ const getDashboardTitle = () => {
           )}
         </div>
 
-        {/* User Info - Mobile Only */}
-        {isMobile && userData && (
-          <div className="p-4 border-b border-slate-700 bg-slate-800/50">
-            <div className="text-center">
-              <div className="font-medium text-white truncate">{userData.name || userData.email}</div>
-              <div className="text-gray-300 text-sm capitalize mt-1">
-                {ROLE_NAMES[userData.roleId]?.toLowerCase() || 'user'}
-              </div>
-            </div>
-          </div>
-        )}
-
         {/* Navigation */}
         <nav className="flex-1 overflow-y-auto py-6">
           {navItems.map((item) => (
@@ -176,30 +253,19 @@ const getDashboardTitle = () => {
               className="flex items-center gap-3 px-6 py-4 text-base hover:bg-slate-800 hover:text-indigo-400 transition-colors border-l-4 border-transparent hover:border-indigo-400"
             >
               {item.icon}
-              <span>{item.name}</span>
+              {/* Use translation key if available, fallback to name */}
+              <span>{t(item.translationKey || item.name.toLowerCase().replace(/\s+/g, ''))}</span>
             </Link>
           ))}
         </nav>
 
-        {/* Logout - Mobile Only */}
-        {isMobile && (
-          <div className="p-4 border-t border-slate-700">
-            <button
-              onClick={handleLogout}
-              className="flex items-center gap-3 text-sm text-gray-400 hover:text-red-400 transition w-full px-2 py-2"
-            >
-              <LogOut size={18} /> Logout
-            </button>
-          </div>
-        )}
-
-        {/* User Info - Desktop Only */}
+        {/* Footer with Language Switcher - Desktop */}
         {!isMobile && userData && (
           <div className="p-4 border-t border-slate-700 mt-auto bg-slate-800/30">
             <div className="mb-3 px-2 py-1 text-sm">
               <div className="font-medium text-white truncate">{userData.name || userData.email}</div>
-              <div className="text-gray-300 capitalize text-xs mt-1">
-                {ROLE_NAMES[userData.roleId]?.toLowerCase() || 'user'}
+              <div className="text-gray-300 text-xs mt-1">
+                {t(ROLE_NAMES[userData.roleId]?.toLowerCase() || 'user')}
               </div>
               {userData.department && (
                 <div className="text-gray-400 text-xs mt-1">{userData.department}</div>
@@ -209,18 +275,29 @@ const getDashboardTitle = () => {
               onClick={handleLogout}
               className="flex items-center gap-3 text-sm text-gray-400 hover:text-red-400 transition w-full px-2 py-2 hover:bg-slate-700 rounded-lg"
             >
-              <LogOut size={18} /> Logout
+              <LogOut size={18} /> {t('logout')}
             </button>
+          </div>
+        )}
+
+        {/* Mobile User Info */}
+        {isMobile && userData && (
+          <div className="p-4 border-t border-slate-700 bg-slate-800/50 mt-auto">
+            <div className="text-center">
+              <div className="font-medium text-white truncate">{userData.name || userData.email}</div>
+              <div className="text-gray-300 text-sm mt-1">
+                {t(ROLE_NAMES[userData.roleId]?.toLowerCase() || 'user')}
+              </div>
+            </div>
           </div>
         )}
       </aside>
 
-      {/* MAIN CONTENT AREA */}
+      {/* MAIN CONTENT */}
       <div className={`flex-1 flex flex-col min-w-0 ${!isMobile ? 'ml-0' : ''}`}>
-        {/* TOPBAR - DUAL STRUCTURE */}
+        {/* TOPBAR */}
         <header className="flex justify-between items-center bg-white shadow-sm border-b border-gray-100">
           <div className={`flex items-center gap-3 ${isMobile ? 'px-4 py-3' : 'px-8 py-4'}`}>
-            {/* Mobile Menu Button */}
             {isMobile && (
               <button 
                 onClick={() => setSidebarOpen(true)}
@@ -230,7 +307,6 @@ const getDashboardTitle = () => {
               </button>
             )}
             
-            {/* Title with Logo Icon */}
             <div className="flex items-center gap-3">
               {dashboardInfo.icon}
               <div>
@@ -245,22 +321,25 @@ const getDashboardTitle = () => {
           </div>
           
           {/* Right Section */}
-            <div className={`flex items-center gap-3 ${isMobile ? 'px-4 py-3' : 'px-8 py-4'}`}>
-              {/* Refresh Button - NEW */}
-              <button 
-                onClick={() => window.location.reload()}
-                className="p-2 text-gray-600 hover:text-indigo-500 hover:bg-indigo-50 rounded-lg transition-all"
-                title="Refresh Dashboard"
-              >
-                <RefreshCw size={20} />
-              </button>
+          <div className={`flex items-center gap-3 ${isMobile ? 'px-4 py-3' : 'px-8 py-4'}`}>
+            {/* Language Switcher - Mobile & Desktop */}
+            <LanguageSwitcher />
+            
+            {/* Refresh Button */}
+            <button 
+              onClick={() => window.location.reload()}
+              className="p-2 text-gray-600 hover:text-indigo-500 hover:bg-indigo-50 rounded-lg transition-all"
+              title={t('refreshDashboard')}
+            >
+              <RefreshCw size={20} />
+            </button>
 
-              {/* Notifications */}
-              <button className="p-2 text-gray-600 hover:text-indigo-500 hover:bg-indigo-50 rounded-lg transition-all">
-                <Bell size={20} />
-              </button>
+            {/* Notifications */}
+            <button className="p-2 text-gray-600 hover:text-indigo-500 hover:bg-indigo-50 rounded-lg transition-all">
+              <Bell size={20} />
+            </button>
 
-            {/* User Menu - Desktop: Full | Mobile: Compact */}
+            {/* User Menu */}
             <div className="relative">
               <button 
                 className={`flex items-center gap-2 rounded-lg hover:bg-gray-50 transition-colors ${
@@ -269,14 +348,13 @@ const getDashboardTitle = () => {
                 onClick={() => setUserMenuOpen(!userMenuOpen)}
               >
                 <UserCircle2 size={isMobile ? 32 : 36} className="text-indigo-600" />
-                {!isMobile && (
+                {!isMobile && userData && (
                   <div className="text-left">
                     <p className="font-medium text-gray-800 text-sm">
-                      {userData?.name || "User Name"}
+                      {userData.name || "User Name"}
                     </p>
                     <p className="text-xs text-gray-500">
-                      {/* Updated to show role instead of department */}
-                      {ROLE_NAMES[userData?.roleId] || "Procurement Manager"}
+                      {t(ROLE_NAMES[userData.roleId]?.toLowerCase() || 'procurementManager')}
                     </p>
                   </div>
                 )}
@@ -288,8 +366,6 @@ const getDashboardTitle = () => {
                 />
               </button>
 
-
-              {/* User Dropdown - Optional: update role display here too */}
               {userMenuOpen && (
                 <div className={`absolute right-0 top-full mt-2 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50 ${
                   isMobile ? 'w-48' : 'w-64'
@@ -298,16 +374,16 @@ const getDashboardTitle = () => {
                     <div className="px-4 py-2 border-b border-gray-100">
                       <p className="font-medium text-gray-800 text-sm">{userData.name}</p>
                       <p className="text-xs text-gray-500 truncate">{userData.email}</p>
-                      {/* Show role in dropdown */}
+                      {/* Show translated role in dropdown */}
                       <p className="text-xs text-gray-400 mt-1">
-                        {ROLE_NAMES[userData.roleId] || "Procurement Manager"}
+                        {t(ROLE_NAMES[userData.roleId]?.toLowerCase() || 'procurementManager')}
                       </p>
                     </div>
                   )}
                   
                   {!isMobile && (
                     <button className="w-full flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
-                      Account Settings
+                      {t('accountSettings')}
                     </button>
                   )}
                   
@@ -316,7 +392,7 @@ const getDashboardTitle = () => {
                     className="w-full flex items-center gap-3 px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
                   >
                     <LogOut size={16} />
-                    Sign Out
+                    {t('signOut')}
                   </button>
                 </div>
               )}
@@ -333,11 +409,12 @@ const getDashboardTitle = () => {
       </div>
 
       {/* Overlay for dropdowns */}
-      {(userMenuOpen || (isMobile && sidebarOpen)) && (
+      {(userMenuOpen || languageMenuOpen || (isMobile && sidebarOpen)) && (
         <div 
           className="fixed inset-0 z-40"
           onClick={() => {
             setUserMenuOpen(false);
+            setLanguageMenuOpen(false);
             if (isMobile) setSidebarOpen(false);
           }}
         />
