@@ -1,7 +1,8 @@
-// frontend/src/app/dashboard/procurement/vendors/page.js - MOBILE OPTIMIZED
+// frontend/src/app/dashboard/procurement/vendors/page.js - UPDATED WITH i18n
 "use client";
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
+import { useTranslation } from 'react-i18next'; // ADD THIS IMPORT
 import { Search, Sliders, ChevronDown, CheckCircle, Clock, XCircle, ArrowUp, ArrowDown } from 'lucide-react';
 import ResponsiveLayout from '@/components/layout/ResponsiveLayout';
 import VendorChart from '@/components/VendorChart'; 
@@ -14,6 +15,7 @@ const STATUS_OPTIONS = ['NEW', 'UNDER_REVIEW', 'APPROVED', 'REJECTED', 'NEEDS_RE
 const TYPE_OPTIONS = ['GeneralContractor', 'SubContractor', 'Supplier'];
 
 const VendorListPage = () => {
+    const { t } = useTranslation(); // ADD THIS HOOK
     const [vendors, setVendors] = useState([]);
     const [summary, setSummary] = useState({});
     const [loading, setLoading] = useState(true);
@@ -112,31 +114,53 @@ const VendorListPage = () => {
         setPagination(prev => ({ ...prev, page: 1 }));
     };
 
+    // Helper function to translate status
+    const translateStatus = (status) => {
+        const statusMap = {
+            'APPROVED': t('approved'),
+            'REJECTED': t('rejected'),
+            'NEEDS_RENEWAL': t('needsRenewal'),
+            'UNDER_REVIEW': t('underReview'),
+            'NEW': t('new')
+        };
+        return statusMap[status] || status;
+    };
+
+    // Helper function to translate vendor type
+    const translateVendorType = (type) => {
+        const typeMap = {
+            'GeneralContractor': t('generalContractor'),
+            'SubContractor': t('subContractor'),
+            'Supplier': t('supplier')
+        };
+        return typeMap[type] || type;
+    };
+
     return (
         <ResponsiveLayout>
             <div className="space-y-6">
                 {/* Header */}
                 <div>
                     <h1 className="text-2xl font-bold text-gray-800 sm:text-3xl">
-                        Vendor Qualification Dashboard
+                        {t('vendorQualificationDashboard')}
                     </h1>
                     <p className="text-gray-600 mt-2 text-sm sm:text-base">
-                        Manage and track vendor qualifications and compliance
+                        {t('vendorDashboardSubtitle')}
                     </p>
                 </div>
 
                 {/* KPI Summary - Responsive Grid */}
                 <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
                     {[
-                        { label: 'Total Vendors', icon: Clock, color: 'blue', dataKey: 'totalVendors' },
-                        { label: 'Approved', icon: CheckCircle, color: 'green', dataKey: 'statusBreakdown?.APPROVED' },
-                        { label: 'Under Review', icon: Clock, color: 'yellow', dataKey: 'statusBreakdown?.UNDER_REVIEW' },
-                        { label: 'Expired', icon: XCircle, color: 'red', dataKey: 'expiredVendorsCount' },
-                        { label: 'Expiring Soon', icon: Clock, color: 'orange', dataKey: 'expiringSoonVendorsCount' },
+                        { label: t('totalVendors'), icon: Clock, color: 'blue', dataKey: 'totalVendors' },
+                        { label: t('approved'), icon: CheckCircle, color: 'green', dataKey: 'statusBreakdown?.APPROVED' },
+                        { label: t('underReview'), icon: Clock, color: 'yellow', dataKey: 'statusBreakdown?.UNDER_REVIEW' },
+                        { label: t('expired'), icon: XCircle, color: 'red', dataKey: 'expiredVendorsCount' },
+                        { label: t('expiringSoon'), icon: Clock, color: 'orange', dataKey: 'expiringSoonVendorsCount' },
                     ].map(({ label, icon: Icon, color, dataKey }) => {
                         let value = 0;
                         
-                        if (label === 'Under Review') {
+                        if (label === t('underReview')) {
                             value = (summary.statusBreakdown?.UNDER_REVIEW || 0) + (summary.statusBreakdown?.NEW || 0);
                         } else if (dataKey.includes('.')) {
                             value = dataKey.split('.').reduce((acc, part) => acc?.[part.replace('?', '')] ?? 0, summary);
@@ -177,7 +201,7 @@ const VendorListPage = () => {
                             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
                             <input
                                 type="text"
-                                placeholder="Search by Name, CR, or Email..."
+                                placeholder={t('searchPlaceholder')}
                                 className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
                                 value={filters.search}
                                 onChange={(e) => handleFilterChange('search', e.target.value)}
@@ -190,9 +214,9 @@ const VendorListPage = () => {
                                 value={filters.status}
                                 onChange={(e) => handleFilterChange('status', e.target.value)}
                             >
-                                <option value="">All Statuses</option>
+                                <option value="">{t('allStatuses')}</option>
                                 {STATUS_OPTIONS.map(status => (
-                                    <option key={status} value={status}>{status.replace('_', ' ')}</option>
+                                    <option key={status} value={status}>{translateStatus(status)}</option>
                                 ))}
                             </select>
 
@@ -201,9 +225,9 @@ const VendorListPage = () => {
                                 value={filters.type}
                                 onChange={(e) => handleFilterChange('type', e.target.value)}
                             >
-                                <option value="">All Types</option>
+                                <option value="">{t('allTypes')}</option>
                                 {TYPE_OPTIONS.map(type => (
-                                    <option key={type} value={type}>{type.replace(/([A-Z])/g, ' $1').trim()}</option>
+                                    <option key={type} value={type}>{translateVendorType(type)}</option>
                                 ))}
                             </select>
 
@@ -220,13 +244,22 @@ const VendorListPage = () => {
                 {/* Vendor Table - Horizontal scroll on mobile */}
                 <div className="bg-white rounded-lg shadow-xl overflow-x-auto">
                     {loading ? (
-                        <div className="p-8 text-center text-gray-500">Loading vendors...</div>
+                        <div className="p-8 text-center text-gray-500">{t('loadingVendors')}</div>
                     ) : (
                         <div className="min-w-full">
                             <table className="min-w-full divide-y divide-gray-200">
                                 <thead className="bg-gray-50">
                                     <tr>
-                                        {['Vendor ID', 'Name', 'Type', 'Status', 'Updated', 'CR Expiry', 'ISO Expiry', 'Zakat Expiry'].map((header, index) => {
+                                        {[
+                                            t('vendorId'),
+                                            t('name'),
+                                            t('type'),
+                                            t('status'),
+                                            t('updated'),
+                                            t('crExpiry'),
+                                            t('isoExpiry'),
+                                            t('zakatExpiry')
+                                        ].map((header, index) => {
                                             const field = ['vendorId', 'name', 'vendorType', 'status', 'updatedAt', 'crExpiry', 'isoExpiry', 'zakatExpiry'][index];
                                             return (
                                                 <th
@@ -242,22 +275,22 @@ const VendorListPage = () => {
                                                 </th>
                                             );
                                         })}
-                                        <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">Action</th>
+                                        <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">{t('action')}</th>
                                     </tr>
                                 </thead>
                                 <tbody className="bg-white divide-y divide-gray-200">
                                     {vendors.length === 0 ? (
-                                        <tr><td colSpan="10" className="px-6 py-4 text-center text-gray-500">No vendors match your criteria.</td></tr>
+                                        <tr><td colSpan="10" className="px-6 py-4 text-center text-gray-500">{t('noVendorsMatch')}</td></tr>
                                     ) : (
                                         vendors.map((vendor) => (
                                             <tr key={vendor.id} className="odd:bg-white even:bg-gray-50/50 hover:bg-blue-50 transition duration-150">
                                                 <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{vendor.vendorId}</td>
                                                 <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">{vendor.name}</td>
-                                                <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">{vendor.vendorType}</td>
+                                                <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">{translateVendorType(vendor.vendorType)}</td>
                                                 <td className="px-4 py-4 whitespace-nowrap text-sm">
                                                     <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${vendor.status === 'APPROVED' ? 'bg-green-100 text-green-800' : vendor.status === 'REJECTED' || vendor.status === 'NEEDS_RENEWAL' ? 'bg-red-100 text-red-800' : 'bg-yellow-100 text-yellow-800'}`}>
                                                         {getStatusIcon(vendor.status)}
-                                                        {vendor.status.replace('_', ' ')}
+                                                        {translateStatus(vendor.status)}
                                                     </span>
                                                 </td>
                                                 <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">{new Date(vendor.updatedAt).toLocaleDateString()}</td>
@@ -266,14 +299,14 @@ const VendorListPage = () => {
                                                 {['crExpiry', 'isoExpiry', 'zakatExpiry'].map((field) => (
                                                     <td key={field} className="px-4 py-4 whitespace-nowrap text-sm">
                                                         <span className={getExpiryClass(vendor[field])}>
-                                                            {vendor[field] ? new Date(vendor[field]).toLocaleDateString() : 'N/A'}
+                                                            {vendor[field] ? new Date(vendor[field]).toLocaleDateString() : t('na')}
                                                         </span>
                                                     </td>
                                                 ))}
                                                 
                                                 <td className="px-4 py-4 whitespace-nowrap text-sm font-medium">
                                                     <a href={`/dashboard/procurement/vendors/${vendor.id}`} className="text-blue-600 hover:text-blue-900 font-semibold transition duration-150 text-sm">
-                                                        Review
+                                                        {t('review')}
                                                     </a>
                                                 </td>
                                             </tr>
@@ -288,7 +321,11 @@ const VendorListPage = () => {
                 {/* Pagination */}
                 <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
                     <p className="text-sm text-gray-600">
-                        Showing {Math.min(pagination.total, (pagination.page - 1) * pagination.pageSize + 1)} to {Math.min(pagination.total, pagination.page * pagination.pageSize)} of {pagination.total} entries
+                        {t('showingEntries', {
+                            start: Math.min(pagination.total, (pagination.page - 1) * pagination.pageSize + 1),
+                            end: Math.min(pagination.total, pagination.page * pagination.pageSize),
+                            total: pagination.total
+                        })}
                     </p>
                     <div className="flex space-x-2">
                         <button 
@@ -296,14 +333,14 @@ const VendorListPage = () => {
                             disabled={pagination.page <= 1}
                             onClick={() => setPagination(prev => ({ ...prev, page: prev.page - 1 }))}
                         >
-                            Previous
+                            {t('previous')}
                         </button>
                         <button 
                             className="px-4 py-2 border rounded-lg bg-white hover:bg-gray-100 disabled:opacity-50 text-sm"
                             disabled={pagination.page >= pagination.totalPages}
                             onClick={() => setPagination(prev => ({ ...prev, page: prev.page + 1 }))}
                         >
-                            Next
+                            {t('next')}
                         </button>
                     </div>
                 </div>

@@ -326,6 +326,72 @@ const enTranslations = {
    mayRequireAttention: "May require attention",
    overdueTask: "Overdue Task",
    requireImmediateAction: "Require immediate action",
+
+   // Vendor Management Page
+  vendorQualificationDashboard: "Vendor Qualification Dashboard",
+  vendorDashboardSubtitle: "Manage and track vendor qualifications and compliance",
+  
+  // KPI Labels
+  totalVendors: "Total Vendors",
+  approved: "Approved",
+  underReview: "Under Review",
+  expired: "Expired",
+  expiringSoon: "Expiring Soon",
+  
+  // Vendor Types
+  generalContractor: "General Contractor",
+  subContractor: "Sub Contractor",
+  supplier: "Supplier",
+  
+  // Status Labels
+  new: "New",
+  rejected: "Rejected",
+  needsRenewal: "Needs Renewal",
+  
+  // Search and Filters
+  searchPlaceholder: "Search by Name, CR, or Email...",
+  allStatuses: "All Statuses",
+  allTypes: "All Types",
+  
+  // Table Headers
+  vendorId: "Vendor ID",
+  name: "Name",
+  type: "Type",
+  status: "Status",
+  updated: "Updated",
+  crExpiry: "CR Expiry",
+  isoExpiry: "ISO Expiry",
+  zakatExpiry: "Zakat Expiry",
+  action: "Action",
+  
+  // Table Content
+  loadingVendors: "Loading vendors...",
+  noVendorsMatch: "No vendors match your criteria.",
+  na: "N/A",
+  review: "Review",
+  
+  // Pagination
+  showingEntries: "Showing {start} to {end} of {total} entries",
+  previous: "Previous",
+  next: "Next",
+  
+  // Charts
+  vendorStatusSummary: "Vendor Status Summary",
+  vendorTypeBreakdown: "Vendor Type Breakdown",
+  vendors: "Vendors",
+  share: "Share",
+  vendorsCount: "{count} Vendors",
+  noVendorStatusData: "No vendor status data available for the chart.",
+  noVendorTypeData: "No vendor type data available for the chart.",
+  
+  // Expiry Risk Card
+  documentExpiryRisk: "Document Expiry Risk",
+  vendorsAtHighRisk: "Vendors at High Risk (Expired or Expiring Soon)",
+  active: "Active",
+  lowRisk: "Low Risk",
+  moderateRisk: "Moderate Risk",
+  highRisk: "High Risk",
+  ofTotal: "of Total",
 };
 
 // Arabic translations
@@ -650,6 +716,73 @@ const arTranslations = {
   mayRequireAttention: "قد تتطلب اهتمام",
   overdueTask: "مهمة متأخرة",
   requireImmediateAction: "تتطلب إجراءً فورياً",
+
+
+   // Vendor Management Page
+   vendorQualificationDashboard: "لوحة تأهيل الموردين",
+   vendorDashboardSubtitle: "إدارة وتتبع مؤهلات الموردين والامتثال",
+   
+   // KPI Labels
+   totalVendors: "إجمالي الموردين",
+   approved: "معتمد",
+   underReview: "قيد المراجعة",
+   expired: "منتهي الصلاحية",
+   expiringSoon: "سينتهي قريباً",
+   
+   // Vendor Types
+   generalContractor: "مقاول عام",
+   subContractor: "مقاول فرعي",
+   supplier: "مورد",
+   
+   // Status Labels
+   new: "جديد",
+   rejected: "مرفوض",
+   needsRenewal: "يحتاج إلى تجديد",
+   
+   // Search and Filters
+   searchPlaceholder: "البحث بالاسم أو السجل التجاري أو البريد الإلكتروني...",
+   allStatuses: "جميع الحالات",
+   allTypes: "جميع الأنواع",
+   
+   // Table Headers
+   vendorId: "معرف المورد",
+   name: "الاسم",
+   type: "النوع",
+   status: "الحالة",
+   updated: "تم التحديث",
+   crExpiry: "انتهاء السجل التجاري",
+   isoExpiry: "انتهاء ISO",
+   zakatExpiry: "انتهاء الزكاة",
+   action: "إجراء",
+   
+   // Table Content
+   loadingVendors: "جاري تحميل الموردين...",
+   noVendorsMatch: "لا توجد موردين تطابق معايير البحث.",
+   na: "غير متوفر",
+   review: "مراجعة",
+   
+   // Pagination
+   showingEntries: "عرض {start} إلى {end} من إجمالي {total}",
+   previous: "السابق",
+   next: "التالي",
+   
+   // Charts
+   vendorStatusSummary: "ملخص حالة الموردين",
+   vendorTypeBreakdown: "تفصيل أنواع الموردين",
+   vendors: "الموردين",
+   share: "نسبة",
+   vendorsCount: "{count} مورد",
+   noVendorStatusData: "لا توجد بيانات حالة الموردين للرسم البياني.",
+   noVendorTypeData: "لا توجد بيانات أنواع الموردين للرسم البياني.",
+   
+   // Expiry Risk Card
+   documentExpiryRisk: "مخاطر انتهاء صلاحية المستندات",
+   vendorsAtHighRisk: "الموردين المعرضين لمخاطر عالية (منتهية أو تنتهي قريباً)",
+   active: "نشط",
+   lowRisk: "مخاطر منخفضة",
+   moderateRisk: "مخاطر متوسطة",
+   highRisk: "مخاطر عالية",
+   ofTotal: "من الإجمالي",
 };
 
 // Add a function to set HTML direction
