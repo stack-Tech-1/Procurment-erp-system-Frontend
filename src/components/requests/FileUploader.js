@@ -2,6 +2,7 @@
 "use client";
 
 import React, { useState, useRef } from 'react';
+import { useTranslation } from 'react-i18next'; // ADD THIS
 import { Upload, X, FileText, Image, FileSpreadsheet, Trash2, Eye } from 'lucide-react';
 
 const FileUploader = ({
@@ -15,6 +16,7 @@ const FileUploader = ({
   description = 'Drag & drop files or click to browse',
   disabled = false
 }) => {
+  const { t } = useTranslation(); // ADD THIS
   const fileInputRef = useRef(null);
   const [dragOver, setDragOver] = useState(false);
   const [errors, setErrors] = useState([]);
@@ -25,19 +27,19 @@ const FileUploader = ({
     // Check file size
     const maxSizeBytes = maxSizeMB * 1024 * 1024;
     if (file.size > maxSizeBytes) {
-      errors.push(`${file.name} exceeds ${maxSizeMB}MB limit`);
+      errors.push(t('fileExceedsSizeLimit', { fileName: file.name, maxSize: maxSizeMB }));
     }
     
     // Check file type
     const acceptedExtensions = acceptedTypes.split(',').map(ext => ext.trim());
     const fileExtension = '.' + file.name.split('.').pop().toLowerCase();
     if (!acceptedExtensions.includes(fileExtension)) {
-      errors.push(`${file.name} has invalid file type`);
+      errors.push(t('fileInvalidType', { fileName: file.name }));
     }
     
     // Check total files count
     if (multiple && files.length >= maxFiles) {
-      errors.push(`Maximum ${maxFiles} files allowed`);
+      errors.push(t('maxFilesExceeded', { maxFiles }));
     }
     
     return errors;
@@ -117,7 +119,7 @@ const FileUploader = ({
   const formatFileSize = (bytes) => {
     if (bytes === 0) return '0 Bytes';
     const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const sizes = [t('bytes'), t('kb'), t('mb'), t('gb')];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
@@ -128,7 +130,7 @@ const FileUploader = ({
         <label className="block text-sm font-medium text-gray-700 mb-1">
           {label}
           <span className="text-xs text-gray-500 ml-2">
-            ({acceptedTypes.replace(/\./g, '').toUpperCase()}, max {maxSizeMB}MB each)
+            ({acceptedTypes.replace(/\./g, '').toUpperCase()}, {t('maxSizeEach', { size: maxSizeMB })})
           </span>
         </label>
         <p className="text-xs text-gray-500 mb-3">{description}</p>
@@ -157,14 +159,14 @@ const FileUploader = ({
           </div>
           <div>
             <p className="text-sm font-medium text-gray-700">
-              {dragOver ? 'Drop files here' : 'Drag & drop files here'}
+              {dragOver ? t('dropFilesHere') : t('dragDropFilesHere')}
             </p>
             <p className="text-xs text-gray-500 mt-1">
-              or click to browse files from your computer
+              {t('orClickToBrowse')}
             </p>
           </div>
           <div className="text-xs text-gray-400">
-            Supports: {acceptedTypes.replace(/\./g, '').toUpperCase()}
+            {t('supports')}: {acceptedTypes.replace(/\./g, '').toUpperCase()}
           </div>
         </div>
 
@@ -182,7 +184,7 @@ const FileUploader = ({
       {/* Error Messages */}
       {errors.length > 0 && (
         <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
-          <p className="text-sm font-medium text-red-700 mb-1">Upload Errors:</p>
+          <p className="text-sm font-medium text-red-700 mb-1">{t('uploadErrors')}:</p>
           <ul className="text-xs text-red-600 space-y-1">
             {errors.map((error, index) => (
               <li key={index}>• {error}</li>
@@ -196,7 +198,7 @@ const FileUploader = ({
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <span className="text-sm font-medium text-gray-700">
-              Selected Files ({files.length}/{maxFiles})
+              {t('selectedFiles', { current: files.length, max: maxFiles })}
             </span>
             {!disabled && files.length > 0 && (
               <button
@@ -205,7 +207,7 @@ const FileUploader = ({
                 className="text-xs text-red-600 hover:text-red-800 flex items-center gap-1"
               >
                 <Trash2 size={12} />
-                Remove All
+                {t('removeAll')}
               </button>
             )}
           </div>
@@ -225,7 +227,7 @@ const FileUploader = ({
                     <div className="flex items-center gap-3 text-xs text-gray-500">
                       <span>{formatFileSize(file.size)}</span>
                       <span>•</span>
-                      <span>{file.type || 'Unknown type'}</span>
+                      <span>{file.type || t('unknownType')}</span>
                     </div>
                   </div>
                 </div>
@@ -237,7 +239,7 @@ const FileUploader = ({
                         type="button"
                         onClick={() => window.open(URL.createObjectURL(file), '_blank')}
                         className="p-1 text-gray-400 hover:text-blue-600"
-                        title="Preview"
+                        title={t('preview')}
                       >
                         <Eye size={16} />
                       </button>
@@ -246,7 +248,7 @@ const FileUploader = ({
                       type="button"
                       onClick={() => removeFile(index)}
                       className="p-1 text-gray-400 hover:text-red-600"
-                      title="Remove"
+                      title={t('remove')}
                     >
                       <X size={16} />
                     </button>
@@ -262,7 +264,7 @@ const FileUploader = ({
       {multiple && files.length >= maxFiles && (
         <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
           <p className="text-sm text-yellow-700">
-            Maximum {maxFiles} files reached. Remove some files to upload more.
+            {t('maxFilesReached', { maxFiles })}
           </p>
         </div>
       )}

@@ -2,6 +2,7 @@
 "use client";
 
 import React from 'react';
+import { useTranslation } from 'react-i18next'; // ADD THIS
 import Link from 'next/link';
 import { 
   FileText, 
@@ -19,6 +20,7 @@ import { formatDate, getRelativeTime, isOverdue } from '@/utils/dateUtils';
 import { REQUEST_TYPES, PRIORITY_LEVELS, REQUEST_STATUS } from '@/utils/requestConstants';
 
 const RequestCard = ({ request, isVendorView = true, onClick }) => {
+  const { t } = useTranslation(); // ADD THIS
 
   const requestType = request.requestType || 'OTHER';
   const requestTypeConfig = REQUEST_TYPES[request.requestType] || REQUEST_TYPES.OTHER;
@@ -101,7 +103,7 @@ const RequestCard = ({ request, isVendorView = true, onClick }) => {
         <div className="space-y-2">
           <div className="flex items-center gap-2 text-gray-600">
             <Calendar size={14} />
-            <span>Due: {formatDate(request.dueDate, 'short')}</span>
+            <span>{t('due')}: {formatDate(request.dueDate, 'short')}</span>
           </div>
           
           <div className="flex items-center gap-2 text-gray-600">
@@ -126,14 +128,14 @@ const RequestCard = ({ request, isVendorView = true, onClick }) => {
           {isVendorView && request.createdByName && (
             <div className="flex items-center gap-2 text-gray-600">
               <User size={14} />
-              <span>By: {request.createdByName}</span>
+              <span>{t('by')}: {request.createdByName}</span>
             </div>
           )}
           
           {hasAttachment && (
             <div className="flex items-center gap-2 text-blue-600">
               <Paperclip size={14} />
-              <span>{request.responseFiles.length} attachment(s)</span>
+              <span>{request.responseFiles.length} {t('attachment')}(s)</span>
             </div>
           )}
         </div>
@@ -151,8 +153,8 @@ const RequestCard = ({ request, isVendorView = true, onClick }) => {
           <AlertCircle size={14} />
           <span>
             {isOverdue(request.dueDate) 
-              ? `Overdue by ${Math.abs(getRelativeTime(request.dueDate, true).match(/\d+/)?.[0] || 0)} days`
-              : 'Due soon'
+              ? `${t('overdueByNDays', { days: Math.abs(getRelativeTime(request.dueDate, true).match(/\d+/)?.[0] || 0) })}`
+              : t('dueSoon')
             }
           </span>
         </div>
@@ -161,7 +163,7 @@ const RequestCard = ({ request, isVendorView = true, onClick }) => {
       {/* Response preview for submitted/approved/rejected */}
       {request.responseText && (
         <div className="mt-3 pt-3 border-t border-gray-100">
-          <p className="text-xs text-gray-500 mb-1">Response:</p>
+          <p className="text-xs text-gray-500 mb-1">{t('response')}:</p>
           <p className="text-sm text-gray-700 line-clamp-2">
             {request.responseText}
           </p>

@@ -2,6 +2,7 @@
 "use client";
 
 import React from 'react';
+import { useTranslation } from 'react-i18next'; // ADD THIS
 import { FileText, Inbox, CheckCircle, Clock, AlertCircle } from 'lucide-react';
 
 const EmptyState = ({ 
@@ -10,6 +11,8 @@ const EmptyState = ({
   description, 
   actionButton 
 }) => {
+  const { t } = useTranslation(); // ADD THIS
+
   const getIcon = () => {
     switch (type) {
       case 'no-requests':
@@ -30,34 +33,34 @@ const EmptyState = ({
   const getDefaultTitle = () => {
     switch (type) {
       case 'no-requests':
-        return 'No Information Requests';
+        return t('noInformationRequests');
       case 'no-pending':
-        return 'All Caught Up!';
+        return t('allCaughtUp');
       case 'no-overdue':
-        return 'No Overdue Requests';
+        return t('noOverdueRequests');
       case 'no-results':
-        return 'No Results Found';
+        return t('noResultsFound');
       case 'loading':
-        return 'Loading...';
+        return t('loading');
       default:
-        return 'No Data Available';
+        return t('noDataAvailable');
     }
   };
 
   const getDefaultDescription = () => {
     switch (type) {
       case 'no-requests':
-        return "You don't have any information requests yet. Requests will appear here when procurement needs additional information.";
+        return t('noRequestsDescription');
       case 'no-pending':
-        return 'You have responded to all pending requests. Great work!';
+        return t('noPendingRequestsDescription');
       case 'no-overdue':
-        return 'All your requests are up to date. Keep it up!';
+        return t('noOverdueRequestsDescription');
       case 'no-results':
-        return 'Try adjusting your filters to see more results.';
+        return t('noResultsFoundDescription');
       case 'loading':
-        return 'Please wait while we load your requests...';
+        return t('loadingRequestsDescription');
       default:
-        return 'There is no data to display at the moment.';
+        return t('noDataAvailableDescription');
     }
   };
 
@@ -86,13 +89,13 @@ const EmptyState = ({
       {type === 'no-requests' && (
         <div className="mt-8 p-4 bg-blue-50 border border-blue-200 rounded-lg max-w-md mx-auto">
           <p className="text-sm text-blue-700">
-            <span className="font-medium">Tip:</span> Information requests are used by procurement to request:
+            <span className="font-medium">{t('tip')}:</span> {t('informationRequestsUsedFor')}
           </p>
           <ul className="text-xs text-blue-600 mt-2 space-y-1 text-left">
-            <li>• Missing or updated documents (certificates, NDAs)</li>
-            <li>• Clarifications on proposals or qualifications</li>
-            <li>• Brand lists and authorization details</li>
-            <li>• Additional project information</li>
+            <li>• {t('missingUpdatedDocuments')}</li>
+            <li>• {t('clarificationsOnProposals')}</li>
+            <li>• {t('brandListsAuthorizationDetails')}</li>
+            <li>• {t('additionalProjectInformation')}</li>
           </ul>
         </div>
       )}

@@ -2,6 +2,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next'; // ADD THIS IMPORT
 import { 
   Filter, 
   Search, 
@@ -34,6 +35,7 @@ import { formatDate } from '@/utils/dateUtils';
 import ResponsiveLayout from '@/components/layout/ResponsiveLayout';
 
 export default function ExecutiveInformationRequestsPage() {
+  const { t } = useTranslation(); // ADD THIS HOOK
   const [requests, setRequests] = useState([]);
   const [filteredRequests, setFilteredRequests] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -71,7 +73,7 @@ export default function ExecutiveInformationRequestsPage() {
         setRequests(response.data);
         setStats(response.stats);
       } else {
-        throw new Error('Failed to fetch requests');
+        throw new Error(t('failedToFetchRequests'));
       }
     } catch (err) {
       console.error('Error fetching requests:', err);
@@ -187,21 +189,21 @@ export default function ExecutiveInformationRequestsPage() {
 
   const handleBulkAction = async (action) => {
     if (selectedRequests.length === 0) {
-      alert('Please select requests first');
+      alert(t('pleaseSelectRequestsFirst'));
       return;
     }
 
     switch (action) {
       case 'send_reminder':
-        if (confirm(`Send reminder to ${selectedRequests.length} vendor(s)?`)) {
+        if (confirm(t('sendReminderToNVendors', { count: selectedRequests.length }))) {
           try {
             for (const requestId of selectedRequests) {
               await mockRequestService.sendReminder(requestId);
             }
-            alert(`Reminders sent to ${selectedRequests.length} vendor(s)`);
+            alert(t('remindersSentToNVendors', { count: selectedRequests.length }));
             fetchRequests();
           } catch (err) {
-            alert(`Error: ${err.message}`);
+            alert(`${t('error')}: ${err.message}`);
           }
         }
         break;
@@ -225,7 +227,7 @@ export default function ExecutiveInformationRequestsPage() {
     
     if (selectedData.length === 0) return;
     
-    const headers = ['Title', 'Vendor', 'Type', 'Status', 'Priority', 'Created', 'Due Date', 'Created By', 'Response'];
+    const headers = [t('title'), t('vendor'), t('type'), t('status'), t('priority'), t('created'), t('dueDate'), t('createdBy'), t('response')];
     const csvData = selectedData.map(req => [
       req.title,
       req.vendorName,
@@ -235,7 +237,7 @@ export default function ExecutiveInformationRequestsPage() {
       formatDate(req.createdAt, 'short'),
       formatDate(req.dueDate, 'short'),
       req.createdByName,
-      req.responseDate ? 'Yes' : 'No'
+      req.responseDate ? t('yes') : t('no')
     ]);
 
     const csvContent = [
@@ -247,13 +249,13 @@ export default function ExecutiveInformationRequestsPage() {
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `selected-requests-${new Date().toISOString().split('T')[0]}.csv`;
+    a.download = `${t('selectedRequests')}-${new Date().toISOString().split('T')[0]}.csv`;
     a.click();
     window.URL.revokeObjectURL(url);
   };
 
   const exportAllToCSV = () => {
-    const headers = ['Title', 'Vendor', 'Type', 'Status', 'Priority', 'Created', 'Due Date', 'Created By', 'Response'];
+    const headers = [t('title'), t('vendor'), t('type'), t('status'), t('priority'), t('created'), t('dueDate'), t('createdBy'), t('response')];
     const csvData = filteredRequests.map(req => [
       req.title,
       req.vendorName,
@@ -263,7 +265,7 @@ export default function ExecutiveInformationRequestsPage() {
       formatDate(req.createdAt, 'short'),
       formatDate(req.dueDate, 'short'),
       req.createdByName,
-      req.responseDate ? 'Yes' : 'No'
+      req.responseDate ? t('yes') : t('no')
     ]);
 
     const csvContent = [
@@ -275,7 +277,7 @@ export default function ExecutiveInformationRequestsPage() {
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `all-requests-${new Date().toISOString().split('T')[0]}.csv`;
+    a.download = `${t('allRequests')}-${new Date().toISOString().split('T')[0]}.csv`;
     a.click();
     window.URL.revokeObjectURL(url);
   };
@@ -320,13 +322,13 @@ export default function ExecutiveInformationRequestsPage() {
       <div className="p-8">
         <div className="bg-red-50 border border-red-200 rounded-xl p-6 text-center">
           <AlertCircle className="mx-auto text-red-500 mb-4" size={48} />
-          <h2 className="text-xl font-semibold text-red-800 mb-2">Error Loading Requests</h2>
+          <h2 className="text-xl font-semibold text-red-800 mb-2">{t('errorLoadingRequests')}</h2>
           <p className="text-red-600 mb-4">{error}</p>
           <button
             onClick={fetchRequests}
             className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
           >
-            Retry
+            {t('retry')}
           </button>
         </div>
       </div>
@@ -344,10 +346,10 @@ export default function ExecutiveInformationRequestsPage() {
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
           <div>
             <h1 className="text-2xl md:text-3xl font-bold text-gray-800 mb-2">
-              Information Requests Management
+              {t('informationRequestsManagement')}
             </h1>
             <p className="text-gray-600">
-              Manage all information requests across vendors. Create new requests, track responses, and ensure compliance.
+              {t('informationRequestsDescription')}
             </p>
           </div>
           
@@ -357,7 +359,7 @@ export default function ExecutiveInformationRequestsPage() {
               className="flex items-center gap-2 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
             >
               <Download size={18} />
-              Export All
+              {t('exportAll')}
             </button>
             
             <button
@@ -365,7 +367,7 @@ export default function ExecutiveInformationRequestsPage() {
               className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
             >
               <Plus size={18} />
-              Create Request
+              {t('createRequest')}
             </button>
           </div>
         </div>
@@ -376,20 +378,20 @@ export default function ExecutiveInformationRequestsPage() {
             <div className="bg-gradient-to-r from-blue-50 to-blue-100 border border-blue-200 rounded-xl p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-blue-700">Total Requests</p>
+                  <p className="text-sm text-blue-700">{t('totalRequests')}</p>
                   <p className="text-2xl font-bold text-blue-800">{stats.total || requests.length}</p>
                 </div>
                 <FileText className="text-blue-500" size={20} />
               </div>
               <div className="mt-2 text-xs text-blue-600">
-                Across {vendorStats.length} vendors
+                {t('acrossNVendors', { count: vendorStats.length })}
               </div>
             </div>
             
             <div className="bg-gradient-to-r from-yellow-50 to-yellow-100 border border-yellow-200 rounded-xl p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-yellow-700">Pending</p>
+                  <p className="text-sm text-yellow-700">{t('pending')}</p>
                   <p className="text-2xl font-bold text-yellow-800">
                     {stats.byStatus?.pending || 0}
                   </p>
@@ -397,14 +399,14 @@ export default function ExecutiveInformationRequestsPage() {
                 <Clock className="text-yellow-500" size={20} />
               </div>
               <div className="mt-2 text-xs text-yellow-600">
-                {stats.overdueCount || 0} overdue
+                {t('nOverdue', { count: stats.overdueCount || 0 })}
               </div>
             </div>
             
             <div className="bg-gradient-to-r from-green-50 to-green-100 border border-green-200 rounded-xl p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-green-700">Completed</p>
+                  <p className="text-sm text-green-700">{t('completed')}</p>
                   <p className="text-2xl font-bold text-green-800">
                     {(stats.byStatus?.approved || 0) + (stats.byStatus?.rejected || 0)}
                   </p>
@@ -412,14 +414,14 @@ export default function ExecutiveInformationRequestsPage() {
                 <CheckCircle className="text-green-500" size={20} />
               </div>
               <div className="mt-2 text-xs text-green-600">
-                {stats.complianceRate || 0}% compliance
+                {t('complianceRatePercentage', { rate: stats.complianceRate || 0 })}
               </div>
             </div>
             
             <div className="bg-gradient-to-r from-purple-50 to-purple-100 border border-purple-200 rounded-xl p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-purple-700">Avg. Response Time</p>
+                  <p className="text-sm text-purple-700">{t('avgResponseTime')}</p>
                   <p className="text-2xl font-bold text-purple-800">
                     {stats.avgResponseTime || 0}d
                   </p>
@@ -427,14 +429,14 @@ export default function ExecutiveInformationRequestsPage() {
                 <TrendingUp className="text-purple-500" size={20} />
               </div>
               <div className="mt-2 text-xs text-purple-600">
-                Days to respond
+                {t('daysToRespond')}
               </div>
             </div>
             
             <div className="bg-gradient-to-r from-red-50 to-red-100 border border-red-200 rounded-xl p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-red-700">Overdue</p>
+                  <p className="text-sm text-red-700">{t('overdue')}</p>
                   <p className="text-2xl font-bold text-red-800">
                     {stats.byStatus?.overdue || 0}
                   </p>
@@ -442,7 +444,7 @@ export default function ExecutiveInformationRequestsPage() {
                 <AlertCircle className="text-red-500" size={20} />
               </div>
               <div className="mt-2 text-xs text-red-600">
-                Require escalation
+                {t('requireEscalation')}
               </div>
             </div>
           </div>
@@ -452,12 +454,12 @@ export default function ExecutiveInformationRequestsPage() {
         {topVendors.length > 0 && (
           <div className="mb-6">
             <div className="flex items-center justify-between mb-3">
-              <h3 className="text-lg font-semibold text-gray-800">Top Vendors by Activity</h3>
+              <h3 className="text-lg font-semibold text-gray-800">{t('topVendorsByActivity')}</h3>
               <Link
                 href="/dashboard/procurement/vendors"
                 className="text-sm text-blue-600 hover:text-blue-800 flex items-center gap-1"
               >
-                View all vendors
+                {t('viewAllVendors')}
                 <ChevronRight size={16} />
               </Link>
             </div>
@@ -481,11 +483,11 @@ export default function ExecutiveInformationRequestsPage() {
                   </div>
                   <div className="grid grid-cols-2 gap-2 text-xs">
                     <div>
-                      <div className="text-gray-500">Total</div>
+                      <div className="text-gray-500">{t('total')}</div>
                       <div className="font-medium text-gray-700">{vendor.total}</div>
                     </div>
                     <div>
-                      <div className="text-gray-500">Pending</div>
+                      <div className="text-gray-500">{t('pending')}</div>
                       <div className="font-medium text-yellow-600">{vendor.pending}</div>
                     </div>
                   </div>
@@ -504,10 +506,10 @@ export default function ExecutiveInformationRequestsPage() {
               <CheckSquare className="text-blue-600" size={20} />
               <div>
                 <p className="font-medium text-blue-800">
-                  {selectedRequests.length} request{selectedRequests.length !== 1 ? 's' : ''} selected
+                  {t('nRequestsSelected', { count: selectedRequests.length })}
                 </p>
                 <p className="text-sm text-blue-600">
-                  Select an action to perform on all selected requests
+                  {t('selectActionForSelectedRequests')}
                 </p>
               </div>
             </div>
@@ -518,7 +520,7 @@ export default function ExecutiveInformationRequestsPage() {
                 className="flex items-center gap-2 px-3 py-2 bg-white border border-blue-300 text-blue-700 rounded-lg hover:bg-blue-50 transition-colors text-sm"
               >
                 <Mail size={16} />
-                Send Reminder
+                {t('sendReminder')}
               </button>
               
               <button
@@ -526,7 +528,7 @@ export default function ExecutiveInformationRequestsPage() {
                 className="flex items-center gap-2 px-3 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-sm"
               >
                 <Download size={16} />
-                Export Selected
+                {t('exportSelected')}
               </button>
               
               <button
@@ -534,7 +536,7 @@ export default function ExecutiveInformationRequestsPage() {
                 className="flex items-center gap-2 px-3 py-2 bg-white border border-red-300 text-red-700 rounded-lg hover:bg-red-50 transition-colors text-sm"
               >
                 <XCircle size={16} />
-                Clear Selection
+                {t('clearSelection')}
               </button>
             </div>
           </div>
@@ -565,20 +567,20 @@ export default function ExecutiveInformationRequestsPage() {
                   className="h-4 w-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
                 />
                 <span className="text-sm text-gray-600">
-                  Select all ({filteredRequests.length})
+                  {t('selectAllN', { count: filteredRequests.length })}
                 </span>
               </div>
               
               <p className="text-sm text-gray-600">
-                Showing {filteredRequests.length} of {requests.length} requests
-                {activeFilters.status && ` • Filtered by: ${REQUEST_STATUS[activeFilters.status]?.label}`}
+                {t('showingNOfMRequests', { shown: filteredRequests.length, total: requests.length })}
+                {activeFilters.status && ` • ${t('filteredBy')}: ${REQUEST_STATUS[activeFilters.status]?.label}`}
                 {activeFilters.type && ` • ${REQUEST_TYPES[activeFilters.type]?.label}`}
-                {activeFilters.vendorId && ` • Vendor: ${activeFilters.vendorId}`}
+                {activeFilters.vendorId && ` • ${t('vendor')}: ${activeFilters.vendorId}`}
               </p>
             </div>
             
             <div className="text-sm text-gray-500">
-              Sorted by: <span className="font-medium">Due Date</span>
+              {t('sortedBy')}: <span className="font-medium">{t('dueDate')}</span>
             </div>
           </div>
           
@@ -605,8 +607,8 @@ export default function ExecutiveInformationRequestsPage() {
           type={requests.length === 0 ? "no-requests" : "no-results"}
           description={
             requests.length === 0 
-              ? "No information requests have been created yet. Create your first request to get started."
-              : "No requests match your current filters. Try adjusting your search criteria."
+              ? t('noRequestsCreatedDescription')
+              : t('noRequestsMatchFiltersDescription')
           }
           actionButton={
             requests.length === 0 ? (
@@ -614,14 +616,14 @@ export default function ExecutiveInformationRequestsPage() {
                 onClick={() => setShowCreateModal(true)}
                 className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
               >
-                Create First Request
+                {t('createFirstRequest')}
               </button>
             ) : activeFilters.status || activeFilters.type || activeFilters.search ? (
               <button
                 onClick={handleClearFilters}
                 className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
               >
-                Clear Filters
+                {t('clearFilters')}
               </button>
             ) : null
           }
@@ -638,4 +640,4 @@ export default function ExecutiveInformationRequestsPage() {
     </div>
     </ResponsiveLayout>
   );
-}
+} 

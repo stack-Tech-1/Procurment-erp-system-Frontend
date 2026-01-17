@@ -2,6 +2,7 @@
 "use client";
 
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next'; // ADD THIS
 import { 
   Filter, 
   Search, 
@@ -19,6 +20,7 @@ const RequestFilters = ({
   onSearch,
   isVendorView = true 
 }) => {
+  const { t } = useTranslation(); // ADD THIS
   const [showFilters, setShowFilters] = useState(false);
   const [searchTerm, setSearchTerm] = useState(activeFilters.search || '');
   const [dateRange, setDateRange] = useState({
@@ -79,10 +81,10 @@ const RequestFilters = ({
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <Filter size={18} className="text-gray-600" />
-          <span className="font-medium text-gray-700">Filters</span>
+          <span className="font-medium text-gray-700">{t('filters')}</span>
           {getActiveFilterCount() > 0 && (
             <span className="bg-blue-100 text-blue-700 text-xs font-medium px-2 py-1 rounded-full">
-              {getActiveFilterCount()} active
+              {getActiveFilterCount()} {t('active')}
             </span>
           )}
         </div>
@@ -94,7 +96,7 @@ const RequestFilters = ({
               className="flex items-center gap-1 text-sm text-red-600 hover:text-red-800"
             >
               <X size={14} />
-              Clear all
+              {t('clearAll')}
             </button>
           )}
           
@@ -103,7 +105,7 @@ const RequestFilters = ({
             className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-800"
           >
             {showFilters ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-            {showFilters ? 'Hide' : 'Show'} filters
+            {showFilters ? t('hide') : t('show')} {t('filters')}
           </button>
         </div>
       </div>
@@ -116,7 +118,7 @@ const RequestFilters = ({
             type="text"
             value={searchTerm}
             onChange={handleSearch}
-            placeholder="Search requests by title, description, or type..."
+            placeholder={t('searchRequestsPlaceholder')}
             className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           />
           {searchTerm && (
@@ -138,7 +140,7 @@ const RequestFilters = ({
         <div className="space-y-6 pt-4 border-t border-gray-100">
           {/* Status Filters */}
           <div>
-            <h4 className="text-sm font-medium text-gray-700 mb-2">Status</h4>
+            <h4 className="text-sm font-medium text-gray-700 mb-2">{t('status')}</h4>
             <div className="flex flex-wrap gap-2">
               {Object.entries(REQUEST_STATUS).map(([key, config]) => (
                 <button
@@ -160,7 +162,7 @@ const RequestFilters = ({
 
           {/* Type Filters */}
           <div>
-            <h4 className="text-sm font-medium text-gray-700 mb-2">Request Type</h4>
+            <h4 className="text-sm font-medium text-gray-700 mb-2">{t('requestType')}</h4>
             <div className="flex flex-wrap gap-2">
               {Object.entries(REQUEST_TYPES).map(([key, config]) => (
                 <button
@@ -183,7 +185,7 @@ const RequestFilters = ({
           {/* Priority Filters */}
           {!isVendorView && (
             <div>
-              <h4 className="text-sm font-medium text-gray-700 mb-2">Priority</h4>
+              <h4 className="text-sm font-medium text-gray-700 mb-2">{t('priority')}</h4>
               <div className="flex flex-wrap gap-2">
                 {Object.entries(PRIORITY_LEVELS).map(([key, config]) => (
                   <button
@@ -207,20 +209,20 @@ const RequestFilters = ({
           {/* Date Range Filter */}
           <div>
             <div className="flex items-center justify-between mb-2">
-              <h4 className="text-sm font-medium text-gray-700">Date Range</h4>
+              <h4 className="text-sm font-medium text-gray-700">{t('dateRange')}</h4>
               {(dateRange.startDate || dateRange.endDate) && (
                 <button
                   onClick={clearDateRange}
                   className="text-xs text-red-600 hover:text-red-800"
                 >
-                  Clear dates
+                  {t('clearDates')}
                 </button>
               )}
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs text-gray-500 mb-1">From Date</label>
+                <label className="block text-xs text-gray-500 mb-1">{t('fromDate')}</label>
                 <div className="relative">
                   <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={16} />
                   <input
@@ -233,7 +235,7 @@ const RequestFilters = ({
               </div>
               
               <div>
-                <label className="block text-xs text-gray-500 mb-1">To Date</label>
+                <label className="block text-xs text-gray-500 mb-1">{t('toDate')}</label>
                 <div className="relative">
                   <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={16} />
                   <input
@@ -248,7 +250,7 @@ const RequestFilters = ({
             
             {activeFilters.dateRange && (
               <div className="mt-2 text-xs text-gray-500">
-                Showing requests from {dateRange.startDate} to {dateRange.endDate}
+                {t('showingRequestsFromTo', { start: dateRange.startDate, end: dateRange.endDate })}
               </div>
             )}
           </div>
@@ -261,7 +263,7 @@ const RequestFilters = ({
           <div className="flex flex-wrap gap-2">
             {activeFilters.status && (
               <div className="inline-flex items-center gap-1 px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-sm">
-                Status: {REQUEST_STATUS[activeFilters.status].label}
+                {t('status')}: {REQUEST_STATUS[activeFilters.status].label}
                 <button
                   onClick={() => handleStatusChange(activeFilters.status)}
                   className="text-blue-400 hover:text-blue-600"
@@ -273,7 +275,7 @@ const RequestFilters = ({
             
             {activeFilters.type && (
               <div className="inline-flex items-center gap-1 px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-sm">
-                Type: {REQUEST_TYPES[activeFilters.type].label}
+                {t('type')}: {REQUEST_TYPES[activeFilters.type].label}
                 <button
                   onClick={() => handleTypeChange(activeFilters.type)}
                   className="text-blue-400 hover:text-blue-600"
@@ -285,7 +287,7 @@ const RequestFilters = ({
             
             {activeFilters.priority && (
               <div className="inline-flex items-center gap-1 px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-sm">
-                Priority: {PRIORITY_LEVELS[activeFilters.priority].label}
+                {t('priority')}: {PRIORITY_LEVELS[activeFilters.priority].label}
                 <button
                   onClick={() => handlePriorityChange(activeFilters.priority)}
                   className="text-blue-400 hover:text-blue-600"
@@ -297,7 +299,7 @@ const RequestFilters = ({
             
             {activeFilters.search && (
               <div className="inline-flex items-center gap-1 px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-sm">
-                Search: "{activeFilters.search}"
+                {t('search')}: "{activeFilters.search}"
                 <button
                   onClick={() => {
                     setSearchTerm('');
@@ -312,7 +314,7 @@ const RequestFilters = ({
             
             {activeFilters.dateRange && (
               <div className="inline-flex items-center gap-1 px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-sm">
-                Date Range: {dateRange.startDate} to {dateRange.endDate}
+                {t('dateRange')}: {dateRange.startDate} {t('to')} {dateRange.endDate}
                 <button
                   onClick={clearDateRange}
                   className="text-blue-400 hover:text-blue-600"

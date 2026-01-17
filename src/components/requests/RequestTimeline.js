@@ -2,6 +2,7 @@
 "use client";
 
 import React from 'react';
+import { useTranslation } from 'react-i18next'; // ADD THIS
 import {
   FilePlus,
   Bell,
@@ -15,6 +16,8 @@ import {
 import { formatDate } from '@/utils/dateUtils';
 
 const RequestTimeline = ({ events = [] }) => {
+  const { t } = useTranslation(); // ADD THIS
+
   const getEventIcon = (type) => {
     switch (type) {
       case 'REQUEST_CREATED':
@@ -61,7 +64,7 @@ const RequestTimeline = ({ events = [] }) => {
     return (
       <div className="text-center py-8">
         <Clock className="mx-auto text-gray-400 mb-3" size={32} />
-        <p className="text-gray-500">No activity yet</p>
+        <p className="text-gray-500">{t('noActivityYet')}</p>
       </div>
     );
   }
@@ -110,7 +113,7 @@ const RequestTimeline = ({ events = [] }) => {
               
               {event.attachments && event.attachments.length > 0 && (
                 <div className="mt-3 pt-3 border-t border-gray-100">
-                  <p className="text-xs text-gray-500 mb-1">Attachments:</p>
+                  <p className="text-xs text-gray-500 mb-1">{t('attachments')}:</p>
                   <div className="flex flex-wrap gap-2">
                     {event.attachments.map((attachment, idx) => (
                       <a
