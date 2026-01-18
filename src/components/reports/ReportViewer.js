@@ -1,6 +1,7 @@
 // frontend/src/components/reports/ReportViewer.js - ENHANCED VERSION
 "use client";
 import React, { useState, useEffect, useMemo } from 'react';
+import { useTranslation } from 'react-i18next'; // ADD THIS IMPORT
 import {
   Play,
   Download,
@@ -28,6 +29,7 @@ import RealTimeChart from './RealTimeChart';
 import ChartDashboard from './ChartDashboard';
 
 const ReportViewer = ({ report, onBack }) => {
+  const { t } = useTranslation(); // ADD THIS HOOK
   const [reportData, setReportData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [executing, setExecuting] = useState(false);
@@ -56,7 +58,7 @@ const ReportViewer = ({ report, onBack }) => {
     if (!reportData?.rows) return [];
 
     return reportData.rows.map(row => {
-      const chartRow = { name: row[reportData.columns[0]?.fieldName] || 'Unknown' };
+      const chartRow = { name: row[reportData.columns[0]?.fieldName] || t('unknown') };
       
       reportData.columns.forEach((column, index) => {
         if (index > 0) { // Skip first column (used as name)
@@ -66,7 +68,7 @@ const ReportViewer = ({ report, onBack }) => {
       
       return chartRow;
     });
-  }, [reportData]);
+  }, [reportData, t]);
 
   // Generate chart configurations based on report data
   const chartConfigs = useMemo(() => {
@@ -81,7 +83,7 @@ const ReportViewer = ({ report, onBack }) => {
     return [
       {
         id: 1,
-        title: `${report?.name} - Overview`,
+        title: `${report?.name} - ${t('overview')}`,
         type: "bar",
         data: chartData,
         config: {
@@ -95,7 +97,7 @@ const ReportViewer = ({ report, onBack }) => {
       },
       {
         id: 2,
-        title: `${report?.name} - Trends`,
+        title: `${report?.name} - ${t('trends')}`,
         type: "line",
         data: chartData.slice(-12), // Last 12 data points for trends
         config: {
@@ -108,7 +110,7 @@ const ReportViewer = ({ report, onBack }) => {
       },
       {
         id: 3,
-        title: `${report?.name} - Distribution`,
+        title: `${report?.name} - ${t('distribution')}`,
         type: "pie",
         data: chartData.map(item => ({
           name: item.name,
@@ -120,7 +122,7 @@ const ReportViewer = ({ report, onBack }) => {
         }
       }
     ];
-  }, [reportData, chartData, report]);
+  }, [reportData, chartData, report, t]);
 
   // Enhanced executeReport function
   const executeReport = async () => {
@@ -142,7 +144,7 @@ const ReportViewer = ({ report, onBack }) => {
       // Convert report.id to number
       const numericReportId = parseInt(report.id, 10);
       
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/reports/${numericReportId}/execute`, {
+      const response = await fetch(`http://localhost:4000/api/reports/${numericReportId}/execute`, {
         method: 'POST',
         headers: { 
           'Authorization': `Bearer ${token}`,
@@ -151,14 +153,14 @@ const ReportViewer = ({ report, onBack }) => {
         body: JSON.stringify({ filters })
       });
 
-      if (!response.ok) throw new Error('Failed to execute report');
+      if (!response.ok) throw new Error(t('failedToExecuteReport'));
       
       const result = await response.json();
       setReportData(result.data);
       
     } catch (error) {
       console.error('Failed to execute report:', error);
-      setError('Failed to execute report. Please try again.');
+      setError(t('failedToExecuteReportTryAgain'));
     } finally {
       setExecuting(false);
     }
@@ -198,7 +200,7 @@ const ReportViewer = ({ report, onBack }) => {
       // Convert report.id to number
       const numericReportId = parseInt(report.id, 10);
       
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/reports/${numericReportId}/export`, {
+      const response = await fetch(`http://localhost:4000/api/reports/${numericReportId}/export`, {
         method: 'POST',
         headers: { 
           'Authorization': `Bearer ${token}`,
@@ -207,7 +209,7 @@ const ReportViewer = ({ report, onBack }) => {
         body: JSON.stringify({ format, filters })
       });
 
-      if (!response.ok) throw new Error('Export failed');
+      if (!response.ok) throw new Error(t('exportFailed'));
       
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
@@ -222,7 +224,7 @@ const ReportViewer = ({ report, onBack }) => {
       setExportMenuOpen(false);
     } catch (error) {
       console.error('Export failed:', error);
-      setError('Failed to export report.');
+      setError(t('failedToExport'));
     }
   };
 
@@ -255,10 +257,10 @@ const ReportViewer = ({ report, onBack }) => {
             onChange={(e) => handleFilterChange(index, e.target.value)}
             className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
           >
-            <option value="">All</option>
-            <option value="APPROVED">Approved</option>
-            <option value="PENDING">Pending</option>
-            <option value="REJECTED">Rejected</option>
+            <option value="">{t('all')}</option>
+            <option value="APPROVED">{t('approved')}</option>
+            <option value="PENDING">{t('pending')}</option>
+            <option value="REJECTED">{t('rejected')}</option>
           </select>
         );
       
@@ -278,7 +280,7 @@ const ReportViewer = ({ report, onBack }) => {
             type="text"
             value={filter.value}
             onChange={(e) => handleFilterChange(index, e.target.value)}
-            placeholder={`Filter by ${filter.filterLabel}`}
+            placeholder={`${t('filterBy')} ${filter.filterLabel}`}
             className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
           />
         );
@@ -339,7 +341,7 @@ const ReportViewer = ({ report, onBack }) => {
           }`}
         >
           <Table className="w-4 h-4 inline mr-2" />
-          Table View
+          {t('tableView')}
         </button>
         <button
           onClick={() => setViewMode('chart')}
@@ -350,7 +352,7 @@ const ReportViewer = ({ report, onBack }) => {
           }`}
         >
           <BarChart3 className="w-4 h-4 inline mr-2" />
-          Single Chart
+          {t('singleChart')}
         </button>
         <button
           onClick={() => setViewMode('dashboard')}
@@ -361,7 +363,7 @@ const ReportViewer = ({ report, onBack }) => {
           }`}
         >
           <Grid className="w-4 h-4 inline mr-2" />
-          Dashboard
+          {t('dashboard')}
         </button>
       </div>
     </div>
@@ -384,7 +386,7 @@ const ReportViewer = ({ report, onBack }) => {
   const renderTableView = () => (
     <div>
       <h3 className="text-lg font-semibold text-gray-800 mb-4">
-        Report Data ({reportData.totalRecords} records)
+        {t('reportData')} ({reportData.totalRecords} {t('records')})
       </h3>
       
       <div className="overflow-x-auto">
@@ -424,7 +426,11 @@ const ReportViewer = ({ report, onBack }) => {
       {/* Pagination */}
       <div className="flex items-center justify-between mt-4">
         <div className="text-sm text-gray-700">
-          Showing {page * rowsPerPage + 1} to {Math.min((page + 1) * rowsPerPage, reportData.rows.length)} of {reportData.rows.length} entries
+          {t('showingNToNOfNEntries', {
+            start: page * rowsPerPage + 1,
+            end: Math.min((page + 1) * rowsPerPage, reportData.rows.length),
+            total: reportData.rows.length
+          })}
         </div>
         <div className="flex space-x-2">
           <button
@@ -432,14 +438,14 @@ const ReportViewer = ({ report, onBack }) => {
             disabled={page === 0}
             className="px-3 py-1 border border-gray-300 rounded text-sm disabled:opacity-50"
           >
-            Previous
+            {t('previous')}
           </button>
           <button
             onClick={() => setPage(Math.min(Math.ceil(reportData.rows.length / rowsPerPage) - 1, page + 1))}
             disabled={page >= Math.ceil(reportData.rows.length / rowsPerPage) - 1}
             className="px-3 py-1 border border-gray-300 rounded text-sm disabled:opacity-50"
           >
-            Next
+            {t('next')}
           </button>
         </div>
       </div>
@@ -450,18 +456,18 @@ const ReportViewer = ({ report, onBack }) => {
     <div className="space-y-6">
       {/* Chart Type Selector */}
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-gray-800">Data Visualization</h3>
+        <h3 className="text-lg font-semibold text-gray-800">{t('dataVisualization')}</h3>
         <div className="flex items-center gap-4">
           <select
             value={chartType}
             onChange={(e) => setChartType(e.target.value)}
             className="px-3 py-2 border border-gray-300 rounded-lg text-sm"
           >
-            <option value="bar">Bar Chart</option>
-            <option value="line">Line Chart</option>
-            <option value="area">Area Chart</option>
-            <option value="pie">Pie Chart</option>
-            <option value="composed">Composed Chart</option>
+            <option value="bar">{t('barChart')}</option>
+            <option value="line">{t('lineChart')}</option>
+            <option value="area">{t('areaChart')}</option>
+            <option value="pie">{t('pieChart')}</option>
+            <option value="composed">{t('composedChart')}</option>
           </select>
         </div>
       </div>
@@ -469,7 +475,7 @@ const ReportViewer = ({ report, onBack }) => {
       {/* Enhanced Chart */}
       <AdvancedChart
         data={chartData}
-        title={`${report.name} - ${chartType.charAt(0).toUpperCase() + chartType.slice(1)} View`}
+        title={`${report.name} - ${chartType.charAt(0).toUpperCase() + chartType.slice(1)} ${t('view')}`}
         chartType={chartType}
         config={chartConfigs[0]?.config || {}}
         height={500}
@@ -481,8 +487,7 @@ const ReportViewer = ({ report, onBack }) => {
         <div className="flex items-center gap-2 text-blue-700 text-sm">
           <Zap size={16} />
           <span>
-            <strong>Interactive Features:</strong> Click on chart elements to explore data, 
-            use mouse wheel to zoom, and hover for detailed values.
+            <strong>{t('interactiveFeatures')}:</strong> {t('interactiveFeaturesDescription')}
           </span>
         </div>
       </div>
@@ -491,7 +496,7 @@ const ReportViewer = ({ report, onBack }) => {
 
   const renderDashboardView = () => (
     <ChartDashboard
-      title={`${report.name} - Analytics Dashboard`}
+      title={`${report.name} - ${t('analyticsDashboard')}`}
       charts={chartConfigs}
     />
   );
@@ -499,7 +504,7 @@ const ReportViewer = ({ report, onBack }) => {
   if (!report) {
     return (
       <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-        <p className="text-yellow-800">No report selected. Please select a report to view.</p>
+        <p className="text-yellow-800">{t('noReportSelected')}</p>
       </div>
     );
   }
@@ -517,7 +522,7 @@ const ReportViewer = ({ report, onBack }) => {
                   className="flex items-center text-gray-600 hover:text-gray-800 mr-4"
                 >
                   <ArrowLeft className="w-5 h-5 mr-1" />
-                  Back
+                  {t('back')}
                 </button>
                 <h1 className="text-2xl font-bold text-gray-800">{report.name}</h1>
               </div>
@@ -531,12 +536,12 @@ const ReportViewer = ({ report, onBack }) => {
                 </span>
                 {report.isPublic && (
                   <span className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-green-100 text-green-800">
-                    Public
+                    {t('public')}
                   </span>
                 )}
                 {viewMode === 'dashboard' && (
                   <span className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-purple-100 text-purple-800">
-                    Dashboard View
+                    {t('dashboardView')}
                   </span>
                 )}
               </div>
@@ -549,7 +554,7 @@ const ReportViewer = ({ report, onBack }) => {
                 className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition flex items-center disabled:opacity-50"
               >
                 <RefreshCw className="w-4 h-4 mr-2" />
-                Refresh
+                {t('refresh')}
               </button>
               
               <div className="relative">
@@ -558,7 +563,7 @@ const ReportViewer = ({ report, onBack }) => {
                   className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition flex items-center"
                 >
                   <Download className="w-4 h-4 mr-2" />
-                  Export
+                  {t('export')}
                 </button>
                 
                 {exportMenuOpen && (
@@ -567,19 +572,19 @@ const ReportViewer = ({ report, onBack }) => {
                       onClick={() => handleExport('excel')}
                       className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 first:rounded-t-lg"
                     >
-                      Export as Excel
+                      {t('exportAsExcel')}
                     </button>
                     <button
                       onClick={() => handleExport('csv')}
                       className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                     >
-                      Export as CSV
+                      {t('exportAsCSV')}
                     </button>
                     <button
                       onClick={() => handleExport('pdf')}
                       className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 last:rounded-b-lg"
                     >
-                      Export as PDF
+                      {t('exportAsPDF')}
                     </button>
                   </div>
                 )}
@@ -593,12 +598,12 @@ const ReportViewer = ({ report, onBack }) => {
                 {executing ? (
                   <>
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                    Running...
+                    {t('running')}...
                   </>
                 ) : (
                   <>
                     <Play className="w-4 h-4 mr-2" />
-                    Run Report
+                    {t('runReport')}
                   </>
                 )}
               </button>
@@ -618,7 +623,7 @@ const ReportViewer = ({ report, onBack }) => {
       {activeFilters.length > 0 && (
         <div className="bg-white rounded-lg shadow mb-6">
           <div className="p-6">
-            <h2 className="text-lg font-semibold text-gray-800 mb-4">Filters</h2>
+            <h2 className="text-lg font-semibold text-gray-800 mb-4">{t('filters')}</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               {activeFilters.map((filter, index) => (
                 <div key={index}>
@@ -651,9 +656,9 @@ const ReportViewer = ({ report, onBack }) => {
 
           {/* Execution Info */}
           <div className="text-center text-sm text-gray-500 mt-4">
-            Generated on {new Date(reportData.generatedAt).toLocaleString()} • 
-            Execution time: {reportData.executionTime}ms • 
-            {reportData.totalRecords} records
+            {t('generatedOn')} {new Date(reportData.generatedAt).toLocaleString()} • 
+            {t('executionTime')}: {reportData.executionTime}ms • 
+            {reportData.totalRecords} {t('records')}
           </div>
         </>
       )}
@@ -663,15 +668,15 @@ const ReportViewer = ({ report, onBack }) => {
         <div className="bg-white rounded-lg shadow">
           <div className="p-8 text-center">
             <Table className="w-12 h-12 text-gray-300 mx-auto mb-2" />
-            <h3 className="text-lg font-semibold text-gray-800 mb-2">No Data to Display</h3>
-            <p className="text-gray-600 mb-4">Run the report to see the data</p>
+            <h3 className="text-lg font-semibold text-gray-800 mb-2">{t('noDataToDisplay')}</h3>
+            <p className="text-gray-600 mb-4">{t('runReportToSeeData')}</p>
             <button
               onClick={executeReport}
               disabled={executing}
               className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition flex items-center mx-auto disabled:opacity-50"
             >
               <Play className="w-4 h-4 mr-2" />
-              Run Report
+              {t('runReport')}
             </button>
           </div>
         </div>

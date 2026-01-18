@@ -1,6 +1,7 @@
 // frontend/src/components/reports/RealTimeChart.jsx
 "use client";
 import React, { useState, useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next'; // ADD THIS IMPORT
 import AdvancedChart from './AdvancedChart';
 import { Play, Pause, RefreshCw, Zap, Clock } from 'lucide-react';
 
@@ -11,6 +12,7 @@ const RealTimeChart = ({
   refreshInterval = 30000, // 30 seconds
   maxDataPoints = 50 
 }) => {
+  const { t } = useTranslation(); // ADD THIS HOOK
   const [chartData, setChartData] = useState([]);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -33,7 +35,7 @@ const RealTimeChart = ({
         }
       });
 
-      if (!response.ok) throw new Error('Failed to fetch data');
+      if (!response.ok) throw new Error(t('failedToFetchData'));
       
       const result = await response.json();
       
@@ -42,7 +44,7 @@ const RealTimeChart = ({
         setChartData(newData);
         setLastUpdated(new Date());
       } else {
-        throw new Error(result.message || 'Failed to load data');
+        throw new Error(result.message || t('failedToLoadData'));
       }
     } catch (err) {
       console.error('Real-time chart error:', err);
@@ -107,7 +109,7 @@ const RealTimeChart = ({
           {lastUpdated && (
             <div className="flex items-center gap-1 text-sm text-gray-500">
               <Clock size={14} />
-              Updated: {lastUpdated.toLocaleTimeString()}
+              {t('updated')}: {lastUpdated.toLocaleTimeString()}
             </div>
           )}
         </div>
@@ -123,7 +125,7 @@ const RealTimeChart = ({
             }`}
           >
             {isPlaying ? <Pause size={16} /> : <Play size={16} />}
-            {isPlaying ? 'Pause' : 'Auto-Refresh'}
+            {isPlaying ? t('pause') : t('autoRefresh')}
           </button>
 
           {/* Manual Refresh */}
@@ -133,7 +135,7 @@ const RealTimeChart = ({
             className="flex items-center gap-2 px-3 py-2 bg-blue-100 text-blue-800 rounded-lg hover:bg-blue-200 disabled:opacity-50 transition-colors text-sm font-medium"
           >
             <RefreshCw size={16} className={isLoading ? 'animate-spin' : ''} />
-            Refresh
+            {t('manualRefresh')}
           </button>
 
           {/* Status Indicator */}
@@ -147,7 +149,7 @@ const RealTimeChart = ({
       {error && (
         <div className="p-4 bg-red-50 border-b border-red-200">
           <div className="text-red-700 text-sm">
-            <strong>Error:</strong> {error}
+            <strong>{t('error')}:</strong> {error}
           </div>
         </div>
       )}
@@ -168,13 +170,13 @@ const RealTimeChart = ({
         <div className="flex items-center justify-between text-sm text-gray-600">
           <div className="flex items-center gap-4">
             <span>
-              <strong>Interval:</strong> {refreshInterval / 1000}s
+              <strong>{t('interval')}:</strong> {refreshInterval / 1000}s
             </span>
             <span>
-              <strong>Data Points:</strong> {chartData.length}
+              <strong>{t('dataPoints')}:</strong> {chartData.length}
             </span>
             <span>
-              <strong>Mode:</strong> {isPlaying ? 'Live' : 'Paused'}
+              <strong>{t('mode')}:</strong> {isPlaying ? t('live') : t('paused')}
             </span>
           </div>
           
@@ -182,7 +184,7 @@ const RealTimeChart = ({
             {isPlaying && (
               <div className="flex items-center gap-1">
                 <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                <span>Live</span>
+                <span>{t('live')}</span>
               </div>
             )}
           </div>

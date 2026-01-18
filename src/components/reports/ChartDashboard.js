@@ -1,12 +1,14 @@
 // frontend/src/components/reports/ChartDashboard.jsx
 "use client";
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next'; // ADD THIS IMPORT
 import AdvancedChart from './AdvancedChart';
 import DrillDownChart from './DrillDownChart';
 import RealTimeChart from './RealTimeChart';
 import { Grid, List, Settings, Download, Share2 } from 'lucide-react';
 
 const ChartDashboard = ({ charts = [], title = "Analytics Dashboard" }) => {
+  const { t } = useTranslation(); // ADD THIS HOOK
   const [viewMode, setViewMode] = useState('grid'); // 'grid' or 'list'
   const [selectedCharts, setSelectedCharts] = useState([]);
 
@@ -14,46 +16,46 @@ const ChartDashboard = ({ charts = [], title = "Analytics Dashboard" }) => {
   const defaultCharts = [
     {
       id: 1,
-      title: "Spend by Category",
+      title: t('spendByCategory'),
       type: "bar",
       data: [
-        { name: "Construction", value: 4500000 },
-        { name: "Materials", value: 3200000 },
-        { name: "Services", value: 1800000 },
-        { name: "Equipment", value: 1200000 }
+        { name: t('construction'), value: 4500000 },
+        { name: t('materials'), value: 3200000 },
+        { name: t('services'), value: 1800000 },
+        { name: t('equipment'), value: 1200000 }
       ],
       config: {
         currency: true,
-        bars: [{ dataKey: "value", name: "Spend" }]
+        bars: [{ dataKey: "value", name: t('spend') }]
       }
     },
     {
       id: 2,
-      title: "Monthly Spend Trend",
+      title: t('monthlySpendTrend'),
       type: "line",
       data: [
-        { name: "Jan", spend: 1200000, budget: 1500000 },
-        { name: "Feb", spend: 1800000, budget: 1500000 },
-        { name: "Mar", spend: 2200000, budget: 1500000 },
-        { name: "Apr", spend: 1900000, budget: 1500000 }
+        { name: t('jan'), spend: 1200000, budget: 1500000 },
+        { name: t('feb'), spend: 1800000, budget: 1500000 },
+        { name: t('mar'), spend: 2200000, budget: 1500000 },
+        { name: t('apr'), spend: 1900000, budget: 1500000 }
       ],
       config: {
         currency: true,
         lines: [
-          { dataKey: "spend", name: "Actual Spend" },
-          { dataKey: "budget", name: "Budget" }
+          { dataKey: "spend", name: t('actualSpend') },
+          { dataKey: "budget", name: t('budget') }
         ]
       }
     },
     {
       id: 3,
-      title: "Vendor Distribution",
+      title: t('vendorDistribution'),
       type: "pie",
       data: [
-        { name: "Class A", value: 35 },
-        { name: "Class B", value: 45 },
-        { name: "Class C", value: 15 },
-        { name: "Class D", value: 5 }
+        { name: t('classA'), value: 35 },
+        { name: t('classB'), value: 45 },
+        { name: t('classC'), value: 15 },
+        { name: t('classD'), value: 5 }
       ],
       config: {
         percentage: true,
@@ -81,7 +83,7 @@ const ChartDashboard = ({ charts = [], title = "Analytics Dashboard" }) => {
     
     // In a real implementation, this would generate a PDF or export data
     console.log('Exporting charts:', chartsToExport);
-    alert(`Exporting ${chartsToExport.length} charts...`);
+    alert(t('exportingCharts', { count: chartsToExport.length }));
   };
 
   return (
@@ -91,7 +93,7 @@ const ChartDashboard = ({ charts = [], title = "Analytics Dashboard" }) => {
         <div>
           <h1 className="text-2xl font-bold text-gray-800">{title}</h1>
           <p className="text-gray-600 mt-1">
-            Interactive analytics and visualization dashboard
+            {t('dashboardDescription')}
           </p>
         </div>
         
@@ -127,13 +129,13 @@ const ChartDashboard = ({ charts = [], title = "Analytics Dashboard" }) => {
               className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
             >
               <Download size={16} />
-              Export ({selectedCharts.length})
+              {t('export')} ({selectedCharts.length})
             </button>
           )}
           
           <button className="flex items-center gap-2 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors">
             <Share2 size={16} />
-            Share
+            {t('share')}
           </button>
         </div>
       </div>
@@ -203,12 +205,12 @@ const ChartDashboard = ({ charts = [], title = "Analytics Dashboard" }) => {
           <div className="mx-auto w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
             <Settings className="text-gray-400" size={24} />
           </div>
-          <h3 className="text-lg font-semibold text-gray-600 mb-2">No Charts Configured</h3>
+          <h3 className="text-lg font-semibold text-gray-600 mb-2">{t('noChartsConfigured')}</h3>
           <p className="text-gray-500 mb-6">
-            Add charts to your dashboard to start visualizing data.
+            {t('noChartsDescription')}
           </p>
           <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
-            Add First Chart
+            {t('addFirstChart')}
           </button>
         </div>
       )}

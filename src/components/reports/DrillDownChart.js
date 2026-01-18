@@ -1,10 +1,12 @@
 // frontend/src/components/reports/DrillDownChart.jsx
 "use client";
 import React, { useState, useMemo } from 'react';
+import { useTranslation } from 'react-i18next'; // ADD THIS IMPORT
 import AdvancedChart from './AdvancedChart';
 import { ArrowLeft, Layers, Filter, BarChart3 } from 'lucide-react';
 
 const DrillDownChart = ({ data, title, initialConfig = {} }) => {
+  const { t } = useTranslation(); // ADD THIS HOOK
   const [drillDownStack, setDrillDownStack] = useState([]);
   const [currentLevel, setCurrentLevel] = useState(0);
 
@@ -47,7 +49,7 @@ const DrillDownChart = ({ data, title, initialConfig = {} }) => {
       xAxisKey: initialConfig.xAxisKey || 'name',
       currency: initialConfig.currency || false,
       percentage: initialConfig.percentage || false,
-      bars: initialConfig.bars || [{ dataKey: 'value', name: 'Value' }],
+      bars: initialConfig.bars || [{ dataKey: 'value', name: t('value') }],
       lines: initialConfig.lines,
       areas: initialConfig.areas
     };
@@ -57,7 +59,7 @@ const DrillDownChart = ({ data, title, initialConfig = {} }) => {
       return {
         ...baseConfig,
         chartType: 'bar', // Always use bar for drill-down for consistency
-        bars: [{ dataKey: 'value', name: drillDownStack[currentLevel - 1]?.name || 'Value' }]
+        bars: [{ dataKey: 'value', name: drillDownStack[currentLevel - 1]?.name || t('value') }]
       };
     }
 
@@ -75,7 +77,7 @@ const DrillDownChart = ({ data, title, initialConfig = {} }) => {
               className="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 hover:text-gray-800 hover:bg-gray-50 rounded-lg transition-colors"
             >
               <ArrowLeft size={16} />
-              Back
+              {t('back')}
             </button>
           )}
           
@@ -85,8 +87,8 @@ const DrillDownChart = ({ data, title, initialConfig = {} }) => {
               {getBreadcrumb()}
             </h3>
             <p className="text-sm text-gray-600 mt-1">
-              Level {currentLevel + 1} • {currentData.length} items
-              {currentLevel > 0 && ' (Drill-down view)'}
+              {t('level')} {currentLevel + 1} • {currentData.length} {t('items')}
+              {currentLevel > 0 && ` (${t('drillDownView')})`}
             </p>
           </div>
         </div>
@@ -97,13 +99,13 @@ const DrillDownChart = ({ data, title, initialConfig = {} }) => {
               onClick={handleReset}
               className="px-3 py-2 text-sm text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition-colors"
             >
-              Reset View
+              {t('resetView')}
             </button>
           )}
           
           <div className="flex items-center gap-1 px-3 py-2 bg-gray-100 rounded-lg text-sm text-gray-600">
             <Layers size={16} />
-            <span>Drill-down {currentLevel > 0 ? 'Enabled' : 'Available'}</span>
+            <span>{t('drillDown')} {currentLevel > 0 ? t('enabled') : t('available')}</span>
           </div>
         </div>
       </div>
@@ -124,12 +126,12 @@ const DrillDownChart = ({ data, title, initialConfig = {} }) => {
         <div className="p-4 bg-blue-50 border-t border-blue-200">
           <div className="flex items-center justify-between text-sm">
             <div className="text-blue-700">
-              <strong>Drill-down Active:</strong> You're viewing detailed data for "
+              <strong>{t('drillDownActive')}:</strong> {t('drillDownActiveDescription')} "
               {drillDownStack[currentLevel - 1]?.name}".
-              Click on any bar to drill down further.
+              {t('clickToDrillDownFurther')}
             </div>
             <div className="text-blue-600">
-              {drillDownStack.length} level{drillDownStack.length > 1 ? 's' : ''} deep
+              {drillDownStack.length} {drillDownStack.length > 1 ? t('levels') : t('level')} {t('deep')}
             </div>
           </div>
         </div>

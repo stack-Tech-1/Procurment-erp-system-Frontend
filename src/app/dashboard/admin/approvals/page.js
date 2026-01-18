@@ -2,6 +2,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslation } from 'react-i18next'; // ADD THIS IMPORT
 import axios from "axios";
 import { 
   Users, 
@@ -18,6 +19,7 @@ import {
 import ResponsiveLayout from '@/components/layout/ResponsiveLayout';
 
 export default function AdminApprovalsPage() {
+  const { t } = useTranslation(); // ADD THIS HOOK
   const [user, setUser] = useState(null);
   const [pendingUsers, setPendingUsers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -29,7 +31,7 @@ export default function AdminApprovalsPage() {
     status: "pending"
   });
 
-  const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;   
+  const API_BASE_URL = `${process.env.NEXT_PUBLIC_API_URL}`; 
   
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
@@ -37,7 +39,7 @@ export default function AdminApprovalsPage() {
 
     fetchPendingUsers();
 
-    // ✅ Auto-refresh every 30 seconds
+    // Auto-refresh every 30 seconds
     const interval = setInterval(fetchPendingUsers, 30000);
     return () => clearInterval(interval);
   }, []);
@@ -50,7 +52,7 @@ export default function AdminApprovalsPage() {
       setError("");
     } catch (err) {
       console.error("Error fetching pending users:", err);
-      setError("Failed to fetch pending users");
+      setError(t('failedToFetchPendingUsers'));
     } finally {
       setLoading(false);
     }
@@ -64,14 +66,14 @@ export default function AdminApprovalsPage() {
       setError("");
     } catch (err) {
       console.error(err);
-      setError("Approval failed. Please try again.");
+      setError(t('approvalFailed'));
     } finally {
       setApproving(null);
     }
   };
 
   const rejectUser = async (id) => {
-    if (!window.confirm("Are you sure you want to reject this user? This action cannot be undone.")) {
+    if (!window.confirm(t('confirmRejectUser'))) {
       return;
     }
 
@@ -82,7 +84,7 @@ export default function AdminApprovalsPage() {
       setError("");
     } catch (err) {
       console.error(err);
-      setError("Rejection failed. Please try again.");
+      setError(t('rejectionFailed'));
     } finally {
       setApproving(null);
     }
@@ -115,22 +117,22 @@ export default function AdminApprovalsPage() {
           </div>
         </div>
         <span className="px-2 py-1 bg-yellow-100 text-yellow-800 text-xs font-medium rounded-full">
-          {user.status}
+          {t(user.status?.toLowerCase() || 'pending')}
         </span>
       </div>
 
       <div className="grid grid-cols-2 gap-4 text-sm mb-4">
         <div>
-          <p className="text-gray-500 text-xs">Requested Role</p>
+          <p className="text-gray-500 text-xs">{t('requestedRole')}</p>
           <p className="font-medium text-gray-900 text-sm flex items-center">
             <Shield className="w-3 h-3 mr-1 text-blue-500" />
-            {user.role?.name || "Staff"}
+            {user.role?.name || t('staff')}
           </p>
         </div>
         <div>
-          <p className="text-gray-500 text-xs">Submitted</p>
+          <p className="text-gray-500 text-xs">{t('submitted')}</p>
           <p className="font-medium text-gray-900 text-sm">
-            {user.createdAt ? new Date(user.createdAt).toLocaleDateString() : "Recently"}
+            {user.createdAt ? new Date(user.createdAt).toLocaleDateString() : t('recently')}
           </p>
         </div>
       </div>
@@ -150,7 +152,7 @@ export default function AdminApprovalsPage() {
           ) : (
             <CheckCircle className="w-4 h-4 mr-1" />
           )}
-          <span className="ml-1">Approve</span>
+          <span className="ml-1">{t('approve')}</span>
         </button>
         
         <button
@@ -173,19 +175,19 @@ export default function AdminApprovalsPage() {
         <thead className="bg-gray-50">
           <tr>
             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              User Details
+              {t('userDetails')}
             </th>
             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Requested Role
+              {t('requestedRole')}
             </th>
             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Status
+              {t('status')}
             </th>
             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Submitted
+              {t('submitted')}
             </th>
             <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Actions
+              {t('actions')}
             </th>
           </tr>
         </thead>
@@ -209,17 +211,17 @@ export default function AdminApprovalsPage() {
               <td className="px-6 py-4 whitespace-nowrap">
                 <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                   <Shield className="w-3 h-3 mr-1" />
-                  {user.role?.name || "Staff"}
+                  {user.role?.name || t('staff')}
                 </span>
               </td>
               <td className="px-6 py-4 whitespace-nowrap">
                 <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
                   <Clock className="w-3 h-3 mr-1" />
-                  {user.status}
+                  {t(user.status?.toLowerCase() || 'pending')}
                 </span>
               </td>
               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                {user.createdAt ? new Date(user.createdAt).toLocaleDateString() : "Recently"}
+                {user.createdAt ? new Date(user.createdAt).toLocaleDateString() : t('recently')}
               </td>
               <td className="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
                 <div className="flex justify-center space-x-2">
@@ -237,7 +239,7 @@ export default function AdminApprovalsPage() {
                     ) : (
                       <CheckCircle className="w-3 h-3 mr-1" />
                     )}
-                    Approve
+                    {t('approve')}
                   </button>
                   <button
                     onClick={() => rejectUser(user.id)}
@@ -247,7 +249,7 @@ export default function AdminApprovalsPage() {
                     }`}
                   >
                     <AlertCircle className="w-3 h-3 mr-1" />
-                    Reject
+                    {t('reject')}
                   </button>
                 </div>
               </td>
@@ -266,10 +268,10 @@ export default function AdminApprovalsPage() {
           <div>
             <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 flex items-center">
               <UserCheck className="w-6 h-6 sm:w-7 sm:h-7 mr-2 sm:mr-3 text-blue-600" />
-              Staff Registration Approvals
+              {t('staffRegistrationApprovals')}
             </h1>
             <p className="text-gray-600 mt-2 text-sm sm:text-base">
-              Review and approve new staff registration requests
+              {t('approvalsDescription')}
             </p>
           </div>
           
@@ -280,7 +282,7 @@ export default function AdminApprovalsPage() {
               className="flex items-center px-3 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 text-sm"
             >
               <RefreshCw className={`w-4 h-4 mr-1 ${loading ? 'animate-spin' : ''}`} />
-              <span className="hidden sm:inline">Refresh</span>
+              <span className="hidden sm:inline">{t('refresh')}</span>
             </button>
           </div>
         </div>
@@ -290,7 +292,7 @@ export default function AdminApprovalsPage() {
           <div className="bg-white p-3 sm:p-4 rounded-lg border border-gray-200 shadow-sm">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs sm:text-sm text-gray-500">Pending Approvals</p>
+                <p className="text-xs sm:text-sm text-gray-500">{t('pendingApprovals')}</p>
                 <p className="text-lg sm:text-2xl font-bold text-yellow-600">{pendingUsers.length}</p>
               </div>
               <Clock className="w-6 h-6 sm:w-8 sm:h-8 text-yellow-500" />
@@ -300,7 +302,7 @@ export default function AdminApprovalsPage() {
           <div className="bg-white p-3 sm:p-4 rounded-lg border border-gray-200 shadow-sm">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs sm:text-sm text-gray-500">This Week</p>
+                <p className="text-xs sm:text-sm text-gray-500">{t('thisWeek')}</p>
                 <p className="text-lg sm:text-2xl font-bold text-blue-600">
                   {pendingUsers.filter(user => {
                     const weekAgo = new Date();
@@ -316,7 +318,7 @@ export default function AdminApprovalsPage() {
           <div className="bg-white p-3 sm:p-4 rounded-lg border border-gray-200 shadow-sm">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs sm:text-sm text-gray-500">Managers</p>
+                <p className="text-xs sm:text-sm text-gray-500">{t('managers')}</p>
                 <p className="text-lg sm:text-2xl font-bold text-green-600">
                   {pendingUsers.filter(user => user.role?.name === 'Manager').length}
                 </p>
@@ -328,7 +330,7 @@ export default function AdminApprovalsPage() {
           <div className="bg-white p-3 sm:p-4 rounded-lg border border-gray-200 shadow-sm">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs sm:text-sm text-gray-500">Officers</p>
+                <p className="text-xs sm:text-sm text-gray-500">{t('officers')}</p>
                 <p className="text-lg sm:text-2xl font-bold text-purple-600">
                   {pendingUsers.filter(user => user.role?.name === 'Officer').length}
                 </p>
@@ -349,7 +351,7 @@ export default function AdminApprovalsPage() {
                   type="text"
                   value={filters.search}
                   onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value }))}
-                  placeholder="Search by name or email..."
+                  placeholder={t('searchPlaceholder')}
                   className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 />
               </div>
@@ -362,17 +364,20 @@ export default function AdminApprovalsPage() {
                 onChange={(e) => setFilters(prev => ({ ...prev, role: e.target.value }))}
                 className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               >
-                <option value="">All Roles</option>
-                <option value="Manager">Managers</option>
-                <option value="Officer">Officers</option>
-                <option value="Admin">Admins</option>
+                <option value="">{t('allRoles')}</option>
+                <option value="Manager">{t('managers')}</option>
+                <option value="Officer">{t('officers')}</option>
+                <option value="Admin">{t('admins')}</option>
               </select>
             </div>
 
             {/* Filter Label */}
             <div className="flex items-center text-sm text-gray-500">
               <Filter className="w-4 h-4 mr-2" />
-              Showing {filteredUsers.length} of {pendingUsers.length} requests
+              {t('showingRequests', { 
+                filtered: filteredUsers.length, 
+                total: pendingUsers.length 
+              })}
             </div>
           </div>
         </div>
@@ -390,7 +395,7 @@ export default function AdminApprovalsPage() {
           <div className="flex justify-center items-center py-12">
             <div className="text-center">
               <RefreshCw className="w-8 h-8 animate-spin text-blue-600 mx-auto mb-4" />
-              <p className="text-gray-600">Loading pending approvals...</p>
+              <p className="text-gray-600">{t('loadingPendingApprovals')}</p>
             </div>
           </div>
         )}
@@ -399,11 +404,11 @@ export default function AdminApprovalsPage() {
         {!loading && filteredUsers.length === 0 && (
           <div className="text-center py-12 bg-white rounded-lg border border-gray-200">
             <UserCheck className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No Pending Approvals</h3>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">{t('noPendingApprovals')}</h3>
             <p className="text-gray-500 max-w-md mx-auto">
               {pendingUsers.length === 0 
-                ? "All staff registration requests have been processed. New requests will appear here automatically."
-                : "No users match your current filters."
+                ? t('allRequestsProcessed')
+                : t('noMatchingFilters')
               }
             </p>
           </div>

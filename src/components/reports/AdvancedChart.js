@@ -1,6 +1,7 @@
 // frontend/src/components/reports/AdvancedChart.jsx
 "use client";
 import React, { useState, useCallback } from 'react';
+import { useTranslation } from 'react-i18next'; // ADD THIS IMPORT
 import {
   BarChart, Bar, LineChart, Line, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
@@ -21,6 +22,7 @@ const AdvancedChart = ({
   config = {},
   isLoading = false
 }) => {
+  const { t } = useTranslation(); // ADD THIS HOOK
   const [zoom, setZoom] = useState(1);
   const [filters, setFilters] = useState({});
   const [hoveredData, setHoveredData] = useState(null);
@@ -208,7 +210,7 @@ const AdvancedChart = ({
       default:
         return (
           <div className="flex items-center justify-center h-full">
-            <p className="text-gray-500">Unsupported chart type: {chartType}</p>
+            <p className="text-gray-500">{t('unsupportedChartType', { chartType })}</p>
           </div>
         );
     }
@@ -230,8 +232,8 @@ const AdvancedChart = ({
       <div className="bg-white rounded-lg border border-gray-200 p-6">
         <div className="text-center py-12">
           <BarChart3 className="mx-auto text-gray-300 mb-4" size={48} />
-          <h3 className="text-lg font-semibold text-gray-600 mb-2">No Data Available</h3>
-          <p className="text-gray-500">There is no data to display for this chart.</p>
+          <h3 className="text-lg font-semibold text-gray-600 mb-2">{t('noDataAvailable')}</h3>
+          <p className="text-gray-500">{t('noDataDescription')}</p>
         </div>
       </div>
     );
@@ -245,7 +247,7 @@ const AdvancedChart = ({
           <h3 className="text-lg font-semibold text-gray-800">{title}</h3>
           {hoveredData && (
             <p className="text-sm text-gray-600 mt-1">
-              Hovering: {hoveredData.data.name} - {hoveredData.data.value}
+              {t('hovering')}: {hoveredData.data.name} - {hoveredData.data.value}
             </p>
           )}
         </div>
@@ -255,27 +257,27 @@ const AdvancedChart = ({
           <button
             onClick={() => setZoom(Math.min(zoom + 0.1, 2))}
             className="p-2 text-gray-600 hover:text-gray-800 transition-colors"
-            title="Zoom In"
+            title={t('zoomIn')}
           >
             <ZoomIn size={16} />
           </button>
           <button
             onClick={() => setZoom(Math.max(zoom - 0.1, 0.5))}
             className="p-2 text-gray-600 hover:text-gray-800 transition-colors"
-            title="Zoom Out"
+            title={t('zoomOut')}
           >
             <ZoomOut size={16} />
           </button>
           <button
             onClick={() => setZoom(1)}
             className="p-2 text-gray-600 hover:text-gray-800 transition-colors"
-            title="Reset Zoom"
+            title={t('resetZoom')}
           >
             <RefreshCw size={16} />
           </button>
           <button
             className="p-2 text-gray-600 hover:text-gray-800 transition-colors"
-            title="Download Chart"
+            title={t('downloadChart')}
           >
             <Download size={16} />
           </button>
@@ -292,17 +294,17 @@ const AdvancedChart = ({
       {/* Chart Footer */}
       <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-200">
         <div className="text-sm text-gray-500">
-          {data.length} data points • {chartType} chart
+          {data.length} {t('dataPoints')} • {chartType} {t('chart')}
         </div>
         <div className="flex items-center gap-2 text-sm text-gray-500">
           <span className="flex items-center gap-1">
             <div className="w-3 h-3 bg-blue-500 rounded"></div>
-            Interactive
+            {t('interactive')}
           </span>
           {onDataPointClick && (
             <span className="flex items-center gap-1">
               <div className="w-3 h-3 bg-green-500 rounded"></div>
-              Click to drill down
+              {t('clickToDrillDown')}
             </span>
           )}
         </div>

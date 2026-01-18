@@ -1,6 +1,7 @@
 // frontend/src/app/dashboard/admin/reports/page.js - MOBILE OPTIMIZED
 "use client";
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next'; // ADD THIS IMPORT
 import { 
   Search, Filter, Plus, FileText, BarChart3, 
   Eye, Edit, Trash2, Star, StarOff,
@@ -15,6 +16,7 @@ import ReportList from '@/components/reports/ReportList';
 const API_BASE_URL = `${process.env.NEXT_PUBLIC_API_URL}/api`;
 
 const ReportsPage = () => {
+  const { t } = useTranslation(); // ADD THIS HOOK
   const [reports, setReports] = useState([]);
   const [loading, setLoading] = useState(true);
   const [currentView, setCurrentView] = useState('list'); // 'list', 'builder', 'viewer'
@@ -43,7 +45,7 @@ const ReportsPage = () => {
         }
       });
 
-      if (!response.ok) throw new Error('Failed to fetch reports');
+      if (!response.ok) throw new Error(t('failedToFetchReports'));
       
       const data = await response.json();
       setReports(data.data || []);
@@ -113,7 +115,7 @@ const ReportsPage = () => {
       
     } catch (error) {
       console.error('Failed to save report:', error);
-      alert('Failed to save report. Please try again.');
+      alert(t('failedToSaveReport'));
     }
   };
 
@@ -125,13 +127,10 @@ const ReportsPage = () => {
 
   const toggleFavorite = async (reportId, isCurrentlyFavorite) => {
     try {
-      console.log('Toggling favorite for report ID:', reportId, 'Type:', typeof reportId);
-
       const token = localStorage.getItem('authToken');
       
       // Convert reportId to number if it's a string
       const numericReportId = parseInt(reportId, 10);
-      console.log('Converted ID:', numericReportId, 'Type:', typeof numericReportId);
       
       await fetch(`${API_BASE_URL}/reports/${numericReportId}/favorite`, {
         method: 'POST',
@@ -155,7 +154,7 @@ const ReportsPage = () => {
       <div className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden">
         <div className="absolute right-0 top-0 h-full w-80 bg-white shadow-xl">
           <div className="flex justify-between items-center p-4 border-b">
-            <h3 className="text-lg font-semibold text-gray-900">Filters</h3>
+            <h3 className="text-lg font-semibold text-gray-900">{t('filters')}</h3>
             <button 
               onClick={() => setShowMobileFilters(false)}
               className="p-2 text-gray-500 hover:text-gray-700"
@@ -168,7 +167,7 @@ const ReportsPage = () => {
             {/* Search */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Search Reports
+                {t('searchReports')}
               </label>
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
@@ -176,7 +175,7 @@ const ReportsPage = () => {
                   type="text"
                   value={filters.search}
                   onChange={(e) => handleFilterChange('search', e.target.value)}
-                  placeholder="Search reports..."
+                  placeholder={t('searchReportsPlaceholder')}
                   className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 />
               </div>
@@ -185,19 +184,19 @@ const ReportsPage = () => {
             {/* Category Filter */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Category
+                {t('category')}
               </label>
               <select
                 value={filters.category}
                 onChange={(e) => handleFilterChange('category', e.target.value)}
                 className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               >
-                <option value="">All Categories</option>
-                <option value="financial">Financial</option>
-                <option value="vendor">Vendor Performance</option>
-                <option value="procurement">Procurement</option>
-                <option value="compliance">Compliance</option>
-                <option value="analytics">Analytics</option>
+                <option value="">{t('allCategories')}</option>
+                <option value="financial">{t('financial')}</option>
+                <option value="vendor">{t('vendorPerformance')}</option>
+                <option value="procurement">{t('procurement')}</option>
+                <option value="compliance">{t('compliance')}</option>
+                <option value="analytics">{t('analytics')}</option>
               </select>
             </div>
 
@@ -211,7 +210,7 @@ const ReportsPage = () => {
                 className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
               />
               <label htmlFor="mobile-favorite" className="ml-2 text-sm text-gray-700">
-                Show Favorites Only
+                {t('showFavoritesOnly')}
               </label>
             </div>
 
@@ -220,7 +219,7 @@ const ReportsPage = () => {
               onClick={() => setShowMobileFilters(false)}
               className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors"
             >
-              Apply Filters
+              {t('applyFilters')}
             </button>
           </div>
         </div>
@@ -236,10 +235,10 @@ const ReportsPage = () => {
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 flex items-center">
             <BarChart3 className="w-6 h-6 sm:w-7 sm:h-7 mr-2 sm:mr-3 text-blue-600" />
-            Reports & Analytics
+            {t('reportsAnalytics')}
           </h1>
           <p className="text-gray-600 mt-2 text-sm sm:text-base">
-            Create, manage, and view procurement reports
+            {t('reportsDescription')}
           </p>
         </div>
         
@@ -248,7 +247,7 @@ const ReportsPage = () => {
           <button
             onClick={() => setShowMobileFilters(true)}
             className="lg:hidden p-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50"
-            title="Filters"
+            title={t('filters')}
           >
             <Filter className="w-4 h-4" />
           </button>
@@ -259,8 +258,8 @@ const ReportsPage = () => {
             className="flex items-center px-3 py-2 sm:px-4 sm:py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm sm:text-base"
           >
             <Plus className="w-4 h-4 mr-1 sm:mr-2" />
-            <span className="hidden sm:inline">Create Report</span>
-            <span className="sm:hidden">New</span>
+            <span className="hidden sm:inline">{t('createReport')}</span>
+            <span className="sm:hidden">{t('new')}</span>
           </button>
         </div>
       </div>
@@ -275,7 +274,7 @@ const ReportsPage = () => {
               type="text"
               value={filters.search}
               onChange={(e) => handleFilterChange('search', e.target.value)}
-              placeholder="Search reports..."
+              placeholder={t('searchReportsPlaceholder')}
               className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             />
           </div>
@@ -288,12 +287,12 @@ const ReportsPage = () => {
             onChange={(e) => handleFilterChange('category', e.target.value)}
             className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           >
-            <option value="">All Categories</option>
-            <option value="financial">Financial</option>
-            <option value="vendor">Vendor Performance</option>
-            <option value="procurement">Procurement</option>
-            <option value="compliance">Compliance</option>
-            <option value="analytics">Analytics</option>
+            <option value="">{t('allCategories')}</option>
+            <option value="financial">{t('financial')}</option>
+            <option value="vendor">{t('vendorPerformance')}</option>
+            <option value="procurement">{t('procurement')}</option>
+            <option value="compliance">{t('compliance')}</option>
+            <option value="analytics">{t('analytics')}</option>
           </select>
         </div>
 
@@ -307,7 +306,7 @@ const ReportsPage = () => {
             className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
           />
           <label htmlFor="favorite" className="ml-2 text-sm text-gray-700">
-            Favorites Only
+            {t('favoritesOnly')}
           </label>
         </div>
 
@@ -318,7 +317,7 @@ const ReportsPage = () => {
           className="flex items-center px-3 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50"
         >
           <RefreshCw className={`w-4 h-4 mr-1 ${loading ? 'animate-spin' : ''}`} />
-          <span className="hidden sm:inline">Refresh</span>
+          <span className="hidden sm:inline">{t('refresh')}</span>
         </button>
       </div>
 
@@ -327,7 +326,7 @@ const ReportsPage = () => {
         <div className="bg-white p-3 sm:p-4 rounded-lg border border-gray-200 shadow-sm">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-xs sm:text-sm text-gray-500">Total Reports</p>
+              <p className="text-xs sm:text-sm text-gray-500">{t('totalReports')}</p>
               <p className="text-lg sm:text-2xl font-bold text-gray-900">{reports.length}</p>
             </div>
             <FileText className="w-6 h-6 sm:w-8 sm:h-8 text-blue-500" />
@@ -337,7 +336,7 @@ const ReportsPage = () => {
         <div className="bg-white p-3 sm:p-4 rounded-lg border border-gray-200 shadow-sm">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-xs sm:text-sm text-gray-500">Favorites</p>
+              <p className="text-xs sm:text-sm text-gray-500">{t('favorites')}</p>
               <p className="text-lg sm:text-2xl font-bold text-yellow-600">
                 {reports.filter(r => r.isFavorite).length}
               </p>
@@ -349,7 +348,7 @@ const ReportsPage = () => {
         <div className="bg-white p-3 sm:p-4 rounded-lg border border-gray-200 shadow-sm">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-xs sm:text-sm text-gray-500">This Month</p>
+              <p className="text-xs sm:text-sm text-gray-500">{t('thisMonth')}</p>
               <p className="text-lg sm:text-2xl font-bold text-green-600">
                 {reports.filter(r => {
                   const reportDate = new Date(r.createdAt);
@@ -366,7 +365,7 @@ const ReportsPage = () => {
         <div className="bg-white p-3 sm:p-4 rounded-lg border border-gray-200 shadow-sm">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-xs sm:text-sm text-gray-500">Categories</p>
+              <p className="text-xs sm:text-sm text-gray-500">{t('categories')}</p>
               <p className="text-lg sm:text-2xl font-bold text-purple-600">
                 {new Set(reports.map(r => r.category)).size}
               </p>
@@ -402,7 +401,7 @@ const ReportsPage = () => {
           className="flex items-center text-gray-600 hover:text-gray-800 transition-colors p-2"
         >
           <ArrowLeft className="w-5 h-5 mr-2" />
-          <span className="hidden sm:inline">Back to Reports</span>
+          <span className="hidden sm:inline">{t('backToReports')}</span>
         </button>
         <div>
           <h1 className="text-xl sm:text-2xl font-bold text-gray-900">{title}</h1>
@@ -414,14 +413,14 @@ const ReportsPage = () => {
         <div className="flex items-center space-x-2">
           <button className="flex items-center px-3 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 text-sm">
             <Download className="w-4 h-4 mr-1" />
-            <span className="hidden sm:inline">Export</span>
+            <span className="hidden sm:inline">{t('export')}</span>
           </button>
           <button 
             onClick={() => handleEditReport(selectedReport)}
             className="flex items-center px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm"
           >
             <Edit className="w-4 h-4 mr-1" />
-            <span className="hidden sm:inline">Edit</span>
+            <span className="hidden sm:inline">{t('edit')}</span>
           </button>
         </div>
       )}
@@ -434,8 +433,8 @@ const ReportsPage = () => {
         return (
           <div className="space-y-6">
             <NavigationHeader 
-              title={selectedReport ? "Edit Report" : "Create New Report"} 
-              subtitle={selectedReport ? "Modify your report configuration" : "Build a custom procurement report"}
+              title={selectedReport ? t('editReport') : t('createNewReport')} 
+              subtitle={selectedReport ? t('editReportDescription') : t('createReportDescription')}
             />
             <ReportBuilder
               report={selectedReport}
@@ -449,8 +448,8 @@ const ReportsPage = () => {
         return (
           <div className="space-y-6">
             <NavigationHeader 
-              title={selectedReport?.name || "Report Viewer"} 
-              subtitle="View and analyze report data"
+              title={selectedReport?.name || t('reportViewer')} 
+              subtitle={t('reportViewerDescription')}
             />
             <ReportViewer
               report={selectedReport}

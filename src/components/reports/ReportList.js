@@ -1,5 +1,7 @@
+// frontend/src/components/reports/ReportList.js
 "use client";
 import React from 'react';
+import { useTranslation } from 'react-i18next'; // ADD THIS IMPORT
 import { 
   Plus, 
   Star, 
@@ -23,6 +25,8 @@ const ReportList = ({
   onCreateReport, 
   onToggleFavorite 
 }) => {
+  const { t } = useTranslation(); // ADD THIS HOOK
+
   const getCategoryColor = (category) => {
     const colors = {
       FINANCIAL: 'bg-green-100 text-green-800 border-green-200',
@@ -44,7 +48,7 @@ const ReportList = ({
     return (
       <div className="bg-white rounded-lg shadow p-8 text-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-        <p className="mt-2 text-gray-500">Loading reports...</p>
+        <p className="mt-2 text-gray-500">{t('loadingReports')}</p>
       </div>
     );
   }
@@ -161,12 +165,12 @@ const ReportList = ({
         {reports.length === 0 ? (
           <div className="col-span-full bg-white rounded-lg shadow p-8 text-center">
             <BarChart3 className="w-12 h-12 text-gray-300 mx-auto mb-2" />
-            <p className="text-gray-500 mb-4">No reports found.</p>
+            <p className="text-gray-500 mb-4">{t('noReportsFound')}</p>
             <button 
               onClick={onCreateReport}
               className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition"
             >
-              Create Your First Report
+              {t('createFirstReport')}
             </button>
           </div>
         ) : (
@@ -178,7 +182,7 @@ const ReportList = ({
                   <div>
                     <h3 className="font-semibold text-lg text-gray-800 mb-1">{report.name}</h3>
                     <span className={`inline-block px-2 py-1 rounded-full text-xs font-medium border ${getCategoryColor(report.category)}`}>
-                      {report.category.toLowerCase()}
+                      {t(report.category.toLowerCase())}
                     </span>
                   </div>
                   <button
@@ -200,18 +204,18 @@ const ReportList = ({
 
                 {/* Description */}
                 <p className="text-gray-600 text-sm mb-4 line-clamp-2">
-                  {report.description || 'No description provided'}
+                  {report.description || t('noDescriptionProvided')}
                 </p>
 
                 {/* Stats */}
                 <div className="flex space-x-2 mb-4">
                   <span className="inline-flex items-center px-2 py-1 rounded text-xs bg-gray-100 text-gray-700">
                     <Table className="w-3 h-3 mr-1" />
-                    {report._count?.executions || 0} runs
+                    {report._count?.executions || 0} {t('runs')}
                   </span>
                   {report.isPublic && (
                     <span className="inline-flex items-center px-2 py-1 rounded text-xs bg-green-100 text-green-700">
-                      Public
+                      {t('public')}
                     </span>
                   )}
                 </div>
@@ -223,14 +227,14 @@ const ReportList = ({
                     className="flex-1 bg-blue-600 text-white py-2 px-3 rounded text-sm hover:bg-blue-700 transition flex items-center justify-center"
                   >
                     <Eye className="w-4 h-4 mr-1" />
-                    View
+                    {t('view')}
                   </button>
                   <button
                     onClick={() => onEditReport(report)}
                     className="flex-1 border border-gray-300 text-gray-700 py-2 px-3 rounded text-sm hover:bg-gray-50 transition flex items-center justify-center"
                   >
                     <Edit className="w-4 h-4 mr-1" />
-                    Edit
+                    {t('edit')}
                   </button>
                 </div>
 
@@ -238,7 +242,7 @@ const ReportList = ({
                 <div className="mt-4 pt-4 border-t border-gray-200">
                   <div className="flex items-center text-xs text-gray-500">
                     <User className="w-3 h-3 mr-1" />
-                    <span className="mr-3">{report.createdBy?.name || 'System'}</span>
+                    <span className="mr-3">{report.createdBy?.name || t('system')}</span>
                     <Calendar className="w-3 h-3 mr-1" />
                     <span>{new Date(report.createdAt).toLocaleDateString()}</span>
                   </div>

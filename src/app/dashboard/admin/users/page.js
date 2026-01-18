@@ -1,6 +1,7 @@
 // frontend/src/app/dashboard/admin/users/page.js - MOBILE OPTIMIZED
 "use client";
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next'; // ADD THIS IMPORT
 import axios from 'axios';
 import {
     Users, Loader2, CheckCircle, XCircle, User, Mail, ToggleRight,
@@ -12,11 +13,12 @@ import {
 import { toast } from 'react-hot-toast'; 
 import ResponsiveLayout from '@/components/layout/ResponsiveLayout';
 
-const API_BASE_URL =  `${process.env.NEXT_PUBLIC_API_URL}/api/users`;
-
+const API_BASE_URL = `${process.env.NEXT_PUBLIC_API_URL}/api/users`;
 
 // --- Notification Center Component ---
 const NotificationCenter = ({ isOpen, onClose, notifications, onMarkAsRead, onMarkAllAsRead }) => {
+  const { t } = useTranslation(); // ADD THIS HOOK
+  
   if (!isOpen) return null;
 
   const getNotificationIcon = (type) => {
@@ -49,7 +51,7 @@ const NotificationCenter = ({ isOpen, onClose, notifications, onMarkAsRead, onMa
           <div className="flex justify-between items-center p-6 border-b">
             <h3 className="text-xl font-bold text-gray-900 flex items-center">
               <Inbox className="w-6 h-6 mr-2 text-blue-600" />
-              Notifications ({notifications.filter(n => !n.read).length} unread)
+              {t('notifications')} ({notifications.filter(n => !n.read).length} {t('unread')})
             </h3>
             <div className="flex items-center space-x-2">
               {notifications.some(n => !n.read) && (
@@ -57,7 +59,7 @@ const NotificationCenter = ({ isOpen, onClose, notifications, onMarkAsRead, onMa
                   onClick={onMarkAllAsRead}
                   className="text-sm text-blue-600 hover:text-blue-800"
                 >
-                  Mark all as read
+                  {t('markAllAsRead')}
                 </button>
               )}
               <button onClick={onClose} className="text-gray-500 hover:text-gray-700">
@@ -70,8 +72,8 @@ const NotificationCenter = ({ isOpen, onClose, notifications, onMarkAsRead, onMa
             {notifications.length === 0 ? (
               <div className="text-center py-12">
                 <Inbox className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                <p className="text-gray-500 text-lg">No notifications</p>
-                <p className="text-gray-400 text-sm">You're all caught up!</p>
+                <p className="text-gray-500 text-lg">{t('noNotifications')}</p>
+                <p className="text-gray-400 text-sm">{t('allCaughtUp')}</p>
               </div>
             ) : (
               notifications.map((notification) => (
@@ -85,7 +87,7 @@ const NotificationCenter = ({ isOpen, onClose, notifications, onMarkAsRead, onMa
                     {getNotificationIcon(notification.type)}
                     <div className="flex-1">
                       <p className="text-sm font-medium text-gray-900">
-                        {notification.title}
+                        {t(notification.title.toLowerCase().replace(/\s+/g, '_')) || notification.title}
                       </p>
                       <p className="text-sm text-gray-600 mt-1">
                         {notification.message}
@@ -99,7 +101,7 @@ const NotificationCenter = ({ isOpen, onClose, notifications, onMarkAsRead, onMa
                         onClick={() => onMarkAsRead(notification.id)}
                         className="text-xs text-blue-600 hover:text-blue-800"
                       >
-                        Mark read
+                        {t('markRead')}
                       </button>
                     )}
                   </div>
@@ -114,6 +116,7 @@ const NotificationCenter = ({ isOpen, onClose, notifications, onMarkAsRead, onMa
   
   // --- Approval Workflow Component ---
   const ApprovalWorkflow = ({ workflow, onApprove, onReject, onClose }) => {
+    const { t } = useTranslation(); // ADD THIS HOOK
     const [comment, setComment] = useState('');
     const [actionLoading, setActionLoading] = useState(null);
   
@@ -130,9 +133,9 @@ const NotificationCenter = ({ isOpen, onClose, notifications, onMarkAsRead, onMa
         }
         
         setComment('');
-        toast.success(`Workflow ${action}d successfully!`);
+        toast.success(t('workflowActionSuccess', { action }));
       } catch (error) {
-        toast.error(`Failed to ${action} workflow`);
+        toast.error(t('workflowActionFailed', { action }));
       } finally {
         setActionLoading(null);
       }
@@ -163,10 +166,10 @@ const NotificationCenter = ({ isOpen, onClose, notifications, onMarkAsRead, onMa
             <div>
               <h3 className="text-xl font-bold text-gray-900 flex items-center">
                 <Workflow className="w-6 h-6 mr-2 text-blue-600" />
-                Approval Workflow - {workflow.title}
+                {t('approvalWorkflow')} - {workflow.title}
               </h3>
               <p className="text-sm text-gray-500 mt-1">
-                Review and take action on this workflow item
+                {t('reviewWorkflowItem')}
               </p>
             </div>
             <button onClick={onClose} className="text-gray-500 hover:text-gray-700">
@@ -178,26 +181,26 @@ const NotificationCenter = ({ isOpen, onClose, notifications, onMarkAsRead, onMa
             {/* Workflow Header */}
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700">Status</label>
+                <label className="block text-sm font-medium text-gray-700">{t('status')}</label>
                 <span className={`px-3 py-1 text-sm font-semibold rounded-full ${getStatusColor(workflow.status)}`}>
-                  {workflow.status}
+                  {t(workflow.status.toLowerCase())}
                 </span>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700">Priority</label>
+                <label className="block text-sm font-medium text-gray-700">{t('priority')}</label>
                 <span className={`px-3 py-1 text-sm font-semibold rounded-full ${
                   workflow.priority === 'HIGH' ? 'bg-red-100 text-red-800' :
                   workflow.priority === 'MEDIUM' ? 'bg-orange-100 text-orange-800' :
                   'bg-blue-100 text-blue-800'
                 }`}>
-                  {workflow.priority}
+                  {t(workflow.priority.toLowerCase())}
                 </span>
               </div>
             </div>
   
             {/* Workflow Steps */}
             <div>
-              <h4 className="font-semibold text-gray-800 mb-4">Approval Steps</h4>
+              <h4 className="font-semibold text-gray-800 mb-4">{t('approvalSteps')}</h4>
               <div className="space-y-3">
                 {workflow.steps?.map((step) => {
                   const stepStatus = getStepStatus(step, workflow.currentStep);
@@ -211,14 +214,14 @@ const NotificationCenter = ({ isOpen, onClose, notifications, onMarkAsRead, onMa
                         {stepStatus === 'completed' ? <Check className="w-4 h-4" /> : step.stepNumber}
                       </div>
                       <div className="flex-1">
-                        <p className="font-medium text-gray-900">{step.role}</p>
+                        <p className="font-medium text-gray-900">{t(step.role.toLowerCase().replace(/\s+/g, '_')) || step.role}</p>
                         <p className="text-sm text-gray-500">
-                          {stepStatus === 'completed' ? `Approved by ${step.approver}` :
-                           stepStatus === 'current' ? 'Waiting for approval' :
-                           'Pending'}
+                          {stepStatus === 'completed' ? t('approvedBy', { approver: step.approver }) :
+                           stepStatus === 'current' ? t('waitingForApproval') :
+                           t('pending')}
                         </p>
                         {step.comment && (
-                          <p className="text-sm text-gray-600 mt-1">Comment: {step.comment}</p>
+                          <p className="text-sm text-gray-600 mt-1">{t('comment')}: {step.comment}</p>
                         )}
                       </div>
                       <div className="text-sm text-gray-500">
@@ -233,18 +236,18 @@ const NotificationCenter = ({ isOpen, onClose, notifications, onMarkAsRead, onMa
             {/* Approval Actions */}
             {workflow.status === 'PENDING' && workflow.currentStep && (
               <div className="border-t pt-6">
-                <h4 className="font-semibold text-gray-800 mb-4">Take Action</h4>
+                <h4 className="font-semibold text-gray-800 mb-4">{t('takeAction')}</h4>
                 <div className="space-y-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Comments (Optional)
+                      {t('commentsOptional')}
                     </label>
                     <textarea
                       value={comment}
                       onChange={(e) => setComment(e.target.value)}
                       rows="3"
                       className="w-full p-3 border border-gray-300 rounded-lg"
-                      placeholder="Add comments for your decision..."
+                      placeholder={t('commentsPlaceholder')}
                     />
                   </div>
                   <div className="flex justify-end space-x-3">
@@ -258,7 +261,7 @@ const NotificationCenter = ({ isOpen, onClose, notifications, onMarkAsRead, onMa
                       ) : (
                         <XCircle className="w-4 h-4 mr-2" />
                       )}
-                      Reject
+                      {t('reject')}
                     </button>
                     <button
                       onClick={() => handleAction('approve')}
@@ -270,7 +273,7 @@ const NotificationCenter = ({ isOpen, onClose, notifications, onMarkAsRead, onMa
                       ) : (
                         <CheckCircle className="w-4 h-4 mr-2" />
                       )}
-                      Approve
+                      {t('approve')}
                     </button>
                   </div>
                 </div>
@@ -282,10 +285,9 @@ const NotificationCenter = ({ isOpen, onClose, notifications, onMarkAsRead, onMa
     );
   };
 
-
-
 // --- Task Assignment Modal ---
 const TaskAssignmentModal = ({ user, isOpen, onClose, onTaskAssigned }) => {
+    const { t } = useTranslation(); // ADD THIS HOOK
     const [formData, setFormData] = useState({
         title: '',
         description: '',
@@ -299,35 +301,35 @@ const TaskAssignmentModal = ({ user, isOpen, onClose, onTaskAssigned }) => {
       const [assigning, setAssigning] = useState(false);
     
       const taskTypes = [
-        { value: 'REVIEW', label: 'Review Task', icon: Eye },
-        { value: 'APPROVAL', label: 'Approval Task', icon: CheckSquare },
-        { value: 'UPDATE', label: 'Update Task', icon: Edit },
-        { value: 'VERIFICATION', label: 'Verification Task', icon: Shield }
+        { value: 'REVIEW', label: t('reviewTask'), icon: Eye },
+        { value: 'APPROVAL', label: t('approvalTask'), icon: CheckSquare },
+        { value: 'UPDATE', label: t('updateTask'), icon: Edit },
+        { value: 'VERIFICATION', label: t('verificationTask'), icon: Shield }
       ];
     
       const workflowTypes = [
-        { value: 'SINGLE_APPROVAL', label: 'Single Approval (Manager)' },
-        { value: 'DOUBLE_APPROVAL', label: 'Double Approval (Manager → Head)' },
-        { value: 'TRIPLE_APPROVAL', label: 'Triple Approval (Officer → Manager → Head)' }
+        { value: 'SINGLE_APPROVAL', label: t('singleApproval') },
+        { value: 'DOUBLE_APPROVAL', label: t('doubleApproval') },
+        { value: 'TRIPLE_APPROVAL', label: t('tripleApproval') }
       ];
     
       const handleAssignTask = async () => {
         if (!formData.title || !formData.dueDate) {
-          toast.error('Title and due date are required');
+          toast.error(t('titleDateRequired'));
           return;
         }
     
         setAssigning(true);
         try {
-          // Simulate API call with workflow
+          // Simulate API call
           await new Promise(resolve => setTimeout(resolve, 1000));
           
           // Create notification for assigned task
           const newNotification = {
             id: Date.now(),
             type: 'TASK_ASSIGNED',
-            title: 'New Task Assigned',
-            message: `You have been assigned: "${formData.title}"`,
+            title: t('newTaskAssigned'),
+            message: t('taskAssignedMessage', { title: formData.title }),
             read: false,
             createdAt: new Date().toISOString()
           };
@@ -335,11 +337,11 @@ const TaskAssignmentModal = ({ user, isOpen, onClose, onTaskAssigned }) => {
           // In a real app, this would be sent to the backend
           console.log('Task assigned with workflow:', formData);
           
-          toast.success(`Task assigned to ${user.name} with approval workflow!`);
+          toast.success(t('taskAssignedSuccess', { name: user.name }));
           onTaskAssigned();
           onClose();
         } catch (error) {
-          toast.error('Failed to assign task');
+          toast.error(t('failedToAssignTask'));
         } finally {
           setAssigning(false);
         }
@@ -353,7 +355,7 @@ const TaskAssignmentModal = ({ user, isOpen, onClose, onTaskAssigned }) => {
             <div className="flex justify-between items-center p-6 border-b">
               <h3 className="text-xl font-bold text-gray-900 flex items-center">
                 <ListTodo className="w-6 h-6 mr-2 text-blue-600" />
-                Assign Task with Workflow
+                {t('assignTaskWorkflow')}
               </h3>
               <button onClick={onClose} className="text-gray-500 hover:text-gray-700">
                 <X className="w-6 h-6" />
@@ -363,27 +365,27 @@ const TaskAssignmentModal = ({ user, isOpen, onClose, onTaskAssigned }) => {
             <div className="p-6 space-y-4">
               {/* Assigned To */}
               <div className="p-3 bg-blue-50 rounded-lg">
-                <p className="text-sm text-gray-600">Assigning to:</p>
+                <p className="text-sm text-gray-600">{t('assigningTo')}:</p>
                 <p className="font-semibold text-blue-800">{user.name} ({user.role?.name})</p>
               </div>
     
               {/* Task Details */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Task Title *
+                  {t('taskTitle')} *
                 </label>
                 <input
                   type="text"
                   value={formData.title}
                   onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
                   className="w-full p-2 border border-gray-300 rounded-lg"
-                  placeholder="Enter task title"
+                  placeholder={t('enterTaskTitle')}
                 />
               </div>
     
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Task Type
+                  {t('taskType')}
                 </label>
                 <select
                   value={formData.type}
@@ -400,23 +402,23 @@ const TaskAssignmentModal = ({ user, isOpen, onClose, onTaskAssigned }) => {
     
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Priority
+                  {t('priority')}
                 </label>
                 <select
                   value={formData.priority}
                   onChange={(e) => setFormData(prev => ({ ...prev, priority: e.target.value }))}
                   className="w-full p-2 border border-gray-300 rounded-lg"
                 >
-                  <option value="LOW">Low</option>
-                  <option value="MEDIUM">Medium</option>
-                  <option value="HIGH">High</option>
-                  <option value="URGENT">Urgent</option>
+                  <option value="LOW">{t('low')}</option>
+                  <option value="MEDIUM">{t('medium')}</option>
+                  <option value="HIGH">{t('high')}</option>
+                  <option value="URGENT">{t('urgent')}</option>
                 </select>
               </div>
     
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Due Date *
+                  {t('dueDate')} *
                 </label>
                 <input
                   type="date"
@@ -429,7 +431,7 @@ const TaskAssignmentModal = ({ user, isOpen, onClose, onTaskAssigned }) => {
     
               {/* Workflow Settings */}
               <div className="border-t pt-4">
-                <h4 className="font-semibold text-gray-800 mb-3">Approval Workflow</h4>
+                <h4 className="font-semibold text-gray-800 mb-3">{t('approvalWorkflow')}</h4>
                 
                 <div className="space-y-3">
                   <div className="flex items-center">
@@ -443,14 +445,14 @@ const TaskAssignmentModal = ({ user, isOpen, onClose, onTaskAssigned }) => {
                       className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                     />
                     <label className="ml-2 text-sm text-gray-700">
-                      Requires approval workflow
+                      {t('requiresApproval')}
                     </label>
                   </div>
     
                   {formData.requiresApproval && (
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Workflow Type
+                        {t('workflowType')}
                       </label>
                       <select
                         value={formData.approvalWorkflow}
@@ -467,9 +469,9 @@ const TaskAssignmentModal = ({ user, isOpen, onClose, onTaskAssigned }) => {
                         ))}
                       </select>
                       <p className="text-xs text-gray-500 mt-1">
-                        {formData.approvalWorkflow === 'SINGLE_APPROVAL' && 'Requires manager approval'}
-                        {formData.approvalWorkflow === 'DOUBLE_APPROVAL' && 'Requires manager and head approval'}
-                        {formData.approvalWorkflow === 'TRIPLE_APPROVAL' && 'Requires officer, manager, and head approval'}
+                        {formData.approvalWorkflow === 'SINGLE_APPROVAL' && t('singleApprovalDescription')}
+                        {formData.approvalWorkflow === 'DOUBLE_APPROVAL' && t('doubleApprovalDescription')}
+                        {formData.approvalWorkflow === 'TRIPLE_APPROVAL' && t('tripleApprovalDescription')}
                       </p>
                     </div>
                   )}
@@ -479,14 +481,14 @@ const TaskAssignmentModal = ({ user, isOpen, onClose, onTaskAssigned }) => {
               {/* Description */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Description
+                  {t('description')}
                 </label>
                 <textarea
                   value={formData.description}
                   onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
                   rows="3"
                   className="w-full p-2 border border-gray-300 rounded-lg"
-                  placeholder="Enter task description..."
+                  placeholder={t('enterTaskDescription')}
                 />
               </div>
             </div>
@@ -496,7 +498,7 @@ const TaskAssignmentModal = ({ user, isOpen, onClose, onTaskAssigned }) => {
                 onClick={onClose}
                 className="px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50"
               >
-                Cancel
+                {t('cancel')}
               </button>
               <button
                 onClick={handleAssignTask}
@@ -508,7 +510,7 @@ const TaskAssignmentModal = ({ user, isOpen, onClose, onTaskAssigned }) => {
                 ) : (
                   <CheckSquare className="w-4 h-4 mr-2" />
                 )}
-                Assign Task
+                {t('assignTask')}
               </button>
             </div>
           </div>
@@ -518,6 +520,7 @@ const TaskAssignmentModal = ({ user, isOpen, onClose, onTaskAssigned }) => {
   
   // --- User Tasks Panel ---
   const UserTasksPanel = ({ userId, userName, isOpen, onClose }) => {
+    const { t } = useTranslation(); // ADD THIS HOOK
     const [tasks, setTasks] = useState([]);
     const [loading, setLoading] = useState(false);
   
@@ -525,22 +528,22 @@ const TaskAssignmentModal = ({ user, isOpen, onClose, onTaskAssigned }) => {
     const mockTasks = [
       {
         id: 1,
-        title: 'Review Vendor Application',
+        title: t('reviewVendorApplication'),
         type: 'REVIEW',
         priority: 'HIGH',
         status: 'PENDING',
         dueDate: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString(),
-        assignedBy: 'Admin User',
+        assignedBy: t('adminUser'),
         createdAt: new Date().toISOString()
       },
       {
         id: 2,
-        title: 'Approve RFQ Submission',
+        title: t('approveRfqSubmission'),
         type: 'APPROVAL',
         priority: 'MEDIUM',
         status: 'IN_PROGRESS',
         dueDate: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString(),
-        assignedBy: 'Procurement Manager',
+        assignedBy: t('procurementManager'),
         createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString()
       }
     ];
@@ -594,10 +597,10 @@ const TaskAssignmentModal = ({ user, isOpen, onClose, onTaskAssigned }) => {
             <div>
               <h3 className="text-xl font-bold text-gray-900 flex items-center">
                 <ListTodo className="w-6 h-6 mr-2 text-blue-600" />
-                User Tasks - {userName}
+                {t('userTasks')} - {userName}
               </h3>
               <p className="text-sm text-gray-500 mt-1">
-                Assigned tasks and workflow items
+                {t('assignedTasksWorkflow')}
               </p>
             </div>
             <button onClick={onClose} className="text-gray-500 hover:text-gray-700">
@@ -609,7 +612,7 @@ const TaskAssignmentModal = ({ user, isOpen, onClose, onTaskAssigned }) => {
             {loading ? (
               <div className="flex justify-center items-center py-12">
                 <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
-                <span className="ml-3 text-gray-600">Loading tasks...</span>
+                <span className="ml-3 text-gray-600">{t('loadingTasks')}</span>
               </div>
             ) : (
               <div className="space-y-4">
@@ -620,34 +623,34 @@ const TaskAssignmentModal = ({ user, isOpen, onClose, onTaskAssigned }) => {
                         <div className="flex items-center space-x-3 mb-2">
                           <h4 className="text-lg font-semibold text-gray-900">{task.title}</h4>
                           <span className={`px-2 py-1 text-xs font-medium rounded-full ${getPriorityColor(task.priority)}`}>
-                            {task.priority}
+                            {t(task.priority.toLowerCase())}
                           </span>
                           <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(task.status)}`}>
-                            {task.status.replace('_', ' ')}
+                            {t(task.status.toLowerCase().replace('_', ' '))}
                           </span>
                         </div>
                         
                         <div className="grid grid-cols-2 gap-4 text-sm text-gray-600">
                           <div>
-                            <span className="font-medium">Type:</span> {task.type.replace('_', ' ')}
+                            <span className="font-medium">{t('type')}:</span> {t(task.type.toLowerCase())}
                           </div>
                           <div>
-                            <span className="font-medium">Due:</span> {new Date(task.dueDate).toLocaleDateString()}
+                            <span className="font-medium">{t('due')}:</span> {new Date(task.dueDate).toLocaleDateString()}
                           </div>
                           <div>
-                            <span className="font-medium">Assigned by:</span> {task.assignedBy}
+                            <span className="font-medium">{t('assignedBy')}:</span> {task.assignedBy}
                           </div>
                           <div>
-                            <span className="font-medium">Created:</span> {new Date(task.createdAt).toLocaleDateString()}
+                            <span className="font-medium">{t('created')}:</span> {new Date(task.createdAt).toLocaleDateString()}
                           </div>
                         </div>
                       </div>
                       
                       <div className="flex space-x-2">
-                        <button className="p-2 text-blue-600 hover:text-blue-800 transition">
+                        <button className="p-2 text-blue-600 hover:text-blue-800 transition" title={t('view')}>
                           <Eye className="w-4 h-4" />
                         </button>
-                        <button className="p-2 text-green-600 hover:text-green-800 transition">
+                        <button className="p-2 text-green-600 hover:text-green-800 transition" title={t('approve')}>
                           <CheckSquare className="w-4 h-4" />
                         </button>
                       </div>
@@ -658,8 +661,8 @@ const TaskAssignmentModal = ({ user, isOpen, onClose, onTaskAssigned }) => {
                 {tasks.length === 0 && (
                   <div className="text-center py-12">
                     <ListTodo className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-                    <p className="text-gray-500 text-lg">No tasks assigned</p>
-                    <p className="text-gray-400 text-sm">This user has no pending tasks</p>
+                    <p className="text-gray-500 text-lg">{t('noTasksAssigned')}</p>
+                    <p className="text-gray-400 text-sm">{t('noPendingTasks')}</p>
                   </div>
                 )}
               </div>
@@ -669,13 +672,10 @@ const TaskAssignmentModal = ({ user, isOpen, onClose, onTaskAssigned }) => {
       </div>
     );
   };
-  
-
-
-
 
 // --- User Activity Log Component ---
 const UserActivityLog = ({ userId, userName, isOpen, onClose }) => {
+  const { t } = useTranslation(); // ADD THIS HOOK
   const [auditLogs, setAuditLogs] = useState([]);
   const [loading, setLoading] = useState(false);
   const [filters, setFilters] = useState({
@@ -699,7 +699,7 @@ const UserActivityLog = ({ userId, userName, isOpen, onClose }) => {
       console.error('Error fetching audit logs:', error);
       // For now, we'll use mock data since you may not have the backend yet
       setAuditLogs(getMockAuditLogs());
-      toast.error('Failed to load audit logs - showing sample data');
+      toast.error(t('failedLoadAuditLogs'));
     } finally {
       setLoading(false);
     }
@@ -709,9 +709,9 @@ const UserActivityLog = ({ userId, userName, isOpen, onClose }) => {
     {
       id: 1,
       action: 'LOGIN',
-      entity: 'User',
+      entity: t('user'),
       entityId: userId,
-      description: 'User logged into the system',
+      description: t('userLoggedIn'),
       ipAddress: '192.168.1.100',
       userAgent: 'Chrome/120.0.0.0',
       createdAt: new Date().toISOString()
@@ -719,9 +719,9 @@ const UserActivityLog = ({ userId, userName, isOpen, onClose }) => {
     {
       id: 2,
       action: 'VIEW_VENDOR',
-      entity: 'Vendor',
+      entity: t('vendor'),
       entityId: 123,
-      description: 'Viewed vendor profile: ABC Construction',
+      description: t('viewedVendorProfile', { name: 'ABC Construction' }),
       ipAddress: '192.168.1.100',
       userAgent: 'Chrome/120.0.0.0',
       createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString()
@@ -729,9 +729,9 @@ const UserActivityLog = ({ userId, userName, isOpen, onClose }) => {
     {
       id: 3,
       action: 'UPDATE_PROFILE',
-      entity: 'User',
+      entity: t('user'),
       entityId: userId,
-      description: 'Updated user profile information',
+      description: t('updatedProfile'),
       ipAddress: '192.168.1.100',
       userAgent: 'Chrome/120.0.0.0',
       createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
@@ -752,7 +752,7 @@ const UserActivityLog = ({ userId, userName, isOpen, onClose }) => {
     a.click();
     window.URL.revokeObjectURL(url);
     
-    toast.success('Activity log exported successfully');
+    toast.success(t('activityLogExported'));
   };
 
   const getActionColor = (action) => {
@@ -784,10 +784,10 @@ const UserActivityLog = ({ userId, userName, isOpen, onClose }) => {
           <div>
             <h3 className="text-xl font-bold text-gray-900 flex items-center">
               <Activity className="w-6 h-6 mr-2 text-blue-600" />
-              User Activity Log - {userName}
+              {t('userActivityLog')} - {userName}
             </h3>
             <p className="text-sm text-gray-500 mt-1">
-              Tracking user actions and system interactions
+              {t('trackingUserActions')}
             </p>
           </div>
           <button onClick={onClose} className="text-gray-500 hover:text-gray-700">
@@ -805,10 +805,10 @@ const UserActivityLog = ({ userId, userName, isOpen, onClose }) => {
                 onChange={(e) => setFilters(prev => ({ ...prev, dateRange: e.target.value }))}
                 className="border border-gray-300 rounded-lg px-3 py-2 text-sm"
               >
-                <option value="">All Time</option>
-                <option value="today">Today</option>
-                <option value="week">This Week</option>
-                <option value="month">This Month</option>
+                <option value="">{t('allTime')}</option>
+                <option value="today">{t('today')}</option>
+                <option value="week">{t('thisWeek')}</option>
+                <option value="month">{t('thisMonth')}</option>
               </select>
             </div>
             
@@ -818,13 +818,13 @@ const UserActivityLog = ({ userId, userName, isOpen, onClose }) => {
                 onChange={(e) => setFilters(prev => ({ ...prev, actionType: e.target.value }))}
                 className="border border-gray-300 rounded-lg px-3 py-2 text-sm"
               >
-                <option value="">All Actions</option>
-                <option value="LOGIN">Login</option>
-                <option value="LOGOUT">Logout</option>
-                <option value="CREATE">Create</option>
-                <option value="UPDATE">Update</option>
-                <option value="DELETE">Delete</option>
-                <option value="VIEW">View</option>
+                <option value="">{t('allActions')}</option>
+                <option value="LOGIN">{t('login')}</option>
+                <option value="LOGOUT">{t('logout')}</option>
+                <option value="CREATE">{t('create')}</option>
+                <option value="UPDATE">{t('update')}</option>
+                <option value="DELETE">{t('delete')}</option>
+                <option value="VIEW">{t('view')}</option>
               </select>
             </div>
             
@@ -833,7 +833,7 @@ const UserActivityLog = ({ userId, userName, isOpen, onClose }) => {
               className="flex items-center space-x-2 px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm"
             >
               <RefreshCw className="w-4 h-4" />
-              <span>Refresh</span>
+              <span>{t('refresh')}</span>
             </button>
             
             <button
@@ -841,7 +841,7 @@ const UserActivityLog = ({ userId, userName, isOpen, onClose }) => {
               className="flex items-center space-x-2 px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm"
             >
               <Download className="w-4 h-4" />
-              <span>Export CSV</span>
+              <span>{t('exportCSV')}</span>
             </button>
           </div>
         </div>
@@ -851,7 +851,7 @@ const UserActivityLog = ({ userId, userName, isOpen, onClose }) => {
           {loading ? (
             <div className="flex justify-center items-center py-12">
               <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
-              <span className="ml-3 text-gray-600">Loading activity logs...</span>
+              <span className="ml-3 text-gray-600">{t('loadingActivityLogs')}</span>
             </div>
           ) : (
             <div className="space-y-4">
@@ -861,17 +861,17 @@ const UserActivityLog = ({ userId, userName, isOpen, onClose }) => {
                     <div className="flex-1">
                       <div className="flex items-center space-x-3 mb-2">
                         <span className={`px-2 py-1 text-xs font-medium rounded-full ${getActionColor(log.action)}`}>
-                          {log.action.replace('_', ' ')}
+                          {t(log.action.toLowerCase().replace('_', ' '))}
                         </span>
                         <span className="text-sm text-gray-500">{log.entity}</span>
                         {log.entityId && (
-                          <span className="text-sm text-gray-400">ID: {log.entityId}</span>
+                          <span className="text-sm text-gray-400">{t('id')}: {log.entityId}</span>
                         )}
                       </div>
                       <p className="text-gray-800 font-medium">{log.description}</p>
                       {log.ipAddress && (
                         <p className="text-sm text-gray-500 mt-1">
-                          IP: {log.ipAddress} • {log.userAgent}
+                          {t('ip')}: {log.ipAddress} • {log.userAgent}
                         </p>
                       )}
                     </div>
@@ -889,8 +889,8 @@ const UserActivityLog = ({ userId, userName, isOpen, onClose }) => {
               {auditLogs.length === 0 && (
                 <div className="text-center py-12">
                   <Activity className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-                  <p className="text-gray-500 text-lg">No activity records found</p>
-                  <p className="text-gray-400 text-sm">User activity will appear here as they use the system</p>
+                  <p className="text-gray-500 text-lg">{t('noActivityRecords')}</p>
+                  <p className="text-gray-400 text-sm">{t('activityWillAppear')}</p>
                 </div>
               )}
             </div>
@@ -901,17 +901,18 @@ const UserActivityLog = ({ userId, userName, isOpen, onClose }) => {
   );
 };
 
-
 // --- Permission Matrix Component ---
 const PermissionMatrix = ({ roles, permissions, onPermissionChange, onClose }) => {
+  const { t } = useTranslation(); // ADD THIS HOOK
+  
   // Sample permission structure - you can customize based on your modules
   const modules = [
-    { id: 'vendors', name: 'Vendors', actions: ['view', 'create', 'edit', 'approve'] },
-    { id: 'rfqs', name: 'RFQs', actions: ['view', 'create', 'edit', 'approve'] },
-    { id: 'contracts', name: 'Contracts', actions: ['view', 'create', 'edit', 'approve'] },
-    { id: 'purchase_orders', name: 'Purchase Orders', actions: ['view', 'create', 'edit', 'approve'] },
-    { id: 'reports', name: 'Reports', actions: ['view', 'export'] },
-    { id: 'user_management', name: 'User Management', actions: ['view', 'edit', 'delete'] },
+    { id: 'vendors', name: t('vendors'), actions: ['view', 'create', 'edit', 'approve'] },
+    { id: 'rfqs', name: t('rfqs'), actions: ['view', 'create', 'edit', 'approve'] },
+    { id: 'contracts', name: t('contracts'), actions: ['view', 'create', 'edit', 'approve'] },
+    { id: 'purchase_orders', name: t('purchaseOrders'), actions: ['view', 'create', 'edit', 'approve'] },
+    { id: 'reports', name: t('reports'), actions: ['view', 'export'] },
+    { id: 'user_management', name: t('userManagement'), actions: ['view', 'edit', 'delete'] },
   ];
 
   const togglePermission = (roleId, moduleId, action) => {
@@ -930,7 +931,7 @@ const PermissionMatrix = ({ roles, permissions, onPermissionChange, onClose }) =
 
   const savePermissions = () => {
     onPermissionChange(permissions);
-    toast.success('Permissions updated successfully!');
+    toast.success(t('permissionsUpdated'));
   };
 
   return (
@@ -939,7 +940,7 @@ const PermissionMatrix = ({ roles, permissions, onPermissionChange, onClose }) =
         <div className="flex justify-between items-center p-6 border-b">
           <h3 className="text-xl font-bold text-gray-900 flex items-center">
             <Shield className="w-6 h-6 mr-2 text-blue-600" />
-            Role Permission Matrix
+            {t('rolePermissionMatrix')}
           </h3>
           <button onClick={onClose} className="text-gray-500 hover:text-gray-700">
             <X className="w-6 h-6" />
@@ -952,13 +953,13 @@ const PermissionMatrix = ({ roles, permissions, onPermissionChange, onClose }) =
               <thead>
                 <tr className="bg-gray-50">
                   <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 border">
-                    Module / Action
+                    {t('moduleAction')}
                   </th>
                   {roles.map(role => (
                     <th key={role.id} className="px-4 py-3 text-center text-sm font-medium text-gray-700 border">
                       <div className="flex flex-col items-center">
                         <span>{role.name}</span>
-                        <span className="text-xs text-gray-500">({role.usersCount} users)</span>
+                        <span className="text-xs text-gray-500">({role.usersCount} {t('users')})</span>
                       </div>
                     </th>
                   ))}
@@ -978,7 +979,7 @@ const PermissionMatrix = ({ roles, permissions, onPermissionChange, onClose }) =
                     {module.actions.map(action => (
                       <tr key={`${module.id}-${action}`} className="hover:bg-gray-50">
                         <td className="px-4 py-2 pl-8 text-sm text-gray-600 border">
-                          {action.charAt(0).toUpperCase() + action.slice(1)}
+                          {t(action)}
                         </td>
                         {roles.map(role => (
                           <td key={role.id} className="px-4 py-2 text-center border">
@@ -1007,14 +1008,14 @@ const PermissionMatrix = ({ roles, permissions, onPermissionChange, onClose }) =
               onClick={onClose}
               className="px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50"
             >
-              Cancel
+              {t('cancel')}
             </button>
             <button
               onClick={savePermissions}
               className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center"
             >
               <Save className="w-4 h-4 mr-2" />
-              Save Permissions
+              {t('savePermissions')}
             </button>
           </div>
         </div>
@@ -1025,6 +1026,7 @@ const PermissionMatrix = ({ roles, permissions, onPermissionChange, onClose }) =
 
 // --- Enhanced User Profile Panel with Activity ---
 const UserProfilePanel = ({ user, isOpen, onClose, onUpdate, onAssignTask }) => {
+    const { t } = useTranslation(); // ADD THIS HOOK
     const [editMode, setEditMode] = useState(false);
     const [formData, setFormData] = useState({});
     const [showActivityLog, setShowActivityLog] = useState(false);
@@ -1047,11 +1049,11 @@ const UserProfilePanel = ({ user, isOpen, onClose, onUpdate, onAssignTask }) => 
           headers: { Authorization: `Bearer ${token}` }
         });
         
-        toast.success('User profile updated successfully!');
+        toast.success(t('profileUpdated'));
         setEditMode(false);
         onUpdate();
       } catch (error) {
-        toast.error('Failed to update user profile');
+        toast.error(t('failedUpdateProfile'));
       }
     };
   
@@ -1063,7 +1065,7 @@ const UserProfilePanel = ({ user, isOpen, onClose, onUpdate, onAssignTask }) => 
       <h4 className="font-semibold text-gray-800 mb-3 flex items-center justify-between">
         <div className="flex items-center">
           <ListTodo className="w-4 h-4 mr-2 text-green-600" />
-          Task Overview
+          {t('taskOverview')}
         </div>
         <div className="flex space-x-2">
           <button
@@ -1071,29 +1073,29 @@ const UserProfilePanel = ({ user, isOpen, onClose, onUpdate, onAssignTask }) => 
             className="text-green-600 hover:text-green-800 text-sm flex items-center"
           >
             <Eye className="w-4 h-4 mr-1" />
-            View All
+            {t('viewAll')}
           </button>
           <button
             onClick={() => onAssignTask(user)}
             className="text-blue-600 hover:text-blue-800 text-sm flex items-center"
           >
             <Plus className="w-4 h-4 mr-1" />
-            Assign Task
+            {t('assignTask')}
           </button>
         </div>
       </h4>
       <div className="grid grid-cols-2 gap-4 text-sm">
         <div>
-          <span className="text-gray-600">Pending Tasks:</span>
+          <span className="text-gray-600">{t('pendingTasks')}:</span>
           <p className="font-medium text-orange-600">2</p>
         </div>
         <div>
-          <span className="text-gray-600">Overdue:</span>
+          <span className="text-gray-600">{t('overdue')}:</span>
           <p className="font-medium text-red-600">0</p>
         </div>
       </div>
       <div className="mt-2 text-xs text-gray-500">
-        Last task assigned: Today
+        {t('lastTaskAssigned')}: {t('today')}
       </div>
     </div>
   );
@@ -1105,7 +1107,7 @@ const UserProfilePanel = ({ user, isOpen, onClose, onUpdate, onAssignTask }) => 
             <div className="flex justify-between items-center mb-6">
               <h3 className="text-xl font-bold text-gray-900 flex items-center">
                 <User className="w-6 h-6 mr-2 text-blue-600" />
-                User Profile - {user.name}
+                {t('userProfile')} - {user.name}
               </h3>
               <button onClick={onClose} className="text-gray-500 hover:text-gray-700">
                 ✕
@@ -1114,61 +1116,61 @@ const UserProfilePanel = ({ user, isOpen, onClose, onUpdate, onAssignTask }) => 
             
             <div className="grid grid-cols-2 gap-4 mb-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Employee ID</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{t('employeeId')}</label>
                 {editMode ? (
                   <input
                     type="text"
                     value={formData.employeeId}
                     onChange={(e) => setFormData(prev => ({ ...prev, employeeId: e.target.value }))}
                     className="w-full p-2 border border-gray-300 rounded-lg"
-                    placeholder="Enter employee ID"
+                    placeholder={t('enterEmployeeId')}
                   />
                 ) : (
-                  <p className="text-gray-900 font-medium">{user.employeeId || 'Not set'}</p>
+                  <p className="text-gray-900 font-medium">{user.employeeId || t('notSet')}</p>
                 )}
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Job Title</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{t('jobTitle')}</label>
                 {editMode ? (
                   <input
                     type="text"
                     value={formData.jobTitle}
                     onChange={(e) => setFormData(prev => ({ ...prev, jobTitle: e.target.value }))}
                     className="w-full p-2 border border-gray-300 rounded-lg"
-                    placeholder="Enter job title"
+                    placeholder={t('enterJobTitle')}
                   />
                 ) : (
-                  <p className="text-gray-900">{user.jobTitle || 'Not set'}</p>
+                  <p className="text-gray-900">{user.jobTitle || t('notSet')}</p>
                 )}
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Department</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{t('department')}</label>
                 {editMode ? (
                   <select
                     value={formData.department}
                     onChange={(e) => setFormData(prev => ({ ...prev, department: e.target.value }))}
                     className="w-full p-2 border border-gray-300 rounded-lg"
                   >
-                    <option value="">Select Department</option>
-                    <option value="Procurement">Procurement</option>
-                    <option value="Contracts">Contracts</option>
-                    <option value="Finance">Finance</option>
-                    <option value="Technical">Technical</option>
-                    <option value="Admin">Admin</option>
+                    <option value="">{t('selectDepartment')}</option>
+                    <option value="Procurement">{t('procurement')}</option>
+                    <option value="Contracts">{t('contracts')}</option>
+                    <option value="Finance">{t('finance')}</option>
+                    <option value="Technical">{t('technical')}</option>
+                    <option value="Admin">{t('admin')}</option>
                   </select>
                 ) : (
-                  <p className="text-gray-900">{user.department || 'Not set'}</p>
+                  <p className="text-gray-900">{user.department || t('notSet')}</p>
                 )}
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Last Activity</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{t('lastActivity')}</label>
                 <p className="text-gray-900 text-sm">
                   {user.lastLoginDate 
                     ? new Date(user.lastLoginDate).toLocaleString() 
-                    : 'No activity recorded'
+                    : t('noActivityRecorded')
                   }
                 </p>
               </div>
@@ -1181,20 +1183,20 @@ const UserProfilePanel = ({ user, isOpen, onClose, onUpdate, onAssignTask }) => 
             <div className="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
               <h4 className="font-semibold text-gray-800 mb-3 flex items-center">
                 <Activity className="w-4 h-4 mr-2 text-blue-600" />
-                Activity Overview
+                {t('activityOverview')}
               </h4>
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>
-                  <span className="text-gray-600">Last Login:</span>
+                  <span className="text-gray-600">{t('lastLogin')}:</span>
                   <p className="font-medium">
                     {user.lastLoginDate 
                       ? new Date(user.lastLoginDate).toLocaleDateString()
-                      : 'Never'
+                      : t('never')
                     }
                   </p>
                 </div>
                 <div>
-                  <span className="text-gray-600">Account Created:</span>
+                  <span className="text-gray-600">{t('accountCreated')}:</span>
                   <p className="font-medium">
                     {new Date(user.createdAt).toLocaleDateString()}
                   </p>
@@ -1205,24 +1207,24 @@ const UserProfilePanel = ({ user, isOpen, onClose, onUpdate, onAssignTask }) => 
                 className="mt-3 text-blue-600 hover:text-blue-800 text-sm flex items-center"
               >
                 <FileText className="w-4 h-4 mr-1" />
-                View Detailed Activity Log
+                {t('viewDetailedActivityLog')}
               </button>
             </div>
             
             {/* Role Information */}
             <div className="mb-6 p-4 bg-gray-50 rounded-lg">
-              <h4 className="font-semibold text-gray-800 mb-2">Role Information</h4>
+              <h4 className="font-semibold text-gray-800 mb-2">{t('roleInformation')}</h4>
               <div className="flex items-center space-x-4">
                 <span className={`px-3 py-1 text-sm font-semibold rounded-full ${
                   user.roleId === 1 ? 'bg-indigo-100 text-indigo-800' :
                   user.roleId === 2 ? 'bg-green-100 text-green-800' :
                   'bg-yellow-100 text-yellow-800'
                 }`}>
-                  {user.role?.name || 'Unknown Role'}
+                  {user.role?.name || t('unknownRole')}
                 </span>
                 <button className="text-blue-600 hover:text-blue-800 text-sm flex items-center">
                   <Settings className="w-4 h-4 mr-1" />
-                  Change Role
+                  {t('changeRole')}
                 </button>
               </div>
             </div>
@@ -1234,14 +1236,14 @@ const UserProfilePanel = ({ user, isOpen, onClose, onUpdate, onAssignTask }) => 
                     onClick={() => setEditMode(false)}
                     className="px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50"
                   >
-                    Cancel
+                    {t('cancel')}
                   </button>
                   <button 
                     onClick={handleSave}
                     className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center"
                   >
                     <Save className="w-4 h-4 mr-2" />
-                    Save Changes
+                    {t('saveChanges')}
                   </button>
                 </>
               ) : (
@@ -1251,10 +1253,10 @@ const UserProfilePanel = ({ user, isOpen, onClose, onUpdate, onAssignTask }) => 
                     className="px-4 py-2 text-blue-600 border border-blue-300 rounded-lg hover:bg-blue-50 flex items-center"
                   >
                     <Edit className="w-4 h-4 mr-2" />
-                    Edit Profile
+                    {t('editProfile')}
                   </button>
                   <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
-                    Close
+                    {t('close')}
                   </button>
                 </>
               )}
@@ -1262,8 +1264,6 @@ const UserProfilePanel = ({ user, isOpen, onClose, onUpdate, onAssignTask }) => 
           </div>
         </div>
 
-         
-  
         {/* Activity Log Modal */}
       {showActivityLog && (
         <UserActivityLog
@@ -1287,16 +1287,16 @@ const UserProfilePanel = ({ user, isOpen, onClose, onUpdate, onAssignTask }) => 
   );
 };
 
-
-
-
   // --- Enhanced Summary Cards Component ---
-const EnhancedSummaryCards = ({ activityStats }) => (
+const EnhancedSummaryCards = ({ activityStats }) => {
+  const { t } = useTranslation(); // ADD THIS HOOK
+  
+  return (
     <div className="grid grid-cols-5 gap-4 mb-6">
       <div className="bg-white p-4 rounded-lg shadow border">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-sm text-gray-500">Total Users</p>
+            <p className="text-sm text-gray-500">{t('totalUsers')}</p>
             <p className="text-2xl font-bold text-gray-900">{activityStats.totalUsers || 0}</p>
           </div>
           <Users className="w-8 h-8 text-blue-500" />
@@ -1305,7 +1305,7 @@ const EnhancedSummaryCards = ({ activityStats }) => (
       <div className="bg-white p-4 rounded-lg shadow border">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-sm text-gray-500">Active Today</p>
+            <p className="text-sm text-gray-500">{t('activeToday')}</p>
             <p className="text-2xl font-bold text-green-600">{activityStats.activeToday || 0}</p>
           </div>
           <Activity className="w-8 h-8 text-green-500" />
@@ -1314,7 +1314,7 @@ const EnhancedSummaryCards = ({ activityStats }) => (
       <div className="bg-white p-4 rounded-lg shadow border">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-sm text-gray-500">Active This Week</p>
+            <p className="text-sm text-gray-500">{t('activeThisWeek')}</p>
             <p className="text-2xl font-bold text-orange-600">{activityStats.activeThisWeek || 0}</p>
           </div>
           <Calendar className="w-8 h-8 text-orange-500" />
@@ -1323,7 +1323,7 @@ const EnhancedSummaryCards = ({ activityStats }) => (
       <div className="bg-white p-4 rounded-lg shadow border">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-sm text-gray-500">Never Logged In</p>
+            <p className="text-sm text-gray-500">{t('neverLoggedIn')}</p>
             <p className="text-2xl font-bold text-red-600">{activityStats.neverLoggedIn || 0}</p>
           </div>
           <XCircle className="w-8 h-8 text-red-500" />
@@ -1332,18 +1332,19 @@ const EnhancedSummaryCards = ({ activityStats }) => (
       <div className="bg-white p-4 rounded-lg shadow border">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-sm text-gray-500">Most Active Dept</p>
-            <p className="text-lg font-bold text-purple-600 truncate">{activityStats.mostActiveDepartment || 'N/A'}</p>
+            <p className="text-sm text-gray-500">{t('mostActiveDept')}</p>
+            <p className="text-lg font-bold text-purple-600 truncate">{activityStats.mostActiveDepartment || t('na')}</p>
           </div>
           <Building className="w-8 h-8 text-purple-500" />
         </div>
       </div>
     </div>
   );
-
+};
 
 // --- Enhanced User Management Content (Updated for Mobile) ---
 const UserManagementContent = ({ users, loading, error, fetchUsers, handleToggleStatus }) => {
+  const { t } = useTranslation(); // ADD THIS HOOK
   const [selectedUser, setSelectedUser] = useState(null);
   const [showProfile, setShowProfile] = useState(false);
   const [showPermissions, setShowPermissions] = useState(false);
@@ -1361,15 +1362,15 @@ const UserManagementContent = ({ users, loading, error, fetchUsers, handleToggle
     const mockWorkflows = [
         {
             id: 1,
-            title: 'Vendor Qualification Review - ABC Construction',
+            title: t('vendorQualificationReview'),
             type: 'VENDOR_APPROVAL',
             status: 'PENDING',
             priority: 'HIGH',
             currentStep: 2,
             steps: [
-                { stepNumber: 1, role: 'Procurement Officer', approver: 'John Doe', completedAt: new Date().toISOString(), comment: 'Initial review completed' },
-                { stepNumber: 2, role: 'Procurement Manager', approver: null, completedAt: null, comment: null },
-                { stepNumber: 3, role: 'Head of Procurement', approver: null, completedAt: null, comment: null }
+                { stepNumber: 1, role: t('procurementOfficer'), approver: 'John Doe', completedAt: new Date().toISOString(), comment: t('initialReviewCompleted') },
+                { stepNumber: 2, role: t('procurementManager'), approver: null, completedAt: null, comment: null },
+                { stepNumber: 3, role: t('headOfProcurement'), approver: null, completedAt: null, comment: null }
             ],
             assignedTo: 'Sarah Wilson',
             dueDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(),
@@ -1382,24 +1383,24 @@ const UserManagementContent = ({ users, loading, error, fetchUsers, handleToggle
         {
             id: 1,
             type: 'APPROVAL_REQUIRED',
-            title: 'Approval Required',
-            message: 'Vendor qualification for ABC Construction requires your approval',
+            title: t('approvalRequired'),
+            message: t('vendorQualificationApprovalRequired'),
             read: false,
             createdAt: new Date().toISOString()
         },
         {
             id: 2,
             type: 'TASK_ASSIGNED',
-            title: 'New Task Assigned',
-            message: 'You have been assigned: "Review Vendor Application"',
+            title: t('newTaskAssigned'),
+            message: t('taskAssignedMessage', { title: t('reviewVendorApplication') }),
             read: true,
             createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString()
         },
         {
             id: 3,
             type: 'APPROVAL_APPROVED',
-            title: 'Approval Completed',
-            message: 'Your RFQ submission has been approved by Procurement Manager',
+            title: t('approvalCompleted'),
+            message: t('rfqApproved'),
             read: true,
             createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
         }
@@ -1461,16 +1462,16 @@ const UserManagementContent = ({ users, loading, error, fetchUsers, handleToggle
             }
             
             const roleData = [
-                { id: 1, name: 'Admin', usersCount: users.filter(u => u.roleId === 1).length },
-                { id: 2, name: 'Procurement Manager', usersCount: users.filter(u => u.roleId === 2).length },
-                { id: 3, name: 'Procurement Officer', usersCount: users.filter(u => u.roleId === 3).length },
-                { id: 4, name: 'Vendor', usersCount: users.filter(u => u.roleId === 4).length },
+                { id: 1, name: t('admin'), usersCount: users.filter(u => u.roleId === 1).length },
+                { id: 2, name: t('procurementManager'), usersCount: users.filter(u => u.roleId === 2).length },
+                { id: 3, name: t('procurementOfficer'), usersCount: users.filter(u => u.roleId === 3).length },
+                { id: 4, name: t('vendor'), usersCount: users.filter(u => u.roleId === 4).length },
             ];
             setRoles(roleData);
         } catch (error) {
             console.error('Error fetching permissions:', error);
             setPermissions(getDefaultPermissions());
-            toast.error('Failed to load role permissions, using defaults');
+            toast.error(t('failedLoadPermissions'));
         }
     };
 
@@ -1494,7 +1495,7 @@ const UserManagementContent = ({ users, loading, error, fetchUsers, handleToggle
         
         return Object.keys(deptActivity).length > 0 
             ? Object.keys(deptActivity).reduce((a, b) => deptActivity[a] > deptActivity[b] ? a : b)
-            : 'No data';
+            : t('noData');
     };
 
     const getDefaultPermissions = () => ({
@@ -1533,13 +1534,13 @@ const UserManagementContent = ({ users, loading, error, fetchUsers, handleToggle
     });
 
     const getActivityStatus = (lastActivity) => {
-        if (!lastActivity) return { color: 'text-gray-500', text: 'Never', bg: 'bg-gray-100' };
+        if (!lastActivity) return { color: 'text-gray-500', text: t('never'), bg: 'bg-gray-100' };
         
         const daysAgo = Math.floor((new Date() - new Date(lastActivity)) / (1000 * 60 * 60 * 24));
         
-        if (daysAgo <= 7) return { color: 'text-green-600', text: 'Active', bg: 'bg-green-100' };
-        if (daysAgo <= 30) return { color: 'text-yellow-600', text: 'Recent', bg: 'bg-yellow-100' };
-        return { color: 'text-red-600', text: 'Inactive', bg: 'bg-red-100' };
+        if (daysAgo <= 7) return { color: 'text-green-600', text: t('active'), bg: 'bg-green-100' };
+        if (daysAgo <= 30) return { color: 'text-yellow-600', text: t('recent'), bg: 'bg-yellow-100' };
+        return { color: 'text-red-600', text: t('inactive'), bg: 'bg-red-100' };
     };
 
     // Notification handlers
@@ -1562,8 +1563,8 @@ const UserManagementContent = ({ users, loading, error, fetchUsers, handleToggle
         const newNotification = {
             id: Date.now(),
             type: 'APPROVAL_APPROVED',
-            title: 'Workflow Approved',
-            message: `You approved: "${selectedWorkflow?.title}"`,
+            title: t('workflowApproved'),
+            message: t('workflowApprovedMessage', { title: selectedWorkflow?.title }),
             read: false,
             createdAt: new Date().toISOString()
         };
@@ -1578,8 +1579,8 @@ const UserManagementContent = ({ users, loading, error, fetchUsers, handleToggle
         const newNotification = {
             id: Date.now(),
             type: 'APPROVAL_REJECTED',
-            title: 'Workflow Rejected',
-            message: `You rejected: "${selectedWorkflow?.title}"`,
+            title: t('workflowRejected'),
+            message: t('workflowRejectedMessage', { title: selectedWorkflow?.title }),
             read: false,
             createdAt: new Date().toISOString()
         };
@@ -1598,11 +1599,11 @@ const UserManagementContent = ({ users, loading, error, fetchUsers, handleToggle
             }
             
             setPermissions(updatedPermissions);
-            toast.success('Permissions updated successfully!');
+            toast.success(t('permissionsUpdated'));
             setShowPermissions(false);
         } catch (error) {
             console.error('Error updating permissions:', error);
-            toast.error('Failed to update permissions');
+            toast.error(t('failedUpdatePermissions'));
         }
     };
 
@@ -1633,7 +1634,7 @@ const UserManagementContent = ({ users, loading, error, fetchUsers, handleToggle
                     setShowProfile(true);
                 }}
                 className="p-2 text-blue-600 hover:text-blue-800 transition"
-                title="View Profile"
+                title={t('viewProfile')}
             >
                 <Eye className="w-4 h-4" />
             </button>
@@ -1643,7 +1644,7 @@ const UserManagementContent = ({ users, loading, error, fetchUsers, handleToggle
                     setShowTaskAssignment(true);
                 }}
                 className="p-2 text-purple-600 hover:text-purple-800 transition"
-                title="Assign Task with Workflow"
+                title={t('assignTaskWorkflow')}
             >
                 <ListTodo className="w-4 h-4" />
             </button>
@@ -1659,7 +1660,7 @@ const UserManagementContent = ({ users, loading, error, fetchUsers, handleToggle
                                 ? 'bg-red-600 hover:bg-red-700 text-white' 
                                 : 'bg-green-600 hover:bg-green-700 text-white'
                 }`}
-                title={user.isActive ? 'Deactivate' : 'Activate'}
+                title={user.isActive ? t('deactivate') : t('activate')}
             >
                 {user.isUpdating ? (
                     <Loader2 className="w-4 h-4 animate-spin" />
@@ -1682,7 +1683,7 @@ const UserManagementContent = ({ users, loading, error, fetchUsers, handleToggle
                 >
                     <div className="flex items-center justify-between">
                         <div>
-                            <p className="text-sm text-gray-500">Unread Notifications</p>
+                            <p className="text-sm text-gray-500">{t('unreadNotifications')}</p>
                             <p className="text-2xl font-bold text-blue-600">{unreadNotifications}</p>
                         </div>
                         <div className="relative">
@@ -1705,7 +1706,7 @@ const UserManagementContent = ({ users, loading, error, fetchUsers, handleToggle
                 >
                     <div className="flex items-center justify-between">
                         <div>
-                            <p className="text-sm text-gray-500">Pending Approvals</p>
+                            <p className="text-sm text-gray-500">{t('pendingApprovals')}</p>
                             <p className="text-2xl font-bold text-orange-600">{pendingApprovals}</p>
                         </div>
                         <CheckSquare className="w-8 h-8 text-orange-500" />
@@ -1715,7 +1716,7 @@ const UserManagementContent = ({ users, loading, error, fetchUsers, handleToggle
                 <div className="bg-white p-4 rounded-lg shadow border border-red-200">
                     <div className="flex items-center justify-between">
                         <div>
-                            <p className="text-sm text-gray-500">Overdue Tasks</p>
+                            <p className="text-sm text-gray-500">{t('overdueTasks')}</p>
                             <p className="text-2xl font-bold text-red-600">{workflowStats.overdueTasks || 0}</p>
                         </div>
                         <AlertCircle className="w-8 h-8 text-red-500" />
@@ -1725,7 +1726,7 @@ const UserManagementContent = ({ users, loading, error, fetchUsers, handleToggle
                 <div className="bg-white p-4 rounded-lg shadow border border-green-200">
                     <div className="flex items-center justify-between">
                         <div>
-                            <p className="text-sm text-gray-500">Avg Completion</p>
+                            <p className="text-sm text-gray-500">{t('avgCompletion')}</p>
                             <p className="text-2xl font-bold text-green-600">{workflowStats.avgTaskCompletion || '0%'}</p>
                         </div>
                         <Workflow className="w-8 h-8 text-green-500" />
@@ -1735,60 +1736,10 @@ const UserManagementContent = ({ users, loading, error, fetchUsers, handleToggle
         );
     };
 
-    const EnhancedSummaryCards = ({ activityStats }) => (
-        <div className="grid grid-cols-5 gap-4 mb-6">
-            <div className="bg-white p-4 rounded-lg shadow border">
-                <div className="flex items-center justify-between">
-                    <div>
-                        <p className="text-sm text-gray-500">Total Users</p>
-                        <p className="text-2xl font-bold text-gray-900">{activityStats.totalUsers || 0}</p>
-                    </div>
-                    <Users className="w-8 h-8 text-blue-500" />
-                </div>
-            </div>
-            <div className="bg-white p-4 rounded-lg shadow border">
-                <div className="flex items-center justify-between">
-                    <div>
-                        <p className="text-sm text-gray-500">Active Today</p>
-                        <p className="text-2xl font-bold text-green-600">{activityStats.activeToday || 0}</p>
-                    </div>
-                    <Activity className="w-8 h-8 text-green-500" />
-                </div>
-            </div>
-            <div className="bg-white p-4 rounded-lg shadow border">
-                <div className="flex items-center justify-between">
-                    <div>
-                        <p className="text-sm text-gray-500">Active This Week</p>
-                        <p className="text-2xl font-bold text-orange-600">{activityStats.activeThisWeek || 0}</p>
-                    </div>
-                    <Calendar className="w-8 h-8 text-orange-500" />
-                </div>
-            </div>
-            <div className="bg-white p-4 rounded-lg shadow border">
-                <div className="flex items-center justify-between">
-                    <div>
-                        <p className="text-sm text-gray-500">Never Logged In</p>
-                        <p className="text-2xl font-bold text-red-600">{activityStats.neverLoggedIn || 0}</p>
-                    </div>
-                    <XCircle className="w-8 h-8 text-red-500" />
-                </div>
-            </div>
-            <div className="bg-white p-4 rounded-lg shadow border">
-                <div className="flex items-center justify-between">
-                    <div>
-                        <p className="text-sm text-gray-500">Most Active Dept</p>
-                        <p className="text-lg font-bold text-purple-600 truncate">{activityStats.mostActiveDepartment || 'N/A'}</p>
-                    </div>
-                    <Building className="w-8 h-8 text-purple-500" />
-                </div>
-            </div>
-        </div>
-    );
-
     const EmptyTableState = () => (
         <tr>
             <td colSpan="5" className="px-6 py-12 text-center text-gray-500 text-lg">
-                No users found in the system.
+                {t('noUsersFound')}
             </td>
         </tr>
     );
@@ -1800,16 +1751,16 @@ const UserManagementContent = ({ users, loading, error, fetchUsers, handleToggle
           {loading && users.length === 0 && (
               <div className="flex justify-center items-center min-h-[50vh]">
                   <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
-                  <p className="ml-3 text-lg text-gray-600">Loading user list...</p>
+                  <p className="ml-3 text-lg text-gray-600">{t('loadingUserList')}</p>
               </div>
           )}
           
           {/* Error State */}
           {error && !users.length && (
               <div className="p-4 sm:p-8 text-center min-h-[50vh]">
-                  <h1 className="text-xl sm:text-3xl font-bold text-red-600 mb-4">Error</h1>
+                  <h1 className="text-xl sm:text-3xl font-bold text-red-600 mb-4">{t('error')}</h1>
                   <p className="text-gray-600 text-sm sm:text-base">{error}</p>
-                  <button onClick={fetchUsers} className="mt-4 text-blue-600 hover:underline text-sm sm:text-base">Try Again</button>
+                  <button onClick={fetchUsers} className="mt-4 text-blue-600 hover:underline text-sm sm:text-base">{t('tryAgain')}</button>
               </div>
           )}
             
@@ -1820,10 +1771,10 @@ const UserManagementContent = ({ users, loading, error, fetchUsers, handleToggle
                     <div>
                         <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 flex items-center">
                             <Users className="w-6 h-6 sm:w-7 sm:h-7 mr-2 sm:mr-3 text-blue-600" />
-                            System User Management ({users.length})
+                            {t('systemUserManagement')} ({users.length})
                         </h1>
                         <p className="text-gray-600 mt-2 text-sm sm:text-base">
-                            Manage user roles, permissions, and account statuses
+                            {t('manageUserRoles')}
                         </p>
                     </div>
                     <div className="flex items-center space-x-2 sm:space-x-3">
@@ -1833,11 +1784,11 @@ const UserManagementContent = ({ users, loading, error, fetchUsers, handleToggle
                             className="px-3 py-2 sm:px-4 sm:py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 flex items-center text-sm"
                         >
                             <Shield className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
-                            <span className="hidden sm:inline">Permissions</span>
+                            <span className="hidden sm:inline">{t('permissions')}</span>
                         </button>
                         <button className="px-3 py-2 sm:px-4 sm:py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center text-sm">
                             <User className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
-                            <span className="hidden sm:inline">Add User</span>
+                            <span className="hidden sm:inline">{t('addUser')}</span>
                         </button>
                         <button 
                             onClick={fetchUsers} 
@@ -1845,7 +1796,7 @@ const UserManagementContent = ({ users, loading, error, fetchUsers, handleToggle
                             disabled={loading}
                         >
                             <Loader2 className={`w-3 h-3 sm:w-4 sm:h-4 mr-1 ${loading ? 'animate-spin' : ''}`} />
-                            <span className="hidden sm:inline">Refresh</span>
+                            <span className="hidden sm:inline">{t('refresh')}</span>
                         </button>
                     </div>
                 </div>
@@ -1862,11 +1813,11 @@ const UserManagementContent = ({ users, loading, error, fetchUsers, handleToggle
                         <table className="min-w-full divide-y divide-gray-200">
                             <thead className="bg-gray-50">
                                 <tr>
-                                    <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User Details</th>
-                                    <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden sm:table-cell">Role & Department</th>
-                                    <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                                    <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell">Activity</th>
-                                    <th className="px-4 sm:px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                                    <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t('userDetails')}</th>
+                                    <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden sm:table-cell">{t('roleDepartment')}</th>
+                                    <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t('status')}</th>
+                                    <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell">{t('activity')}</th>
+                                    <th className="px-4 sm:px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">{t('actions')}</th>
                                 </tr>
                             </thead>
                             <tbody className="bg-white divide-y divide-gray-100">
@@ -1882,7 +1833,7 @@ const UserManagementContent = ({ users, loading, error, fetchUsers, handleToggle
                                             <User className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" />
                                             </div>
                                             <div className="ml-3">
-                                            <div className="text-sm font-medium text-gray-900">{user.name || 'N/A'}</div>
+                                            <div className="text-sm font-medium text-gray-900">{user.name || t('na')}</div>
                                             <div className="text-xs text-gray-500 flex items-center">
                                                 <Mail className="w-3 h-3 mr-1" />
                                                 {user.email}
@@ -1890,7 +1841,7 @@ const UserManagementContent = ({ users, loading, error, fetchUsers, handleToggle
                                             {user.employeeId && (
                                                 <div className="text-xs text-gray-400 flex items-center mt-1">
                                                 <IdCard className="w-3 h-3 mr-1" />
-                                                ID: {user.employeeId}
+                                                {t('id')}: {user.employeeId}
                                                 </div>
                                             )}
                                             {/* Mobile: Show role and department */}
@@ -1901,7 +1852,7 @@ const UserManagementContent = ({ users, loading, error, fetchUsers, handleToggle
                                                 user.roleId === 3 ? 'bg-yellow-100 text-yellow-800' :
                                                 'bg-gray-100 text-gray-800'
                                                 }`}>
-                                                {user.role?.name || 'Unknown'}
+                                                {user.role?.name || t('unknown')}
                                                 </span>
                                                 {user.department && (
                                                 <div className="text-xs text-gray-600 mt-1">
@@ -1922,7 +1873,7 @@ const UserManagementContent = ({ users, loading, error, fetchUsers, handleToggle
                                             user.roleId === 3 ? 'bg-yellow-100 text-yellow-800' :
                                             'bg-gray-100 text-gray-800'
                                             }`}>
-                                            {user.role?.name || 'Unknown'}
+                                            {user.role?.name || t('unknownRole')}
                                             </span>
                                             {user.department && (
                                             <div className="flex items-center text-xs text-gray-600">
@@ -1946,7 +1897,7 @@ const UserManagementContent = ({ users, loading, error, fetchUsers, handleToggle
                                         }`}>
                                             <div className="flex items-center gap-1">
                                             {user.isActive ? <CheckCircle className="w-3 h-3" /> : <XCircle className="w-3 h-3" />}
-                                            {user.isActive ? 'Active' : 'Inactive'}
+                                            {user.isActive ? t('active') : t('inactive')}
                                             </div>
                                         </span>
                                         </td>
@@ -1959,7 +1910,7 @@ const UserManagementContent = ({ users, loading, error, fetchUsers, handleToggle
                                         <div className="text-xs text-gray-500 mt-1">
                                             {user.lastLoginDate 
                                             ? new Date(user.lastLoginDate).toLocaleDateString()
-                                            : 'Never logged in'
+                                            : t('neverLoggedIn')
                                             }
                                         </div>
                                         </td>
@@ -2031,10 +1982,9 @@ const UserManagementContent = ({ users, loading, error, fetchUsers, handleToggle
     );
 };
 
-
-
 // --- Main Page Component (Updated with ResponsiveLayout) ---
 const UserManagementPage = () => {
+  const { t } = useTranslation(); // ADD THIS HOOK
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -2044,7 +1994,7 @@ const UserManagementPage = () => {
       setError(null);
       try {
           const token = localStorage.getItem('authToken');
-          if (!token) throw new Error("Authentication token missing.");
+          if (!token) throw new Error(t('authTokenMissing'));
 
           const response = await axios.get(API_BASE_URL, {
               headers: { Authorization: `Bearer ${token}` }
@@ -2053,8 +2003,8 @@ const UserManagementPage = () => {
           setUsers(response.data.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)));
       } catch (err) {
           console.error("Failed to fetch users:", err);
-          setError(err.response?.data?.error || err.message || 'Could not load user data.');
-          toast.error(err.response?.data?.error || 'Failed to load users.');
+          setError(err.response?.data?.error || err.message || t('couldNotLoadUserData'));
+          toast.error(err.response?.data?.error || t('failedLoadUsers'));
       } finally {
           setLoading(false);
       }
@@ -2066,9 +2016,9 @@ const UserManagementPage = () => {
   
   const handleToggleStatus = async (userId, currentStatus) => {
       const newStatus = !currentStatus;
-      const action = newStatus ? 'Activate' : 'Deactivate';
+      const action = newStatus ? t('activate') : t('deactivate');
       
-      if (!window.confirm(`Are you sure you want to ${action} this user?`)) {
+      if (!window.confirm(t('confirmToggleStatus', { action }))) {
           return;
       }
 
@@ -2081,14 +2031,14 @@ const UserManagementPage = () => {
 
       try {
           const token = localStorage.getItem('authToken');
-          if (!token) throw new Error("Authentication token missing.");
+          if (!token) throw new Error(t('authTokenMissing'));
 
           await axios.patch(`${API_BASE_URL}/${userId}/status`, 
               { isActive: newStatus },
               { headers: { Authorization: `Bearer ${token}` } }
           );
 
-          toast.success(`User successfully ${newStatus ? 'activated' : 'deactivated'}.`);
+          toast.success(t('userStatusUpdated', { status: newStatus ? t('activated') : t('deactivated') }));
           await fetchUsers();
 
       } catch (err) {
@@ -2096,7 +2046,7 @@ const UserManagementPage = () => {
           setUsers(updatedUsers);
           
           console.error("Failed to toggle status:", err);
-          toast.error(err.response?.data?.error || `Failed to ${action} user.`);
+          toast.error(err.response?.data?.error || t('failedToggleStatus', { action }));
       }
   };
   

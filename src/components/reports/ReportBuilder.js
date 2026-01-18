@@ -1,8 +1,11 @@
+// frontend/src/components/reports/ReportBuilder.js
 "use client";
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next'; // ADD THIS IMPORT
 import { Save, X, Plus, Trash2, FileText, Users, ClipboardList, DollarSign, Building } from 'lucide-react';
 
 const ReportBuilder = ({ report = null, onSave, onCancel }) => {
+  const { t } = useTranslation(); // ADD THIS HOOK
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -17,31 +20,31 @@ const ReportBuilder = ({ report = null, onSave, onCancel }) => {
 
   // Data source options
   const dataSources = [
-    { value: 'vendors', label: 'Vendors', icon: Users, description: 'Vendor qualification and performance data' },
-    { value: 'contracts', label: 'Contracts', icon: FileText, description: 'Contract details and financial data' },
-    { value: 'rfqs', label: 'RFQs', icon: ClipboardList, description: 'Request for Quotation data' },
-    { value: 'financial', label: 'Financial Overview', icon: DollarSign, description: 'Combined financial metrics' }
+    { value: 'vendors', label: t('vendors'), icon: Users, description: t('vendorsDataSourceDescription') },
+    { value: 'contracts', label: t('contracts'), icon: FileText, description: t('contractsDataSourceDescription') },
+    { value: 'rfqs', label: t('rfqs'), icon: ClipboardList, description: t('rfqsDataSourceDescription') },
+    { value: 'financial', label: t('financialOverview'), icon: DollarSign, description: t('financialDataSourceDescription') }
   ];
 
   // Available fields by data source
   const fieldOptions = {
     vendors: [
-      { field: 'companyLegalName', label: 'Company Name', type: 'string' },
-      { field: 'vendorType', label: 'Vendor Type', type: 'string' },
-      { field: 'status', label: 'Status', type: 'string' },
-      { field: 'vendorClass', label: 'Vendor Class', type: 'string' },
-      { field: 'qualificationScore', label: 'Qualification Score', type: 'number' },
-      { field: 'documentCount', label: 'Document Count', type: 'number' },
-      { field: 'contractCount', label: 'Contract Count', type: 'number' },
-      { field: 'totalContractValue', label: 'Total Contract Value', type: 'currency' }
+      { field: 'companyLegalName', label: t('companyName'), type: 'string' },
+      { field: 'vendorType', label: t('vendorType'), type: 'string' },
+      { field: 'status', label: t('status'), type: 'string' },
+      { field: 'vendorClass', label: t('vendorClass'), type: 'string' },
+      { field: 'qualificationScore', label: t('qualificationScore'), type: 'number' },
+      { field: 'documentCount', label: t('documentCount'), type: 'number' },
+      { field: 'contractCount', label: t('contractCount'), type: 'number' },
+      { field: 'totalContractValue', label: t('totalContractValue'), type: 'currency' }
     ],
     contracts: [
-      { field: 'contractNumber', label: 'Contract Number', type: 'string' },
-      { field: 'vendor', label: 'Vendor', type: 'string' },
-      { field: 'contractValue', label: 'Contract Value', type: 'currency' },
-      { field: 'status', label: 'Status', type: 'string' },
-      { field: 'startDate', label: 'Start Date', type: 'date' },
-      { field: 'endDate', label: 'End Date', type: 'date' }
+      { field: 'contractNumber', label: t('contractNumber'), type: 'string' },
+      { field: 'vendor', label: t('vendor'), type: 'string' },
+      { field: 'contractValue', label: t('contractValue'), type: 'currency' },
+      { field: 'status', label: t('status'), type: 'string' },
+      { field: 'startDate', label: t('startDate'), type: 'date' },
+      { field: 'endDate', label: t('endDate'), type: 'date' }
     ]
   };
 
@@ -71,15 +74,15 @@ const ReportBuilder = ({ report = null, onSave, onCancel }) => {
     const newErrors = {};
     
     if (!formData.name.trim()) {
-      newErrors.name = 'Report name is required';
+      newErrors.name = t('reportNameRequired');
     }
     
     if (!formData.dataSource) {
-      newErrors.dataSource = 'Data source is required';
+      newErrors.dataSource = t('dataSourceRequired');
     }
     
     if (formData.columns.length === 0) {
-      newErrors.columns = 'At least one column is required';
+      newErrors.columns = t('atLeastOneColumnRequired');
     }
     
     setErrors(newErrors);
@@ -142,10 +145,8 @@ const ReportBuilder = ({ report = null, onSave, onCancel }) => {
               fieldName: field.field,
               columnLabel: field.label,
               dataType: field.type.toUpperCase(),
-              //formatString: field.type === 'currency' ? '0,0.00' : '',
               aggregationType: 'NONE',
               sortOrder: prev.columns.length,
-              //isVisible: true
             }
           ]
         };
@@ -165,10 +166,10 @@ const ReportBuilder = ({ report = null, onSave, onCancel }) => {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold text-gray-800">
-            {report ? 'Edit Report' : 'Create New Report'}
+            {report ? t('editReport') : t('createNewReport')}
           </h1>
           <p className="text-gray-600">
-            {report ? 'Editing' : 'Creating'} report: {formData.name || 'New Report'}
+            {report ? t('editing') : t('creating')}: {formData.name || t('newReport')}
           </p>
         </div>
         <div className="flex space-x-3">
@@ -177,14 +178,14 @@ const ReportBuilder = ({ report = null, onSave, onCancel }) => {
             className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition flex items-center"
           >
             <X className="w-4 h-4 mr-2" />
-            Cancel
+            {t('cancel')}
           </button>
           <button
             onClick={handleSave}
             className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition flex items-center"
           >
             <Save className="w-4 h-4 mr-2" />
-            Save Report
+            {t('saveReport')}
           </button>
         </div>
       </div>
@@ -192,11 +193,11 @@ const ReportBuilder = ({ report = null, onSave, onCancel }) => {
       <div className="bg-white rounded-lg shadow-lg p-6">
         {/* Basic Information */}
         <div className="mb-8">
-          <h2 className="text-lg font-semibold text-gray-800 mb-4">Basic Information</h2>
+          <h2 className="text-lg font-semibold text-gray-800 mb-4">{t('basicInformation')}</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Report Name *
+                {t('reportName')} *
               </label>
               <input
                 type="text"
@@ -205,7 +206,7 @@ const ReportBuilder = ({ report = null, onSave, onCancel }) => {
                 className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
                   errors.name ? 'border-red-500' : 'border-gray-300'
                 }`}
-                placeholder="Enter report name"
+                placeholder={t('reportNamePlaceholder')}
               />
               {errors.name && (
                 <p className="mt-1 text-sm text-red-600">{errors.name}</p>
@@ -214,31 +215,31 @@ const ReportBuilder = ({ report = null, onSave, onCancel }) => {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Category
+                {t('category')}
               </label>
               <select
                 value={formData.category}
                 onChange={(e) => handleInputChange('category', e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               >
-                <option value="FINANCIAL">Financial</option>
-                <option value="VENDOR">Vendor</option>
-                <option value="CONTRACT">Contract</option>
-                <option value="PROJECT">Project</option>
-                <option value="CUSTOM">Custom</option>
+                <option value="FINANCIAL">{t('financial')}</option>
+                <option value="VENDOR">{t('vendor')}</option>
+                <option value="CONTRACT">{t('contract')}</option>
+                <option value="PROJECT">{t('project')}</option>
+                <option value="CUSTOM">{t('custom')}</option>
               </select>
             </div>
 
             <div className="md:col-span-2">
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Description
+                {t('description')}
               </label>
               <textarea
                 value={formData.description}
                 onChange={(e) => handleInputChange('description', e.target.value)}
                 rows={3}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                placeholder="Describe what this report will show..."
+                placeholder={t('reportDescriptionPlaceholder')}
               />
             </div>
           </div>
@@ -246,7 +247,7 @@ const ReportBuilder = ({ report = null, onSave, onCancel }) => {
 
         {/* Data Source Selection */}
         <div className="mb-8">
-          <h2 className="text-lg font-semibold text-gray-800 mb-4">Data Source</h2>
+          <h2 className="text-lg font-semibold text-gray-800 mb-4">{t('dataSource')}</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {dataSources.map((source) => (
               <div
@@ -280,9 +281,9 @@ const ReportBuilder = ({ report = null, onSave, onCancel }) => {
         {/* Available Fields */}
         <div className="mb-8">
           <h2 className="text-lg font-semibold text-gray-800 mb-4">
-            Available Fields ({availableFields.length})
+            {t('availableFields')} ({availableFields.length})
           </h2>
-          <p className="text-gray-600 mb-4">Select fields to include in your report</p>
+          <p className="text-gray-600 mb-4">{t('selectFieldsDescription')}</p>
           
           {errors.columns && (
             <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
@@ -320,7 +321,7 @@ const ReportBuilder = ({ report = null, onSave, onCancel }) => {
         {formData.columns.length > 0 && (
           <div className="mb-8">
             <h2 className="text-lg font-semibold text-gray-800 mb-4">
-              Selected Columns ({formData.columns.length})
+              {t('selectedColumns')} ({formData.columns.length})
             </h2>
             <div className="bg-gray-50 rounded-lg p-4">
               <div className="flex flex-wrap gap-2">
@@ -346,20 +347,20 @@ const ReportBuilder = ({ report = null, onSave, onCancel }) => {
         {/* Filters Section */}
         <div className="mb-6">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-gray-800">Filters</h2>
+            <h2 className="text-lg font-semibold text-gray-800">{t('filters')}</h2>
             <button
               onClick={addFilter}
               className="flex items-center px-3 py-2 text-sm text-blue-600 hover:text-blue-800"
             >
               <Plus className="w-4 h-4 mr-1" />
-              Add Filter
+              {t('addFilter')}
             </button>
           </div>
 
           {formData.filters.map((filter, index) => (
             <div key={index} className="bg-gray-50 rounded-lg p-4 mb-3">
               <div className="flex items-center justify-between mb-3">
-                <h3 className="font-medium text-gray-700">Filter {index + 1}</h3>
+                <h3 className="font-medium text-gray-700">{t('filter')} {index + 1}</h3>
                 <button
                   onClick={() => removeFilter(index)}
                   className="text-red-600 hover:text-red-800"
@@ -371,14 +372,14 @@ const ReportBuilder = ({ report = null, onSave, onCancel }) => {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Field
+                    {t('field')}
                   </label>
                   <select
                     value={filter.fieldName}
                     onChange={(e) => updateFilter(index, 'fieldName', e.target.value)}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
                   >
-                    <option value="">Select a field</option>
+                    <option value="">{t('selectField')}</option>
                     {availableFields.map(field => (
                       <option key={field.field} value={field.field}>
                         {field.label}
@@ -389,30 +390,30 @@ const ReportBuilder = ({ report = null, onSave, onCancel }) => {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Filter Type
+                    {t('filterType')}
                   </label>
                   <select
                     value={filter.filterType}
                     onChange={(e) => updateFilter(index, 'filterType', e.target.value)}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
                   >
-                    <option value="text">Text</option>
-                    <option value="number">Number</option>
-                    <option value="date">Date</option>
-                    <option value="select">Select</option>
+                    <option value="text">{t('text')}</option>
+                    <option value="number">{t('number')}</option>
+                    <option value="date">{t('date')}</option>
+                    <option value="select">{t('select')}</option>
                   </select>
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Label
+                    {t('label')}
                   </label>
                   <input
                     type="text"
                     value={filter.filterLabel}
                     onChange={(e) => updateFilter(index, 'filterLabel', e.target.value)}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
-                    placeholder="User-friendly label"
+                    placeholder={t('userFriendlyLabel')}
                   />
                 </div>
               </div>
@@ -423,9 +424,9 @@ const ReportBuilder = ({ report = null, onSave, onCancel }) => {
         {/* Visibility Settings */}
         <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
           <div>
-            <h3 className="font-medium text-gray-700">Report Visibility</h3>
+            <h3 className="font-medium text-gray-700">{t('reportVisibility')}</h3>
             <p className="text-sm text-gray-600">
-              Make this report visible to all users
+              {t('makeReportPublicDescription')}
             </p>
           </div>
           <label className="relative inline-flex items-center cursor-pointer">
