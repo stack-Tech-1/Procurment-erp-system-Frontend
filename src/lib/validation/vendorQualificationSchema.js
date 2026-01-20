@@ -289,7 +289,7 @@ export const VendorQualificationSchema = z.object({
     }, { message: "One or more documents have expired. Please update them before submission." }),
 
   // --- NEW: Logo validation ---
-  logoUrl: z.string().optional(),
+  logoUrl: z.string().optional().default(''),
   
   // --- NEW: Additional fields for dynamic sections ---
   majorBrands: z.string().optional(),
