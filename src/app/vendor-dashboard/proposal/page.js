@@ -22,7 +22,7 @@ import {
 import EnhancedQualificationDocumentManager from '@/components/EnhancedQualificationDocumentManager';
 import { useRouter } from 'next/navigation';
 
-
+submission-tracker
 // Generate unique form ID (can be based on vendor ID or random)
 const generateFormId = (initialData) => { // <--- Added initialData argument
   // If vendorId exists, use it, otherwise generate random
@@ -834,7 +834,7 @@ const CompanyIdentitySection = () => (
   </section>
 );
 
-
+{/*
 const getVendorTypeDisplayName = (vendorTypeValue) => {
   const mapping = {
     'ServiceProvider': 'Service Provider',
@@ -849,6 +849,7 @@ const getVendorTypeDisplayName = (vendorTypeValue) => {
          vendorTypeValue?.replace(/([A-Z])/g, ' $1').trim() || 
          vendorTypeValue;
 };
+*/}
 
 // --- NEW: Additional Section Components ---
   
@@ -1026,16 +1027,10 @@ const handleSubmit = async (e) => {
   setSubmissionError(null);
   setSubmissionSuccess(false);
 
+  
   // === VALIDATION 1: Logo validation ===
   if (!companyLogo && !logoPreview) {
     setSubmissionError("Company Logo is required. Please upload your company logo.");
-    setIsSubmitting(false);
-    return;
-  }
-
-  // === VALIDATION 2: Project Experience for mandatory types ===
-  if (vendorConfig.isProjectExperienceMandatory && projectExperience.length === 0) {
-    setSubmissionError("Project Experience is mandatory for this vendor type. Please add at least one project.");
     setIsSubmitting(false);
     return;
   }
@@ -1047,13 +1042,21 @@ const handleSubmit = async (e) => {
     setIsSubmitting(false);
     return;
   }
+   // === VALIDATION 2: Project Experience for mandatory types ===
+   if (vendorConfig.isProjectExperienceMandatory && projectExperience.length === 0) {
+    setSubmissionError("Project Experience is mandatory for this vendor type. Please add at least one project.");
+    setIsSubmitting(false);
+    return;
+  }
+
+ 
 
   // === VALIDATION 3: Zod validation with all form data ===
   const dataToValidate = {
     ...formData,
     documentData: documentData,
     projectExperience: projectExperience,
-    logoUrl: !companyLogo && logoPreview ? logoPreview : null,
+    logoUrl: logoPreview || (companyLogo ? '' : ''),
   };
 
   try {
@@ -1068,7 +1071,8 @@ const handleSubmit = async (e) => {
   } catch (validationError) {
     console.error("Validation failed:", validationError);
     
-    if (validationError instanceof z.ZodError) {
+     // FIX: Safely handle the validation error
+     if (validationError && validationError.errors && Array.isArray(validationError.errors)) {
       // Format Zod errors for form fields
       const fieldErrors = validationError.errors.reduce((acc, current) => {
         const fieldName = current.path[0];
@@ -1079,49 +1083,49 @@ const handleSubmit = async (e) => {
       }, {});
       setErrors(fieldErrors);
       
-      // Check for specific error types
-      const expiredDocError = validationError.errors.find(err => 
-        err.message.includes('expired') || err.message.includes('Expiry')
-      );
-      const emailDomainError = validationError.errors.find(err => 
-        err.message.includes('Email domain should match')
-      );
-      const phoneError = validationError.errors.find(err => 
-        err.message.includes('Saudi mobile number')
-      );
-      
-      if (expiredDocError) {
-        setSubmissionError("One or more documents have expired. Please update them before submission.");
-      } else if (emailDomainError) {
-        setSubmissionError("Please use a company email address that matches your company name.");
-      } else if (phoneError) {
-        setSubmissionError("Please enter a valid Saudi mobile number (e.g., 05xxxxxxxx, +9665xxxxxxxx).");
-      } else {
-        setSubmissionError("Please correct the validation errors in the form.");
-      }
-    } else {
-      setSubmissionError(validationError.message);
-    }
-    
-    setIsSubmitting(false);
-    return;
-  }
+              // Check for specific error types
+              const expiredDocError = validationError.errors.find(err => 
+                err.message.includes('expired') || err.message.includes('Expiry')
+              );
+              const emailDomainError = validationError.errors.find(err => 
+                err.message.includes('Email domain should match')
+              );
+              const phoneError = validationError.errors.find(err => 
+                err.message.includes('Saudi mobile number')
+              );
+              
+              if (expiredDocError) {
+                setSubmissionError("One or more documents have expired. Please update them before submission.");
+              } else if (emailDomainError) {
+                setSubmissionError("Please use a company email address that matches your company name.");
+              } else if (phoneError) {
+                setSubmissionError("Please enter a valid Saudi mobile number (e.g., 05xxxxxxxx, +9665xxxxxxxx).");
+              } else {
+                setSubmissionError("Please correct the validation errors in the form.");
+              }
+            } else {
+              setSubmissionError(validationError.message);
+            }
+            
+            setIsSubmitting(false);
+            return;
+          }
 
-  // === VALIDATION 4: Mandatory documents check (vendor-specific) ===
-  const mandatoryDocs = getMandatoryDocsForVendorType(formData.vendorType);
-  const missingMandatoryDocs = mandatoryDocs.filter(docKey => {
-    const docEntry = documentData[docKey];
-    return !docEntry || !docEntry.file;
-  });
+            // === VALIDATION 4: Mandatory documents check (vendor-specific) ===
+            const mandatoryDocs = getMandatoryDocsForVendorType(formData.vendorType);
+            const missingMandatoryDocs = mandatoryDocs.filter(docKey => {
+              const docEntry = documentData[docKey];
+              return !docEntry || !docEntry.file;
+            });
 
-  if (missingMandatoryDocs.length > 0) {
-    const missingDocNames = missingMandatoryDocs.map(key => 
-      DOCUMENT_CHECKLIST_REFERENCE[key]?.label || key
-    );
-    setSubmissionError(`Missing mandatory documents: ${missingDocNames.join(', ')}`);
-    setIsSubmitting(false);
-    return;
-  }
+            if (missingMandatoryDocs.length > 0) {
+              const missingDocNames = missingMandatoryDocs.map(key => 
+                DOCUMENT_CHECKLIST_REFERENCE[key]?.label || key
+              );
+              setSubmissionError(`Missing mandatory documents: ${missingDocNames.join(', ')}`);
+              setIsSubmitting(false);
+              return;
+            }
 
   // === VALIDATION 5: Duplicate license check (requires backend API) ===
   // This should be implemented when backend is ready
@@ -1162,8 +1166,8 @@ const handleSubmit = async (e) => {
     finalFormData.append('companyLogo', companyLogo, companyLogo.name);
   }
 
-  // Prepare vendor data
-  finalFormData.append('vendorData', JSON.stringify({
+  // Prepare vendor data with safe defaults
+  const vendorPayload = {
     ...formData,
     yearsInBusiness: parseInt(formData.yearsInBusiness) || 0,
     gosiEmployeeCount: parseInt(formData.gosiEmployeeCount) || 0,
@@ -1171,111 +1175,120 @@ const handleSubmit = async (e) => {
     productsAndServices: formData.productsAndServices?.split(',').map(s => s.trim()).filter(s => s.length > 0) || [],
     documentData: Object.keys(documentData).map(key => ({
       docType: key,
-      documentNumber: documentData[key].number,
-      expiryDate: documentData[key].expiry,
-      isoType: documentData[key].isoType,
-    })),
-    projectExperience: projectExperience.map(p => ({
+      documentNumber: documentData[key]?.number || '',
+      expiryDate: documentData[key]?.expiry || '',
+      isoType: documentData[key]?.isoType || '',
+    })).filter(doc => doc.documentNumber || doc.expiryDate || doc.isoType), // Only include if has data
+    projectExperience: (projectExperience || []).map(p => ({
       ...p,
-      contractValue: parseFloat(p.contractValue)
+      contractValue: parseFloat(p.contractValue) || 0
     })),
-    logoUrl: !companyLogo && logoPreview ? logoPreview : null,
-  }));
+    logoUrl: logoPreview || '', // Always string, never null
+  };
+
+  // Remove any undefined or null values
+  Object.keys(vendorPayload).forEach(key => {
+    if (vendorPayload[key] === undefined || vendorPayload[key] === null) {
+      vendorPayload[key] = '';
+    }
+  });
+
+  finalFormData.append('vendorData', JSON.stringify(vendorPayload));
 
   // Add document files
   Object.keys(documentData).forEach(docKey => {
-    const file = documentData[docKey].file;
-    if (file) {
+    const file = documentData[docKey]?.file;
+    if (file && file instanceof File) {
       finalFormData.append(`file_${docKey}`, file, file.name);
     }
   });
 
   // Add project files
-  projectExperience.forEach((project, index) => {
+  (projectExperience || []).forEach((project, index) => {
     if (project.completionFile && project.completionFile[0]) {
       const file = project.completionFile[0];
       finalFormData.append(`project_file_${index}`, file, file.name);
     }
   });
 
- // === SUBMIT TO API ===
-    try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL;
-      console.log("🌍 API URL being used:", apiUrl);
-      const response = await fetch(`${apiUrl}/api/vendor/qualification/submit`, {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-        body: finalFormData,
-      });
+  // === SUBMIT TO API ===
+  try {
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+    console.log("🌍 API URL being used:", apiUrl);
+    const response = await fetch(`${apiUrl}/api/vendor/qualification/submit`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      body: finalFormData,
+    });
 
-      const result = await response.json();
+    const result = await response.json();
 
-      if (!response.ok) {
-        // Handle specific backend errors
-        if (result.error?.includes('duplicate') || result.error?.includes('already exists')) {
-          setSubmissionError({
-            type: 'error',
-            message: "This license number is already registered. Please use a different license number."
-          });
-        } else {
-          throw new Error(result.error || 'Server processing error occurred.');
-        }
-      }
-
-      // Success handling
-      if (result.success) {
-        setSubmissionSuccess(true);
-        
-        // Clear draft on successful submission
-        if (formId) {
-          deleteDraft(formId);
-        }
-      
-      // Start approval workflow
-      try {
-        const workflowResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/approvals/start`, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            entityType: 'VENDOR',
-            entityId: result.data.id,
-            workflowTemplateId: 'vendor-qualification-workflow'
-          })
+    if (!response.ok) {
+      // Handle specific backend errors
+      if (result.error?.includes('duplicate') || result.error?.includes('already exists')) {
+        setSubmissionError({
+          type: 'error',
+          message: "This license number is already registered. Please use a different license number."
         });
-
-        const workflowResult = await workflowResponse.json();
-        if (workflowResult.success) {
-          console.log('✅ Approval workflow started successfully');
-        }
-      } catch (workflowError) {
-        console.error('⚠️ Could not start approval workflow:', workflowError);
-      }
-
-      // Reset form or redirect
-      if (onSuccess) {
-        onSuccess(); 
-        setFormData({});
-        setDocumentData({});
-        setProjectExperience([]);
-        setHasUnsavedChanges(false);
-        setLastSaved(null);
       } else {
-        setTimeout(() => {
-          router.push('/vendor/submission-tracker');
-        }, 3000);
+        throw new Error(result.error || 'Server processing error occurred.');
       }
     }
+
+    // Success handling
+    if (result.success) {
+      setSubmissionSuccess(true);
+      
+      // Clear draft on successful submission
+      if (formId) {
+        deleteDraft(formId);
+      }
+    
+    // Start approval workflow
+    try {
+      const workflowResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/approvals/start`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          entityType: 'VENDOR',
+          entityId: result.data.id,
+          workflowTemplateId: 'vendor-qualification-workflow'
+        })
+      });
+
+      const workflowResult = await workflowResponse.json();
+      if (workflowResult.success) {
+        console.log('✅ Approval workflow started successfully');
+      }
+    } catch (workflowError) {
+      console.error('⚠️ Could not start approval workflow:', workflowError);
+    }
+
+    // Reset form or redirect
+    if (onSuccess) {
+      onSuccess(); 
+      setFormData({});
+      setDocumentData({});
+      setProjectExperience([]);
+      setHasUnsavedChanges(false);
+      setLastSaved(null);
+    } else {
+      setTimeout(() => {
+        router.push('/vendor-dashboard/tracker');
+      }, 3000);
+    }
+  }
 
   } catch (error) {
     console.error("API Submission Error:", error);
     setSubmissionError({
       type: 'error',
-      message: error.message
+      message: error.message || "Submission failed. Please try again."
     });
     setSubmissionSuccess(false);
   } finally {

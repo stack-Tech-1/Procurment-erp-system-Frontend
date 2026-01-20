@@ -426,128 +426,130 @@ const EnhancedQualificationDocumentManager = ({
       setIsoType('');
     };
 
-    return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">        
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-xl shadow-2xl max-w-md w-full">
-              {/* Add close button on overlay click */}
-              <div 
-                className="fixed inset-0" 
+    const handleOverlayClick = (e) => {
+      // Only close if clicking directly on the overlay (not modal content)
+      if (e.target === e.currentTarget) {
+        setShowUploadModal(false);
+      }
+    };
+
+     return (        
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+          onClick={handleOverlayClick}
+        >
+          {/* SINGLE modal container */}
+          <div 
+            className="bg-white rounded-xl shadow-2xl max-w-md w-full relative z-10"
+            onClick={(e) => e.stopPropagation()} // Prevent clicks inside from closing
+          >
+            {/* Modal Header */}
+            <div className="flex items-center justify-between p-6 border-b border-gray-200">
+              <h3 className="text-lg font-bold text-gray-900">
+                Upload {selectedDoc?.label}
+              </h3>
+              <button
                 onClick={() => setShowUploadModal(false)}
-              ></div>
-              
-              <div className="relative z-10"> {/* Add this wrapper */}
-                {/* Rest of your modal content */}
+                className="text-gray-400 hover:text-gray-600 p-1"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+    
+            <div className="p-6 space-y-4">
+              {/* File Upload */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Document File
+                </label>
+                <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center">
+                  <input
+                    type="file"
+                    accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                    onChange={(e) => setFile(e.target.files[0])}
+                    className="hidden"
+                    id="file-upload"
+                  />
+                  <label htmlFor="file-upload" className="cursor-pointer block">
+                    <Upload className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                    <p className="text-sm text-gray-600">
+                      {file ? file.name : 'Click to select file'}
+                    </p>
+                    <p className="text-xs text-gray-500 mt-1">
+                      PDF, DOC, JPG, PNG (Max 10MB)
+                    </p>
+                  </label>
+                </div>
+              </div>
+    
+              {/* Dynamic Fields */}
+              {selectedDoc?.hasExpiry && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Expiry Date
+                  </label>
+                  <input
+                    type="date"
+                    value={expiryDate}
+                    onChange={(e) => setExpiryDate(e.target.value)}
+                    className="w-full p-2 border border-gray-300 rounded-md"
+                  />
+                </div>
+              )}
+    
+              {selectedDoc?.hasNumber && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    {selectedDoc.numberLabel || "Document Number"}
+                  </label>
+                  <input
+                    type="text"
+                    value={docNumber}
+                    onChange={(e) => setDocNumber(e.target.value)}
+                    className="w-full p-2 border border-gray-300 rounded-md"
+                    placeholder="Enter document number"
+                  />
+                </div>
+              )}
+    
+              {selectedDoc?.hasIsoType && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    ISO Type
+                  </label>
+                  <input
+                    type="text"
+                    value={isoType}
+                    onChange={(e) => setIsoType(e.target.value)}
+                    className="w-full p-2 border border-gray-300 rounded-md"
+                    placeholder="e.g., 9001, 14001"
+                  />
+                </div>
+              )}
+    
+              {/* Action Buttons */}
+              <div className="flex justify-end space-x-3 pt-4">
+                <button
+                  type="button"
+                  onClick={() => setShowUploadModal(false)}
+                  className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSubmit}
+                  disabled={!file}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+                >
+                  Upload Document
+                </button>
               </div>
             </div>
           </div>
-        <div className="bg-white rounded-xl shadow-2xl max-w-md w-full">
-          <div className="flex items-center justify-between p-6 border-b border-gray-200">
-            <h3 className="text-lg font-bold text-gray-900">
-              Upload {selectedDoc?.label}
-            </h3>
-            <button
-              onClick={() => setShowUploadModal(false)}
-              className="text-gray-400 hover:text-gray-600"
-            >
-              <X className="w-6 h-6" />
-            </button>
-          </div>
-
-          <div className="p-6 space-y-4">
-          {/* File Upload */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Document File
-            </label>
-            <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center">
-              <input
-                type="file"
-                accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
-                onChange={(e) => setFile(e.target.files[0])}
-                className="hidden"
-                id="file-upload"
-              />
-              <label htmlFor="file-upload" className="cursor-pointer">
-                <Upload className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-                <p className="text-sm text-gray-600">
-                  {file ? file.name : 'Click to select file'}
-                </p>
-                <p className="text-xs text-gray-500 mt-1">
-                  PDF, DOC, JPG, PNG (Max 10MB)
-                </p>
-              </label>
-            </div>
-          </div>
-
-          {/* Dynamic Fields */}
-          {selectedDoc?.hasExpiry && (
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Expiry Date
-              </label>
-              <input
-                type="date"
-                value={expiryDate}
-                onChange={(e) => setExpiryDate(e.target.value)}
-                className="w-full p-2 border border-gray-300 rounded-md"
-              />
-            </div>
-          )}
-
-          {selectedDoc?.hasNumber && (
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                {selectedDoc.numberLabel || "Document Number"}
-              </label>
-              <input
-                type="text"
-                value={docNumber}
-                onChange={(e) => setDocNumber(e.target.value)}
-                className="w-full p-2 border border-gray-300 rounded-md"
-                placeholder="Enter document number"
-              />
-            </div>
-          )}
-
-          {selectedDoc?.hasIsoType && (
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                ISO Type
-              </label>
-              <input
-                type="text"
-                value={isoType}
-                onChange={(e) => setIsoType(e.target.value)}
-                className="w-full p-2 border border-gray-300 rounded-md"
-                placeholder="e.g., 9001, 14001"
-              />
-            </div>
-          )}
-
-          {/* Action Buttons */}
-          <div className="flex justify-end space-x-3 pt-4">
-            <button
-              type="button"
-              onClick={() => setShowUploadModal(false)}
-              className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200"
-            >
-              Cancel
-            </button>
-            <button
-              type="button" // ✅ Changed from "submit" to "button"
-              onClick={handleSubmit} // ✅ Manually call handleSubmit
-              disabled={!file}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400"
-            >
-              Upload Document
-            </button>
-          </div>
         </div>
-      </div>
-    </div>
-  );
-};
+      );
+    };
 
 return (
   <div className="space-y-6">
