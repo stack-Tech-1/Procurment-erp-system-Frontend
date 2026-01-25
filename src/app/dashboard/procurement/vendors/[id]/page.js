@@ -18,7 +18,7 @@ import {
 } from 'lucide-react';
 
 // Use your actual API endpoints
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
 
 
     // Helper Functions and Components

@@ -47,6 +47,7 @@ const VendorProfilePage = () => {
         const transformedData = {
           // Basic Info
           id: data.id,
+          logo: data.logo || null,
           vendorId: data.vendorId,
           companyLegalName: data.companyLegalName,
           vendorType: data.vendorType,
@@ -108,9 +109,50 @@ const VendorProfilePage = () => {
               ? data.documents.filter(doc => !doc.isValid || (doc.expiryDate && new Date(doc.expiryDate) <= new Date())).length
               : 0,
             total: Array.isArray(data.documents) ? data.documents.length : 0
+          },
+
+           // Add debug info
+          _debug: {
+            hasLogo: !!data.logo,
+            logoType: typeof data.logo,
+            logoLength: data.logo ? data.logo.length : 0,
+            isBlobUrl: data.logo ? data.logo.includes('blob:') : false,
+            isS3Url: data.logo ? data.logo.includes('s3.amazonaws.com') : false,
+            isHttpUrl: data.logo ? data.logo.startsWith('http') : false
           }
         };
         
+        console.log('🔍 Logo Debug Info:', transformedData._debug);
+        console.log('🔍 Full logo URL:', data.logo);
+        console.log('🔍 URL includes blob%3A:', data.logo ? data.logo.includes('blob%3A') : false);
+        console.log('🔍 URL includes amazonaws.com:', data.logo ? data.logo.includes('amazonaws.com') : false);
+        // Test if the URL is actually valid
+if (data.logo) {
+  try {
+    new URL(data.logo);
+    console.log('✅ URL is valid according to URL constructor');
+  } catch (error) {
+    console.log('❌ URL is INVALID:', error.message);
+  }
+}
+
+// Check for specific problematic patterns
+if (data.logo) {
+  const problematicPatterns = [
+    'blob%3A',
+    'localhost',
+    'unsafe-url',
+    'blob:http',
+    '%3A%2F%2F' // encoded ://
+  ];
+
+  problematicPatterns.forEach(pattern => {
+    if (data.logo.includes(pattern)) {
+      console.log(`⚠️ URL contains problematic pattern: ${pattern}`);
+    }
+  });
+}  
+
         console.log('📊 Vendor profile data loaded:', transformedData);
         setVendorData(transformedData);
         
@@ -197,34 +239,37 @@ const VendorProfilePage = () => {
     <VendorLayout>
       <div className="max-w-6xl mx-auto p-4 sm:p-6">
         {/* Header with Logo */}
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
-            <div className="flex items-center gap-3">
-              {vendorData.logo ? (
-                <div className="w-16 h-16 rounded-lg border-2 border-blue-200 bg-white p-1 shadow-sm">
-                  <img 
-                    src={vendorData.logo} 
-                    alt={`${vendorData.companyLegalName} Logo`} 
-                    className="w-full h-full object-contain"
-                    onError={(e) => {
-                      e.target.style.display = 'none';
-                      e.target.parentElement.innerHTML = `
-                        <div class="w-full h-full bg-gradient-to-br from-gray-100 to-gray-200 rounded flex items-center justify-center">
-                          <Building2 class="w-8 h-8 text-gray-400" />
-                        </div>
-                      `;
-                    }}
-                  />
-                </div>
-              ) : (
-                <div className="w-16 h-16 rounded-lg border-2 border-dashed border-gray-300 bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
-                  <Building2 className="w-8 h-8 text-gray-400" />
-                </div>
-              )}
-              <div>
-                <h1 className="text-2xl sm:text-3xl font-bold text-gray-800">Company Profile</h1>
-                <p className="text-gray-600 mt-2">View and manage your company information</p>
-              </div>
-            </div>
+<div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
+  <div className="flex items-center gap-3">
+    {vendorData.logo ? (
+      <div className="w-16 h-16 rounded-lg border-2 border-blue-200 bg-white p-1 shadow-sm overflow-hidden">
+        <img 
+          src={vendorData.logo} 
+          alt={`${vendorData.companyLegalName} Logo`} 
+          className="w-full h-full object-contain"
+          onError={(e) => {
+            console.log('Logo load error, using fallback');
+            // Hide the broken image
+            e.target.style.display = 'none';
+            // Show fallback
+            const fallback = document.createElement('div');
+            fallback.className = 'w-full h-full bg-gradient-to-br from-gray-100 to-gray-200 rounded flex items-center justify-center';
+            fallback.innerHTML = '<svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>';
+            e.target.parentElement.appendChild(fallback);
+          }}
+          onLoad={() => console.log('Logo loaded successfully:', vendorData.logo)}
+        />
+      </div>
+    ) : (
+      <div className="w-16 h-16 rounded-lg border-2 border-dashed border-gray-300 bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
+        <Building2 className="w-8 h-8 text-gray-400" />
+      </div>
+    )}
+    <div>
+      <h1 className="text-2xl sm:text-3xl font-bold text-gray-800">Company Profile</h1>
+      <p className="text-gray-600 mt-2">View and manage your company information</p>
+    </div>
+  </div>
             <div className="flex items-center gap-3">
               <button
                 onClick={handleRefresh}
@@ -306,7 +351,8 @@ const VendorProfilePage = () => {
           </div>
         )}
 
-       
+        
+
         {/* Main Content Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Left Column - Company & Contact Info */}

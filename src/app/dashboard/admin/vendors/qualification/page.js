@@ -10,8 +10,6 @@ import Topbar from "@/components/Topbar";
 import QualificationDetailModal from "./components/QualificationDetailModal"; 
 import { useRouter } from "next/navigation"; 
 
-
-// NOTE: Ensure NEXT_PUBLIC_API_URL is set in your .env file (e.g., http://localhost:4000)
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
 
 const getAuthHeader = () => {

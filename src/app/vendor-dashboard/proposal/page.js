@@ -22,6 +22,7 @@ import {
 import EnhancedQualificationDocumentManager from '@/components/EnhancedQualificationDocumentManager';
 import { useRouter } from 'next/navigation';
 
+
 // Generate unique form ID (can be based on vendor ID or random)
 const generateFormId = (initialData) => { // <--- Added initialData argument
   // If vendorId exists, use it, otherwise generate random

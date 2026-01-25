@@ -144,7 +144,7 @@ const ReportViewer = ({ report, onBack }) => {
       // Convert report.id to number
       const numericReportId = parseInt(report.id, 10);
       
-      const response = await fetch(`http://localhost:4000/api/reports/${numericReportId}/execute`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/reports/${numericReportId}/execute`, {
         method: 'POST',
         headers: { 
           'Authorization': `Bearer ${token}`,
@@ -200,7 +200,7 @@ const ReportViewer = ({ report, onBack }) => {
       // Convert report.id to number
       const numericReportId = parseInt(report.id, 10);
       
-      const response = await fetch(`http://localhost:4000/api/reports/${numericReportId}/export`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/reports/${numericReportId}/export`, {
         method: 'POST',
         headers: { 
           'Authorization': `Bearer ${token}`,
