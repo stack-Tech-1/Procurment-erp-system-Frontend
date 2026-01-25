@@ -218,7 +218,7 @@ const EditQualificationPage = () => {
 
       setSuccess(true);
       setTimeout(() => {
-        router.push('/vendors/profile');
+        router.push('/dashboard/vendors/profile');
       }, 3000);
 
     } catch (err) {
@@ -232,7 +232,7 @@ const EditQualificationPage = () => {
   const handleSuccess = () => {
     setSuccess(true);
     setTimeout(() => {
-      router.push('/vendors/profile');
+      router.push('/dashboard/vendors/profile');
     }, 3000);
   };
 
