@@ -16,7 +16,7 @@ const QuickActionsEnhanced = ({ vendorData }) => {
       icon: <FileText size={22} />,
       label: 'Submit New Proposal',
       description: 'Respond to RFQs or submit a new bid',
-      path: '/vendor/proposals/new',
+      path: '/vendor-dashboard/proposal',
       disabled: vendorData.status === 'REJECTED' || vendorData.status === 'BLOCKED',
       badge: vendorData.newRFQs > 0 ? `${vendorData.newRFQs} new` : null,
       tooltip: 'Access available RFQs and submit proposals'

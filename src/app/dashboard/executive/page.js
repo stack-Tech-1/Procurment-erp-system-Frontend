@@ -1,7 +1,7 @@
 // frontend/src/app/dashboard/executive/page.js - UPDATED WITH i18n
 "use client";
 import { useEffect, useState } from 'react';
-import { useTranslation } from 'react-i18next'; 
+import { useTranslation } from 'react-i18next'; // ADD THIS IMPORT
 import ExecutiveDashboard from '@/components/dashboards/ExecutiveDashboard.js';
 import ResponsiveLayout from '@/components/layout/ResponsiveLayout';
 

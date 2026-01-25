@@ -1,8 +1,9 @@
-// frontend/src/app/dashboard/page.js - UPDATED VERSION
+// frontend/src/app/dashboard/page.js - FINAL VERSION
 "use client";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import ResponsiveLayout from "@/components/layout/ResponsiveLayout";
+import Sidebar from "@/components/Sidebar";
+import Topbar from "@/components/Topbar";
 import ExecutiveDashboard from "@/components/dashboards/ExecutiveDashboard";
 import ManagerDashboard from "@/components/dashboards/ManagerDashboard";
 import OfficerDashboard from "@/components/dashboards/OfficerDashboard";
@@ -63,8 +64,14 @@ export default function DashboardPage() {
   }
 
   return (
-    <ResponsiveLayout>
-      {renderRoleBasedDashboard()}
-    </ResponsiveLayout>
+    <div className="flex min-h-screen bg-gray-50">
+      <Sidebar />
+      <main className="flex-1 flex flex-col">
+        <Topbar user={user} dashboardType={user?.roleId} />
+        <div className="flex-1">
+          {renderRoleBasedDashboard()}
+        </div>
+      </main>
+    </div>
   );
 }

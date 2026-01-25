@@ -1,25 +1,27 @@
 "use client";
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next'; // ADD THIS IMPORT
 import { CheckSquare, TrendingUp, FileText, Clock } from 'lucide-react';
 
 const ReviewTabs = ({ 
   qualificationProps, 
   evaluationProps 
 }) => {
+  const { t } = useTranslation(); // ADD THIS HOOK
   const [activeTab, setActiveTab] = useState('qualification');
 
   const tabs = [
     { 
       id: 'qualification', 
-      label: 'Qualification', 
+      label: t('qualification'), 
       icon: CheckSquare,
-      description: 'Status & Classification'
+      description: t('statusClassification')
     },
     { 
       id: 'evaluation', 
-      label: 'Evaluation', 
+      label: t('evaluation'), 
       icon: TrendingUp,
-      description: 'Scoring & Rating'
+      description: t('scoringRating')
     }
   ];
 
@@ -72,7 +74,7 @@ const ReviewTabs = ({
 
       {/* Active Tab Indicator */}
       <div className="px-4 py-2 bg-gray-50 border-t border-gray-200 text-xs text-gray-500 text-center">
-        {activeTab === 'qualification' ? 'Update vendor status and classification' : 'Evaluate vendor performance and score'}
+        {activeTab === 'qualification' ? t('updateVendorStatusClassification') : t('evaluateVendorPerformanceScore')}
       </div>
     </div>
   );

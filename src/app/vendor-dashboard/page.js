@@ -3,6 +3,7 @@
 import React from 'react';
 import VendorDashboardContent from './components/VendorDashboardContent.client';
 
+
 export default function VendorHome() {
   return (
     <div>

@@ -1,7 +1,7 @@
 // frontend/src/services/api.js - ENHANCED VERSION
 import axios from 'axios';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
+const API_BASE_URL = `${process.env.NEXT_PUBLIC_API_URL}/api`;
 
 // Create axios instance with default config
 const api = axios.create({
