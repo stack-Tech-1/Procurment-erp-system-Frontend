@@ -1,8 +1,9 @@
 // frontend/src/components/dashboards/ManagerDashboard.js
 "use client";
 import { useState, useEffect } from 'react';
-import { 
-  FileText, Users, AlertTriangle, Clock, CheckCircle, 
+import { useRouter } from 'next/navigation';
+import {
+  FileText, Users, AlertTriangle, Clock, CheckCircle,
   TrendingUp, TrendingDown, RefreshCw, Calendar, Shield,
   Eye, Database, WifiOff, BarChart, PieChart as PieChartIcon,
   Target, Activity, Zap, Bell, Filter, Download, Settings,
@@ -25,6 +26,8 @@ const getAvatarColor = (index) => {
 };
 
 const ManagerDashboard = () => {
+  const router = useRouter();
+
   const [dashboardData, setDashboardData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -32,15 +35,35 @@ const ManagerDashboard = () => {
   const [timeRange, setTimeRange] = useState('month');
   const [searchQuery, setSearchQuery] = useState('');
 
+  // Per-section live data — empty/zero initial values (no mock data)
+  const [kpiData, setKpiData] = useState({
+    openPRs: 0, trendOpenPRs: null,
+    pendingApprovals: 0, trendPendingApprovals: null,
+    overdueTasks: 0, trendOverdueTasks: null,
+    vendorsUnderReview: 0, trendVendorsUnderReview: null,
+  });
+  const [chartsData,    setChartsData]    = useState({ teamTrends: [], priorityData: [], teamStats: [] });
+  const [queueData,     setQueueData]     = useState([]);
+  const [deadlinesData, setDeadlinesData] = useState([]);
+
+  // Per-section loading / error
+  const [loadingStates, setLoadingStates] = useState({ kpis: true, charts: true, queue: true, deadlines: true });
+  const [errorStates,   setErrorStates]   = useState({ kpis: false, charts: false, queue: false, deadlines: false });
+
+  // Refresh UI
+  const [refreshing,  setRefreshing]  = useState(false);
+  const [lastUpdated, setLastUpdated] = useState(null);
+  const [minutesAgo,  setMinutesAgo]  = useState(null);
+
   const getItemRoute = (item) => {
     const typeMap = {
       'Vendor': 'vendors',
-      'RFQ': 'rfq', 
+      'RFQ': 'rfqs',
       'Contract': 'contracts',
       'PO': 'purchase-orders',
       'Purchase Requests': 'purchase-requests',
       'Invoice': 'invoices'
-    };   
+    };
     
     const route = typeMap[item.type];
     return `/dashboard/procurement/${route}/${item.id}`;
@@ -280,9 +303,10 @@ const ManagerDashboard = () => {
       
       const token = localStorage.getItem('authToken');
       if (!token) {
-        throw new Error('No authentication token found');
+        router.replace('/login');
+        return;
       }
-  
+
       console.log('🔄 Fetching dashboard data...');
   
       // Create promises with proper error handling for each endpoint
@@ -349,6 +373,7 @@ const ManagerDashboard = () => {
             headers: { 'Authorization': `Bearer ${token}` }
           });
           
+          if (response.status === 401) { router.replace('/login'); return; }
           if (response.ok) {
             results[endpoint.key] = await response.json();
           } else {
@@ -393,23 +418,14 @@ const ManagerDashboard = () => {
         }
       };
   
-      // Merge with fallback data for any missing fields
-      const fallbackData = generateFallbackData();
-      const combinedData = {
-        ...fallbackData,  // Start with fallback data
-        ...transformedData, // Override with API data
-        // Make sure we preserve the fallback structure for budgetData if API returns null
-        budgetData: transformedData.budgetData.summary ? transformedData.budgetData : fallbackData.budgetData
-        };
+      setDashboardData(transformedData);
+      setDataSource('api');
 
-        setDashboardData(combinedData); // ✅ FIXED: Use combinedData
-        setDataSource('api');
-  
     } catch (error) {
-      console.log('⚠️ API unavailable, using fallback data:', error.message);
-      setError('Database temporarily unavailable. Showing sample data.');
-      setDashboardData(generateFallbackData());
-      setDataSource('fallback');
+      console.log('⚠️ API unavailable:', error.message);
+      setError('Database temporarily unavailable.');
+      setDashboardData(null);
+      setDataSource('error');
     } finally {
       setLoading(false);
     }
@@ -417,8 +433,24 @@ const ManagerDashboard = () => {
 
 
 useEffect(() => {
+  fetchAllLive();
   fetchDashboardData();
-}, [timeRange]);
+  const liveInterval = setInterval(fetchAllLive, 5 * 60 * 1000);
+  return () => clearInterval(liveInterval);
+}, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+useEffect(() => {
+  fetchDashboardData();
+}, [timeRange]); // eslint-disable-line react-hooks/exhaustive-deps
+
+useEffect(() => {
+  if (!lastUpdated) return;
+  setMinutesAgo(0);
+  const ticker = setInterval(() => {
+    setMinutesAgo(Math.floor((Date.now() - lastUpdated.getTime()) / 60000));
+  }, 60000);
+  return () => clearInterval(ticker);
+}, [lastUpdated]);
 
         const transformBackendData = (backendData) => {
           const { teamOverview, teamPerformance, approvalQueue, deadlineTracking } = backendData;
@@ -522,6 +554,65 @@ useEffect(() => {
       };
 
 
+  // ── Transform helpers ──────────────────────────────────────────────────────
+
+  const transformCharts = (data) => ({
+    teamTrends: (data.teamTrends || []).map(d => ({ month: d.month, tasks: d.total, completed: d.completed })),
+    priorityData: (data.priorityDistribution || []).map(d => ({
+      name:  d.name,
+      value: d.value,
+      color: d.name === 'HIGH' ? '#C0392B' : d.name === 'MEDIUM' ? '#D35400' : '#1A7A4A',
+    })),
+    teamStats: (data.teamPerformance || []).map((m, i) => ({ ...m, avatarColor: getAvatarColor(i) })),
+  });
+
+  const transformDeadlines = (data) =>
+    (Array.isArray(data) ? data : []).map(d => ({ ...d, dueIn: d.daysUntilDue ?? d.dueIn }));
+
+  // ── fetchAllLive ───────────────────────────────────────────────────────────
+
+  const fetchAllLive = async () => {
+    const token = localStorage.getItem('authToken');
+    const base  = process.env.NEXT_PUBLIC_API_URL;
+    const headers = { Authorization: `Bearer ${token}` };
+
+    setRefreshing(true);
+    setLoadingStates({ kpis: true, charts: true, queue: true, deadlines: true });
+
+    const [kpiRes, chartsRes, queueRes, dlRes] = await Promise.allSettled([
+      fetch(`${base}/api/dashboard/manager/kpis`,              { headers }),
+      fetch(`${base}/api/dashboard/manager/charts`,             { headers }),
+      fetch(`${base}/api/dashboard/manager/approval-queue`,     { headers }),
+      fetch(`${base}/api/dashboard/manager/critical-deadlines`, { headers }),
+    ]);
+
+    const handle = async (result, setter, errorKey, transform) => {
+      if (result.status === 'fulfilled') {
+        if (result.value.status === 401) { router.replace('/login'); return; }
+        if (result.value.ok) {
+          const data = await result.value.json();
+          setter(transform ? transform(data) : data);
+          setErrorStates(p => ({ ...p, [errorKey]: false }));
+        } else {
+          setErrorStates(p => ({ ...p, [errorKey]: true }));
+        }
+      } else {
+        setErrorStates(p => ({ ...p, [errorKey]: true }));
+      }
+    };
+
+    await handle(kpiRes,    setKpiData,       'kpis',      null);
+    await handle(chartsRes, setChartsData,    'charts',    transformCharts);
+    await handle(queueRes,  setQueueData,     'queue',     null);
+    await handle(dlRes,     setDeadlinesData, 'deadlines', transformDeadlines);
+
+    setLoadingStates({ kpis: false, charts: false, queue: false, deadlines: false });
+    setRefreshing(false);
+    setLastUpdated(new Date());
+  };
+
+  // ──────────────────────────────────────────────────────────────────────────
+
   const handleRetry = () => {
     fetchDashboardData();
   };
@@ -580,9 +671,9 @@ useEffect(() => {
           </div>
           {trend && (
             <span className={`text-sm font-medium px-2 py-1 rounded-full ${
-              trendPositive 
-                ? 'bg-green-100 text-green-800' 
-                : 'bg-red-100 text-red-800'
+              trendPositive === 'neutral' ? 'bg-gray-100 text-gray-700'
+              : trendPositive ? 'bg-green-100 text-green-800'
+              : 'bg-red-100 text-red-800'
             }`}>
               {trend}
             </span>
@@ -664,45 +755,7 @@ useEffect(() => {
     );
   };
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <RefreshCw className="animate-spin h-12 w-12 text-blue-600 mx-auto mb-4" />
-          <h2 className="text-xl font-semibold text-gray-800">Loading Manager Dashboard...</h2>
-          <p className="text-gray-600 mt-2">Connecting to procurement database</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (!dashboardData) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center max-w-md">
-          <AlertTriangle className="mx-auto text-red-500 mb-4" size={48} />
-          <h2 className="text-xl font-semibold text-gray-800 mb-2">Unable to load dashboard</h2>
-          <p className="text-gray-600 mb-4">Please check your backend connection</p>
-          <button
-            onClick={handleRetry}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-          >
-            Retry Connection
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  const { 
-    summary, 
-    teamPerformance, 
-    approvalQueue, 
-    deadlineTracking, 
-    supplierMetrics,
-    chartData,
-    priorityData 
-  } = dashboardData;
+  const { supplierMetrics } = dashboardData || {};
 
     // Helper function to format currency
     const formatCurrency = (amount) => {
@@ -840,6 +893,43 @@ const getActionButton = (item) => {
 };
   
 
+  // ── Inline helper components ────────────────────────────────────────────────
+
+  const Skeleton = ({ className = '' }) => (
+    <div className={`bg-gray-200 animate-pulse rounded ${className}`} />
+  );
+
+  const SkeletonKPIRow = () => (
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      {[...Array(4)].map((_, i) => (
+        <div key={i} className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+          <Skeleton className="h-6 w-32 mb-4" />
+          <Skeleton className="h-8 w-16 mb-2" />
+          <Skeleton className="h-4 w-24" />
+        </div>
+      ))}
+    </div>
+  );
+
+  const SectionError = () => (
+    <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 text-amber-800 text-sm px-4 py-2 rounded-lg mb-3">
+      <AlertTriangle size={16} className="flex-shrink-0 text-amber-600" />
+      Could not load live data — showing last known values.
+    </div>
+  );
+
+  const trendProps = (trendValue, isNeutralIfPositive = false) => {
+    if (trendValue === null || trendValue === undefined) return {};
+    const pos = trendValue > 0;
+    const neutral = isNeutralIfPositive && pos;
+    return {
+      trend: `${pos ? '↑' : '↓'} ${Math.abs(trendValue)}%`,
+      trendPositive: neutral ? 'neutral' : !pos,
+    };
+  };
+
+  // ──────────────────────────────────────────────────────────────────────────
+
   return (
     <div className="p-6 space-y-6 bg-gray-50 min-h-screen">
       {/* Header with Data Source Indicator */}
@@ -852,7 +942,7 @@ const getActionButton = (item) => {
           </div>
         </div>
         <div className="flex items-center space-x-4">
-          <select 
+          <select
             value={timeRange}
             onChange={(e) => setTimeRange(e.target.value)}
             className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
@@ -860,7 +950,19 @@ const getActionButton = (item) => {
             <option value="month">This Month</option>
             <option value="quarter">This Quarter</option>
             <option value="year">This Year</option>
-          </select>          
+          </select>
+          <button
+            onClick={() => fetchAllLive()}
+            className="flex items-center gap-2 px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 text-gray-600 text-sm"
+          >
+            <RefreshCw size={16} className={refreshing ? 'animate-spin' : ''} />
+            Refresh
+          </button>
+          {lastUpdated && (
+            <span className="text-xs text-gray-400">
+              Updated {minutesAgo === 0 ? 'just now' : `${minutesAgo}m ago`}
+            </span>
+          )}
         </div>
       </div>
 
@@ -886,55 +988,53 @@ const getActionButton = (item) => {
       )}
 
       {/* Top KPI Cards (Row 1) */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <KPICard
-          icon={<FileText className="text-blue-500" size={24} />}
-          title="Open PRs"
-          value={summary.openPRs}
-          subtitle="Open purchase requests"
-          color="primary"
-          trend="+8.3%"
-          trendPositive={true}
-        />
-        
-        <KPICard
-          icon={<AlertTriangle className="text-amber-500" size={24} />}
-          title="Pending Approvals"
-          value={summary.pendingApprovals}
-          subtitle="Require your immediate review"
-          color="warning"
-          trend="+5.2%"
-          trendPositive={false}
-        />
-        
-        <KPICard
-          icon={<Clock className="text-red-500" size={24} />}
-          title="Overdue Tasks"
-          value={summary.overdueTasks}
-          subtitle="Team overdue items"
-          color="error"
-          trend="-12.7%"
-          trendPositive={true}
-        />
-        
-        <KPICard
-          icon={<Users className="text-cyan-500" size={24} />}
-          title="Vendor Reviews"
-          value={summary.vendorReviews}
-          subtitle="Awaiting qualification"
-          color="info"
-          trend="+15.8%"
-          trendPositive={true}
-        />
-      </div>
+      {loadingStates.kpis ? <SkeletonKPIRow /> : (
+        <>
+          {errorStates.kpis && <SectionError />}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <KPICard
+              icon={<FileText className="text-blue-500" size={24} />}
+              title="Open PRs"
+              value={kpiData.openPRs}
+              subtitle="Open purchase requests"
+              color="primary"
+              {...trendProps(kpiData.trendOpenPRs, true)}
+            />
+            <KPICard
+              icon={<AlertTriangle className="text-amber-500" size={24} />}
+              title="Pending Approvals"
+              value={kpiData.pendingApprovals}
+              subtitle="Require your immediate review"
+              color="warning"
+              {...trendProps(kpiData.trendPendingApprovals)}
+            />
+            <KPICard
+              icon={<Clock className="text-red-500" size={24} />}
+              title="Overdue Tasks"
+              value={kpiData.overdueTasks}
+              subtitle="Team overdue items"
+              color="error"
+              {...trendProps(kpiData.trendOverdueTasks)}
+            />
+            <KPICard
+              icon={<Users className="text-cyan-500" size={24} />}
+              title="Vendor Reviews"
+              value={kpiData.vendorsUnderReview}
+              subtitle="Awaiting qualification"
+              color="info"
+              {...trendProps(kpiData.trendVendorsUnderReview)}
+            />
+          </div>
+        </>
+      )}
 
       {/* Phase 2: Additional KPIs (Row 2) */}
-<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+{dashboardData && <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
   <KPICard
     icon={<Users className="text-green-500" size={24} />}
     title="Qualified Suppliers"
     value={`${dashboardData.extendedKPIs?.qualifiedSuppliersPercentage || 0}%`}
-    subtitle={`${supplierMetrics.qualifiedSuppliers} of ${supplierMetrics.totalSuppliers} total`}
+    subtitle={`${supplierMetrics?.qualifiedSuppliers ?? 0} of ${supplierMetrics?.totalSuppliers ?? 0} total`}
     color="success"
     trend="+3.2%"
     trendPositive={true}
@@ -969,9 +1069,10 @@ const getActionButton = (item) => {
     trend="+8"
     trendPositive={true}
   />
-</div>
+</div>}
 
       {/* Charts Section (Row 2) */}
+      {errorStates.charts && <SectionError />}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Team Performance Trends */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
@@ -982,38 +1083,39 @@ const getActionButton = (item) => {
             </h3>
             <Eye className="text-gray-400 cursor-pointer" size={20} />
           </div>
-          <div className="h-64">
-            {/* Simple bar chart visualization */}
-            <div className="flex items-end h-48 gap-2 mt-4">
-              {chartData.map((item, index) => (
-                <div key={index} className="flex-1 flex flex-col items-center">
-                  <div className="flex items-end w-full justify-center gap-1">
-                    <div 
-                      className="w-3/4 bg-blue-200 rounded-t"
-                      style={{ height: `${(item.tasks / 60) * 100}%` }}
-                      title={`Total Tasks: ${item.tasks}`}
-                    ></div>
-                    <div 
-                      className="w-3/4 bg-green-400 rounded-t"
-                      style={{ height: `${(item.completed / 60) * 100}%` }}
-                      title={`Completed: ${item.completed}`}
-                    ></div>
+          {loadingStates.charts ? <Skeleton className="h-64 w-full" /> : (
+            <div className="h-64">
+              <div className="flex items-end h-48 gap-2 mt-4">
+                {chartsData.teamTrends.map((item, index) => (
+                  <div key={index} className="flex-1 flex flex-col items-center">
+                    <div className="flex items-end w-full justify-center gap-1">
+                      <div
+                        className="w-3/4 bg-blue-200 rounded-t"
+                        style={{ height: `${(item.tasks / 60) * 100}%` }}
+                        title={`Total Tasks: ${item.tasks}`}
+                      ></div>
+                      <div
+                        className="w-3/4 bg-green-400 rounded-t"
+                        style={{ height: `${(item.completed / 60) * 100}%` }}
+                        title={`Completed: ${item.completed}`}
+                      ></div>
+                    </div>
+                    <span className="text-xs text-gray-500 mt-2">{item.month}</span>
                   </div>
-                  <span className="text-xs text-gray-500 mt-2">{item.month}</span>
+                ))}
+              </div>
+              <div className="flex items-center justify-center gap-4 mt-4">
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 bg-blue-200 rounded"></div>
+                  <span className="text-sm text-gray-600">Total Tasks</span>
                 </div>
-              ))}
-            </div>
-            <div className="flex items-center justify-center gap-4 mt-4">
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 bg-blue-200 rounded"></div>
-                <span className="text-sm text-gray-600">Total Tasks</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 bg-green-400 rounded"></div>
-                <span className="text-sm text-gray-600">Completed</span>
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 bg-green-400 rounded"></div>
+                  <span className="text-sm text-gray-600">Completed</span>
+                </div>
               </div>
             </div>
-          </div>
+          )}
         </div>
 
         {/* Task Priority Distribution */}
@@ -1025,36 +1127,38 @@ const getActionButton = (item) => {
             </h3>
             <Eye className="text-gray-400 cursor-pointer" size={20} />
           </div>
-          <div className="h-64 flex items-center justify-center">
-            {/* Simple pie chart visualization */}
-            <div className="relative w-48 h-48">
-              <div className="absolute inset-0 rounded-full border-8 border-red-100"></div>
-              <div className="absolute inset-0 rounded-full border-8 border-yellow-100" style={{
-                clipPath: 'polygon(50% 50%, 50% 0%, 100% 0%, 100% 100%, 0% 100%, 0% 35%)'
-              }}></div>
-              <div className="absolute inset-0 rounded-full border-8 border-green-100" style={{
-                clipPath: 'polygon(50% 50%, 50% 0%, 100% 0%, 100% 35%)'
-              }}></div>
-              
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-gray-800">100%</div>
-                  <div className="text-sm text-gray-500">Total Tasks</div>
+          {loadingStates.charts ? <Skeleton className="h-64 w-full" /> : (
+            <>
+              <div className="h-64 flex items-center justify-center">
+                <div className="relative w-48 h-48">
+                  <div className="absolute inset-0 rounded-full border-8 border-red-100"></div>
+                  <div className="absolute inset-0 rounded-full border-8 border-yellow-100" style={{
+                    clipPath: 'polygon(50% 50%, 50% 0%, 100% 0%, 100% 100%, 0% 100%, 0% 35%)'
+                  }}></div>
+                  <div className="absolute inset-0 rounded-full border-8 border-green-100" style={{
+                    clipPath: 'polygon(50% 50%, 50% 0%, 100% 0%, 100% 35%)'
+                  }}></div>
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-gray-800">100%</div>
+                      <div className="text-sm text-gray-500">Total Tasks</div>
+                    </div>
+                  </div>
                 </div>
               </div>
-            </div>
-          </div>
-          <div className="flex justify-center gap-6 mt-4">
-            {priorityData.map((item, index) => (
-              <div key={index} className="flex items-center gap-2">
-                <div 
-                  className="w-3 h-3 rounded-full" 
-                  style={{ backgroundColor: item.color }}
-                ></div>
-                <span className="text-sm text-gray-600">{item.name}: {item.value}%</span>
+              <div className="flex justify-center gap-6 mt-4">
+                {chartsData.priorityData.map((item, index) => (
+                  <div key={index} className="flex items-center gap-2">
+                    <div
+                      className="w-3 h-3 rounded-full"
+                      style={{ backgroundColor: item.color }}
+                    ></div>
+                    <span className="text-sm text-gray-600">{item.name}: {item.value}%</span>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
+            </>
+          )}
         </div>
       </div>
 
@@ -1080,55 +1184,62 @@ const getActionButton = (item) => {
               </tr>
             </thead>
             <tbody>
-              {teamPerformance.teamStats.map((member) => (
-                <tr key={member.id} className="border-b border-gray-100 hover:bg-gray-50">
-                  <td className="py-3 px-4">
-                    <div className="flex items-center gap-3">
-                      <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white ${member.avatarColor}`}>
-                        {member.name.charAt(0)}
+              {(loadingStates.charts
+                ? [...Array(3)].map((_, i) => (
+                    <tr key={i} className="border-b border-gray-100">
+                      <td colSpan={4} className="py-3 px-4"><Skeleton className="h-10 w-full" /></td>
+                    </tr>
+                  ))
+                : chartsData.teamStats.map((member, i) => (
+                  <tr key={member.id ?? member.name ?? i} className="border-b border-gray-100 hover:bg-gray-50">
+                    <td className="py-3 px-4">
+                      <div className="flex items-center gap-3">
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white ${member.avatarColor}`}>
+                          {member.name?.charAt(0) ?? '?'}
+                        </div>
+                        <div>
+                          <p className="font-medium text-gray-800">{member.name}</p>
+                        </div>
                       </div>
-                      <div>
-                        <p className="font-medium text-gray-800">{member.name}</p>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="py-3 px-4 text-center">
-                    <span className="inline-flex items-center gap-1 px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm">
-                      <CheckCircle size={12} />
-                      {member.completed}
-                    </span>
-                  </td>
-                  <td className="py-3 px-4 text-center">
-                    {member.overdue > 0 ? (
-                      <span className="inline-flex items-center gap-1 px-3 py-1 bg-red-100 text-red-800 rounded-full text-sm">
-                        <AlertTriangle size={12} />
-                        {member.overdue}
+                    </td>
+                    <td className="py-3 px-4 text-center">
+                      <span className="inline-flex items-center gap-1 px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm">
+                        <CheckCircle size={12} />
+                        {member.completed}
                       </span>
-                    ) : (
-                      <span className="text-gray-500 text-sm">0</span>
-                    )}
-                  </td>
-                  <td className="py-3 px-4">
-                    <div className="flex items-center gap-3">
-                      <div className="flex-1 bg-gray-200 rounded-full h-2">
-                        <div 
-                          className={`h-2 rounded-full ${
-                            member.successRate >= 90 ? 'bg-green-500' : 
-                            member.successRate >= 80 ? 'bg-yellow-500' : 'bg-red-500'
-                          }`}
-                          style={{ width: `${member.successRate}%` }}
-                        ></div>
+                    </td>
+                    <td className="py-3 px-4 text-center">
+                      {member.overdue > 0 ? (
+                        <span className="inline-flex items-center gap-1 px-3 py-1 bg-red-100 text-red-800 rounded-full text-sm">
+                          <AlertTriangle size={12} />
+                          {member.overdue}
+                        </span>
+                      ) : (
+                        <span className="text-gray-500 text-sm">0</span>
+                      )}
+                    </td>
+                    <td className="py-3 px-4">
+                      <div className="flex items-center gap-3">
+                        <div className="flex-1 bg-gray-200 rounded-full h-2">
+                          <div
+                            className={`h-2 rounded-full ${
+                              member.successRate > 95 ? 'bg-green-500' :
+                              member.successRate < 80 ? 'bg-red-500' : 'bg-yellow-500'
+                            }`}
+                            style={{ width: `${member.successRate}%` }}
+                          ></div>
+                        </div>
+                        <span className={`text-sm font-semibold ${
+                          member.successRate > 95 ? 'text-green-600' :
+                          member.successRate < 80 ? 'text-red-600' : 'text-gray-600'
+                        }`}>
+                          {member.successRate}%
+                        </span>
                       </div>
-                      <span className={`text-sm font-semibold ${
-                        member.successRate >= 90 ? 'text-green-600' : 
-                        member.successRate >= 80 ? 'text-yellow-600' : 'text-red-600'
-                      }`}>
-                        {member.successRate}%
-                      </span>
-                    </div>
-                  </td>
-                </tr>
-              ))}
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
@@ -1143,77 +1254,89 @@ const getActionButton = (item) => {
                   <p className="text-gray-600 text-sm">Pending items requiring your approval</p>
                 </div>
                 <span className="px-3 py-1 bg-amber-100 text-amber-800 rounded-full text-sm font-medium">
-                  {approvalQueue.length} items
+                  {queueData.length} items
                 </span>
               </div>
-              
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b border-gray-200">
-                      <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Type</th>
-                      <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Details (Name)</th>
-                      <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Project</th>
-                      <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Requested</th>
-                      <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Priority</th>
-                      <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Status</th>
-                      <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Action</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {approvalQueue.map((item) => (
-                      <tr key={item.id} className="border-b border-gray-100 hover:bg-gray-50">
-                        <td className="py-3 px-4">
-                          <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${
-                            item.type === 'Vendor' ? 'bg-blue-100 text-blue-800' :
-                            item.type === 'RFQ' ? 'bg-purple-100 text-purple-800' :
-                            item.type === 'Contract' ? 'bg-green-100 text-green-800' :
-                            item.type === 'PO' ? 'bg-teal-100 text-teal-800' :
-                            item.type === 'Purchase Requests' ? 'bg-amber-100 text-amber-800' :
-                            'bg-gray-100 text-gray-800'
-                          }`}>
-                            {item.type === 'Vendor' && <Users size={12} />}
-                            {item.type === 'RFQ' && <FileText size={12} />}
-                            {item.type === 'Contract' && <FileText size={12} />}
-                            {item.type === 'PO' && <DollarSign size={12} />}
-                            {item.type === 'Purchase Requests' && <FileText size={12} />}
-                            {item.type}
-                          </span>
-                        </td>
-                        <td className="py-3 px-4">
-                          <div>
-                            <p className="font-medium text-gray-800">{item.details}</p>
-                            <p className="text-xs text-gray-500">ID: {item.type}-{item.id.toString().padStart(4, '0')}</p>
-                          </div>
-                        </td>
-                        <td className="py-3 px-4">
-                          <span className="text-gray-700">{item.project}</span>
-                        </td>
-                        <td className="py-3 px-4">
-                          <span className="text-gray-700">{item.requested}</span>
-                        </td>
-                        <td className="py-3 px-4">
-                          <PriorityBadge priority={item.priority} />
-                        </td>
-                        <td className="py-3 px-4">
-                          <StatusBadge status={item.status} />
-                        </td>
-                        <td className="py-3 px-4">
-                        <Link 
-                          href={getItemRoute(item)}
-                          className="px-3 py-1 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors inline-block"
-                        >
-                          Review
-                        </Link>
-                        </td>
+
+              {errorStates.queue && <SectionError />}
+
+              {loadingStates.queue ? (
+                <div className="space-y-2">
+                  {[...Array(3)].map((_, i) => <Skeleton key={i} className="h-10 w-full mb-2" />)}
+                </div>
+              ) : queueData.length === 0 ? (
+                <div className="flex items-center gap-3 py-8 justify-center text-green-700 bg-green-50 rounded-xl">
+                  <CheckCircle size={20} className="text-green-500" />
+                  <span className="font-medium">You are all caught up! No pending approvals.</span>
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="border-b border-gray-200">
+                        <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Type</th>
+                        <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Details (Name)</th>
+                        <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Project</th>
+                        <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Requested</th>
+                        <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Priority</th>
+                        <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Status</th>
+                        <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Action</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                    </thead>
+                    <tbody>
+                      {queueData.map((item) => (
+                        <tr key={item.id} className="border-b border-gray-100 hover:bg-gray-50">
+                          <td className="py-3 px-4">
+                            <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${
+                              item.type === 'Vendor' ? 'bg-blue-100 text-blue-800' :
+                              item.type === 'RFQ' ? 'bg-purple-100 text-purple-800' :
+                              item.type === 'Contract' ? 'bg-green-100 text-green-800' :
+                              item.type === 'PO' ? 'bg-teal-100 text-teal-800' :
+                              item.type === 'Purchase Requests' ? 'bg-amber-100 text-amber-800' :
+                              'bg-gray-100 text-gray-800'
+                            }`}>
+                              {item.type === 'Vendor' && <Users size={12} />}
+                              {item.type === 'RFQ' && <FileText size={12} />}
+                              {item.type === 'Contract' && <FileText size={12} />}
+                              {item.type === 'PO' && <DollarSign size={12} />}
+                              {item.type === 'Purchase Requests' && <FileText size={12} />}
+                              {item.type}
+                            </span>
+                          </td>
+                          <td className="py-3 px-4">
+                            <div>
+                              <p className="font-medium text-gray-800">{item.details}</p>
+                              <p className="text-xs text-gray-500">ID: {item.type}-{item.id.toString().padStart(4, '0')}</p>
+                            </div>
+                          </td>
+                          <td className="py-3 px-4">
+                            <span className="text-gray-700">{item.project}</span>
+                          </td>
+                          <td className="py-3 px-4">
+                            <span className="text-gray-700">{item.requested}</span>
+                          </td>
+                          <td className="py-3 px-4">
+                            <PriorityBadge priority={item.priority} />
+                          </td>
+                          <td className="py-3 px-4">
+                            <StatusBadge status={item.status} />
+                          </td>
+                          <td className="py-3 px-4">
+                            <Link
+                              href={getItemRoute(item)}
+                              className="px-3 py-1 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors inline-block"
+                            >
+                              Review
+                            </Link>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </div>
 
-        {/* Critical Deadlines */}
         {/* Critical Deadlines & Priority Items - TABLE FORMAT */}
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
               <div className="flex items-center justify-between mb-6">
@@ -1235,10 +1358,17 @@ const getActionButton = (item) => {
                   <Filter className="text-gray-400 cursor-pointer" size={20} />
                 </div>
               </div>
-              
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                <thead>
+
+              {errorStates.deadlines && <SectionError />}
+
+              {loadingStates.deadlines ? (
+                <div className="space-y-2">
+                  {[...Array(3)].map((_, i) => <Skeleton key={i} className="h-10 w-full mb-2" />)}
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
                       <tr className="border-b border-gray-200">
                         <th className="text-left py-3 px-4 text-sm font-medium text-gray-500 min-w-[200px]">Task / Deliverable</th>
                         <th className="text-left py-3 px-4 text-sm font-medium text-gray-500 min-w-[100px]">Module</th>
@@ -1250,81 +1380,83 @@ const getActionButton = (item) => {
                         <th className="text-left py-3 px-4 text-sm font-medium text-gray-500 min-w-[80px]">Action</th>
                       </tr>
                     </thead>
-                  <tbody>
-                    {deadlineTracking.map((item) => (
-                      <tr key={item.id} className={`border-b border-gray-100 hover:bg-gray-50 ${
-                        item.priority === 'URGENT' ? 'bg-red-50' : ''
-                      }`}>
-                        <td className="py-3 px-4">
-                          <div>
-                            <p className="font-medium text-gray-800">{item.task}</p>
-                            <p className="text-xs text-gray-500">
-                              {getDocumentType(item.module)} • ID: {getDocumentId(item)}
-                            </p>
-                          </div>
-                        </td>
-                        <td className="py-3 px-4">
-                        <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium whitespace-nowrap ${
-                            getModuleColor(item.module)
-                          }`}>
-                            {getModuleIcon(item.module)}
-                            {item.module}
-                          </span>
-                        </td>
-                        <td className="py-3 px-4">
-                          <span className="text-gray-700">{item.project}</span>
-                        </td>
-                        <td className="py-3 px-4">
-                          <div className="flex items-center gap-2">
-                            <div className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center text-blue-800 text-xs">
-                              {item.assignedTo.charAt(0)}
+                    <tbody>
+                      {deadlinesData.map((item) => (
+                        <tr key={item.id} className={`border-b border-gray-100 hover:bg-gray-50 ${
+                          item.priority === 'URGENT' ? 'bg-red-50' : ''
+                        }`}>
+                          <td className="py-3 px-4">
+                            <div>
+                              <p className="font-medium text-gray-800">{item.task}</p>
+                              <p className="text-xs text-gray-500">
+                                {getDocumentType(item.module)} • ID: {getDocumentId(item)}
+                              </p>
                             </div>
-                            <span className="text-gray-700">{item.assignedTo}</span>
-                          </div>
-                        </td>
-                        <td className="py-3 px-4">
-                        <div className="whitespace-nowrap">
-                          <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${
-                            item.dueIn <= 1 
-                              ? 'bg-red-100 text-red-800'
-                              : item.dueIn <= 3
-                              ? 'bg-yellow-100 text-yellow-800'
-                              : 'bg-green-100 text-green-800'
-                          }`}>
-                            {item.dueIn <= 0 ? (
-                              <>
-                                <AlertTriangle size={12} className="flex-shrink-0" />
-                                <span className="whitespace-nowrap">
-                                  {Math.abs(item.dueIn)} day{Math.abs(item.dueIn) !== 1 ? 's' : ''} overdue
+                          </td>
+                          <td className="py-3 px-4">
+                            <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium whitespace-nowrap ${getModuleColor(item.module)}`}>
+                              {getModuleIcon(item.module)}
+                              {item.module}
+                            </span>
+                          </td>
+                          <td className="py-3 px-4">
+                            <span className="text-gray-700">{item.project}</span>
+                          </td>
+                          <td className="py-3 px-4">
+                            <div className="flex items-center gap-2">
+                              <div className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center text-blue-800 text-xs">
+                                {item.assignedTo?.charAt(0) ?? '?'}
+                              </div>
+                              <span className="text-gray-700">{item.assignedTo ?? 'Unassigned'}</span>
+                            </div>
+                          </td>
+                          <td className="py-3 px-4">
+                            <div className="whitespace-nowrap">
+                              {item.dueIn < 0 ? (
+                                <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-bold bg-red-100 text-red-800">
+                                  <AlertTriangle size={12} className="flex-shrink-0" />
+                                  <span className="whitespace-nowrap">{Math.abs(item.dueIn)} day{Math.abs(item.dueIn) !== 1 ? 's' : ''} overdue</span>
                                 </span>
-                              </>
-                            ) : (
-                              <>
-                                <Clock size={12} className="flex-shrink-0" />
-                                <span className="whitespace-nowrap">
-                                  {item.dueIn} day{item.dueIn !== 1 ? 's' : ''}
+                              ) : item.dueIn === 0 ? (
+                                <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-bold bg-red-100 text-red-800">
+                                  <AlertTriangle size={12} className="flex-shrink-0" />
+                                  <span className="whitespace-nowrap">Due today</span>
                                 </span>
-                              </>
-                            )}
-                          </span>
-                        </div>
-                      </td>
-                        <td className="py-3 px-4">
-                          <PriorityBadge priority={item.priority} />
-                        </td>
-                        <td className="py-3 px-4">
-                        <div className="whitespace-nowrap">
-                          <StatusBadge status={item.status} />
-                        </div>
-                      </td>
-                      <td className="py-3 px-4">
-                          {getActionButton(item)}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                              ) : item.dueIn <= 2 ? (
+                                <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
+                                  <Clock size={12} className="flex-shrink-0" />
+                                  <span className="whitespace-nowrap">{item.dueIn} day{item.dueIn !== 1 ? 's' : ''}</span>
+                                </span>
+                              ) : item.dueIn <= 7 ? (
+                                <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                                  <Clock size={12} className="flex-shrink-0" />
+                                  <span className="whitespace-nowrap">{item.dueIn} day{item.dueIn !== 1 ? 's' : ''}</span>
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700">
+                                  <Clock size={12} className="flex-shrink-0" />
+                                  <span className="whitespace-nowrap">{item.dueIn} day{item.dueIn !== 1 ? 's' : ''}</span>
+                                </span>
+                              )}
+                            </div>
+                          </td>
+                          <td className="py-3 px-4">
+                            <PriorityBadge priority={item.priority} />
+                          </td>
+                          <td className="py-3 px-4">
+                            <div className="whitespace-nowrap">
+                              <StatusBadge status={item.status} />
+                            </div>
+                          </td>
+                          <td className="py-3 px-4">
+                            {getActionButton(item)}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </div>
           
 
@@ -1342,19 +1474,19 @@ const getActionButton = (item) => {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
           <div className="p-4 border border-gray-200 rounded-lg">
             <p className="text-sm text-gray-500">Total Suppliers</p>
-            <p className="text-2xl font-bold text-gray-900">{supplierMetrics.totalSuppliers}</p>
+            <p className="text-2xl font-bold text-gray-900">{supplierMetrics?.totalSuppliers}</p>
           </div>
           <div className="p-4 border border-green-200 bg-green-50 rounded-lg">
             <p className="text-sm text-green-700">Qualified Suppliers</p>
-            <p className="text-2xl font-bold text-green-800">{supplierMetrics.qualifiedSuppliers}</p>
+            <p className="text-2xl font-bold text-green-800">{supplierMetrics?.qualifiedSuppliers}</p>
           </div>
           <div className="p-4 border border-yellow-200 bg-yellow-50 rounded-lg">
             <p className="text-sm text-yellow-700">Under Evaluation</p>
-            <p className="text-2xl font-bold text-yellow-800">{supplierMetrics.underEvaluation}</p>
+            <p className="text-2xl font-bold text-yellow-800">{supplierMetrics?.underEvaluation}</p>
           </div>
           <div className="p-4 border border-red-200 bg-red-50 rounded-lg">
             <p className="text-sm text-red-700">Rejected/Blacklisted</p>
-            <p className="text-2xl font-bold text-red-800">{supplierMetrics.rejectedBlacklisted}</p>
+            <p className="text-2xl font-bold text-red-800">{supplierMetrics?.rejectedBlacklisted}</p>
           </div>
         </div>
 
@@ -1366,8 +1498,8 @@ const getActionButton = (item) => {
               {/* Pie chart visualization */}
               <div className="absolute inset-0">
                 {[
-                    { value: supplierMetrics.qualifiedSuppliers, color: '#22c55e', label: 'Qualified' },
-                    { value: supplierMetrics.underEvaluation, color: '#facc15', label: 'Under Evaluation' },
+                    { value: supplierMetrics?.qualifiedSuppliers, color: '#22c55e', label: 'Qualified' },
+                    { value: supplierMetrics?.underEvaluation, color: '#facc15', label: 'Under Evaluation' },
                     { value: 18, color: '#ef4444', label: 'Rejected' },
                     { value: 11, color: '#9ca3af', label: 'Blacklisted' }
                   ]
@@ -1393,7 +1525,7 @@ const getActionButton = (item) => {
               </div>
               <div className="absolute inset-0 flex items-center justify-center">
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-gray-800">{supplierMetrics.totalSuppliers}</div>
+                  <div className="text-2xl font-bold text-gray-800">{supplierMetrics?.totalSuppliers}</div>
                   <div className="text-sm text-gray-500">Total</div>
                 </div>
               </div>

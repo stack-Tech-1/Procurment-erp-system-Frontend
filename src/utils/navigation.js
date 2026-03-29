@@ -2,7 +2,7 @@
 import { 
   Home, Users, ClipboardList, Briefcase, Receipt, BarChart3, FileText, 
   TrendingUp, DollarSign, Shield, CheckCircle, Building, Send, ListOrdered,
-  CheckSquare, UserPlus, Settings, MessageSquare, Grid, Truck 
+  CheckSquare, UserPlus, Settings, MessageSquare, Grid, Truck, Palette
 } from 'lucide-react';
 import { ROLES } from '../constants/roles';
 
@@ -29,7 +29,8 @@ export const getNavigationItems = (roleId) => {
         { name: "User Management", translationKey: "userManagement", icon: <UserPlus size={18} />, href: "/dashboard/admin/users" },
         { name: "Reports", translationKey: "reports", icon: <FileText size={18} />, href: "/dashboard/admin/reports" },
         { name: "System Settings", translationKey: "systemSettings", icon: <Settings size={18} />, href: "/dashboard/admin/settings" },
-        { name: "Account Approvals", translationKey: "accountApprovals", icon: <CheckCircle size={18} />, href: "/dashboard/admin/approvals" },        
+        { name: "Account Approvals", translationKey: "accountApprovals", icon: <CheckCircle size={18} />, href: "/dashboard/admin/approvals" },
+        { name: "Branding Settings", translationKey: "brandingSettings", icon: <Palette size={18} />, href: "/dashboard/admin/branding" },
         { name: "Workflow Builder", translationKey: "workflowBuilder", icon: <Settings size={18} />, href: "/dashboard/approvals/workflows"}
       ];
 
