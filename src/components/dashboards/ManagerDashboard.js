@@ -45,6 +45,7 @@ const ManagerDashboard = () => {
   const [chartsData,    setChartsData]    = useState({ teamTrends: [], priorityData: [], teamStats: [] });
   const [queueData,     setQueueData]     = useState([]);
   const [deadlinesData, setDeadlinesData] = useState([]);
+  const [poStats, setPoStats] = useState({ totalCommittedValue: 0, totalIssuedValue: 0, totalPOs: 0, issuedCount: 0 });
 
   // Per-section loading / error
   const [loadingStates, setLoadingStates] = useState({ kpis: true, charts: true, queue: true, deadlines: true });
@@ -579,11 +580,12 @@ useEffect(() => {
     setRefreshing(true);
     setLoadingStates({ kpis: true, charts: true, queue: true, deadlines: true });
 
-    const [kpiRes, chartsRes, queueRes, dlRes] = await Promise.allSettled([
+    const [kpiRes, chartsRes, queueRes, dlRes, poStatsRes] = await Promise.allSettled([
       fetch(`${base}/api/dashboard/manager/kpis`,              { headers }),
       fetch(`${base}/api/dashboard/manager/charts`,             { headers }),
       fetch(`${base}/api/dashboard/manager/approval-queue`,     { headers }),
       fetch(`${base}/api/dashboard/manager/critical-deadlines`, { headers }),
+      fetch(`${base}/api/purchase-orders/stats/summary`,        { headers }),
     ]);
 
     const handle = async (result, setter, errorKey, transform) => {
@@ -605,6 +607,17 @@ useEffect(() => {
     await handle(chartsRes, setChartsData,    'charts',    transformCharts);
     await handle(queueRes,  setQueueData,     'queue',     null);
     await handle(dlRes,     setDeadlinesData, 'deadlines', transformDeadlines);
+
+    // PO stats — non-fatal, update silently
+    if (poStatsRes.status === 'fulfilled' && poStatsRes.value.ok) {
+      const data = await poStatsRes.value.json();
+      setPoStats({
+        totalCommittedValue: data.totalCommittedValue || 0,
+        totalIssuedValue: data.totalIssuedValue || 0,
+        totalPOs: data.totalPOs || 0,
+        issuedCount: data.issuedCount || 0,
+      });
+    }
 
     setLoadingStates({ kpis: false, charts: false, queue: false, deadlines: false });
     setRefreshing(false);
@@ -1572,7 +1585,7 @@ const getActionButton = (item) => {
             </div>
 
             {/* Summary Stats - REAL DATA */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
               <div className="text-center p-4 border border-gray-200 rounded-lg">
                 <p className="text-sm text-gray-500">Total Budget</p>
                 <p className="text-xl font-bold text-gray-900">
@@ -1584,6 +1597,13 @@ const getActionButton = (item) => {
                 <p className="text-xl font-bold text-blue-800">
                   SAR {formatCurrency(dashboardData?.budgetData?.summary?.totalSpent || 0)}
                 </p>
+              </div>
+              <div className="text-center p-4 border rounded-lg" style={{ borderColor: '#B8960A', backgroundColor: '#FFFBEB' }}>
+                <p className="text-sm font-medium" style={{ color: '#92400E' }}>PO Committed Value</p>
+                <p className="text-xl font-bold" style={{ color: '#78350F' }}>
+                  SAR {formatCurrency(poStats.totalCommittedValue)}
+                </p>
+                <p className="text-xs mt-0.5" style={{ color: '#B8960A' }}>{poStats.totalPOs} active POs</p>
               </div>
               <div className={`text-center p-4 border rounded-lg ${
                 (dashboardData?.budgetData?.summary?.budgetUtilization || 0) >= 90 

@@ -2,580 +2,673 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { 
-  ArrowLeft, Save, Send, Plus, Minus, FileText, Building,
-  User, DollarSign, Calendar, Package, CheckCircle, AlertTriangle,
-  Search, X
+import {
+  ArrowLeft, Save, Send, Plus, Trash2, FileText, Building,
+  Package, AlertTriangle, Search, X,
+  ChevronDown, CheckCircle
 } from 'lucide-react';
 import ResponsiveLayout from '@/components/layout/ResponsiveLayout';
 
-const mockAPI = {
-  getRFQData: async (rfqId) => {
-    if (!rfqId) return null;
-    
-    return {
-      rfqId: rfqId,
-      rfqNumber: "RFQ-2024-00123",
-      title: "HVAC System Procurement",
-      projectName: "Tower B Construction",
-      recommendedSupplier: {
-        id: 101,
-        name: "Al Redwan Trading",
-        contactPerson: "Mohammed Ali",
-        email: "info@alredwan.com",
-        phone: "+966 11 234 5678"
-      },
-      items: [
-        { id: 1, description: "HVAC Unit 10HP", quantity: 2, unit: "PCS", unitPrice: 450000, total: 900000 },
-        { id: 2, description: "Ductwork Materials", quantity: 500, unit: "M", unitPrice: 700, total: 350000 }
-      ]
-    };
-  },
+const API_BASE = process.env.NEXT_PUBLIC_API_URL;
 
-  getSuppliers: async () => {
-    return [
-      { id: 101, name: "Al Redwan Trading", contact: "Mohammed Ali", email: "info@alredwan.com" },
-      { id: 102, name: "Gulf Engineering", contact: "Sarah Ahmed", email: "sales@gulfeng.com" },
-      { id: 103, name: "Elite Industrial", contact: "Khalid Omar", email: "contact@eliteind.com" }
-    ];
-  }
-};
+const UNITS = ['SQM', 'CBM', 'Piece', 'Ton', 'm', 'KG', 'L', 'Set', 'LS', 'No.'];
+const CURRENCIES = ['SAR', 'USD', 'EUR'];
 
-const CreatePurchaseOrderPage = () => {
+const emptyItem = () => ({
+  _key: Math.random().toString(36).slice(2),
+  description: '',
+  csiCode: '',
+  quantity: '',
+  unit: 'Piece',
+  unitPrice: '',
+  totalPrice: 0,
+  costCode: '',
+});
+
+export default function CreatePurchaseOrderClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const rfqId = searchParams.get('rfqId');
-  const supplierId = searchParams.get('supplierId');
-  
-  const [loading, setLoading] = useState(true);
-  const [rfqData, setRfqData] = useState(null);
-  const [suppliers, setSuppliers] = useState([]);
-  const [showSupplierSearch, setShowSupplierSearch] = useState(false);
-  const [supplierSearch, setSupplierSearch] = useState('');
-  
-  const [formData, setFormData] = useState({
-    poNumber: `PO-${Date.now().toString().slice(-6)}`,
+  const preRfqId = searchParams.get('rfqId');
+
+  const [activeTab, setActiveTab] = useState('details'); // details | items | review
+  const [submitting, setSubmitting] = useState(false);
+  const [errors, setErrors] = useState({});
+  const [apiError, setApiError] = useState('');
+
+  // Lookup data
+  const [vendors, setVendors] = useState([]);
+  const [rfqs, setRfqs] = useState([]);
+  const [vendorSearch, setVendorSearch] = useState('');
+  const [rfqSearch, setRfqSearch] = useState('');
+  const [showVendorDropdown, setShowVendorDropdown] = useState(false);
+  const [showRfqDropdown, setShowRfqDropdown] = useState(false);
+
+  // Form state
+  const [form, setForm] = useState({
     projectName: '',
-    supplierId: '',
-    supplierName: '',
-    poDate: new Date().toISOString().split('T')[0],
-    deliveryDate: '',
-    paymentTerms: '30% advance, 70% after delivery',
-    incoterms: 'CIF Jeddah',
+    vendorId: '',
+    vendorName: '',
+    vendorClass: '',
+    rfqId: preRfqId || '',
+    rfqNumber: '',
     currency: 'SAR',
+    requiredDate: '',
+    deliveryLocation: '',
+    paymentTerms: '',
+    warrantyPeriod: '',
     notes: '',
-    items: []
+  });
+  const [items, setItems] = useState([emptyItem()]);
+
+  const authHeaders = () => ({
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${localStorage.getItem('authToken')}`,
   });
 
   useEffect(() => {
-    fetchInitialData();
-  }, [rfqId, supplierId]);
-
-  const fetchInitialData = async () => {
-    setLoading(true);
-    try {
-      // Get suppliers list
-      const suppliersData = await mockAPI.getSuppliers();
-      setSuppliers(suppliersData);
-
-      // If coming from RFQ evaluation
-      if (rfqId) {
-        const rfqData = await mockAPI.getRFQData(rfqId);
-        if (rfqData) {
-          setRfqData(rfqData);
-          
-          // Auto-fill form from RFQ data
-          setFormData(prev => ({
-            ...prev,
-            projectName: rfqData.projectName,
-            supplierId: supplierId || rfqData.recommendedSupplier.id,
-            supplierName: rfqData.recommendedSupplier.name,
-            items: rfqData.items.map(item => ({
-              ...item,
-              poUnitPrice: item.unitPrice,
-              poTotal: item.total
-            }))
-          }));
+    const load = async () => {
+      try {
+        const [vRes, rRes] = await Promise.all([
+          fetch(`${API_BASE}/api/vendors`, { headers: authHeaders() }),
+          fetch(`${API_BASE}/api/rfqs`, { headers: authHeaders() }),
+        ]);
+        if (vRes.ok) {
+          const vData = await vRes.json();
+          setVendors(Array.isArray(vData) ? vData : (vData.data || []));
         }
+        if (rRes.ok) {
+          const rData = await rRes.json();
+          setRfqs(Array.isArray(rData) ? rData : (rData.data || []));
+        }
+      } catch (e) {
+        console.error('Failed to load lookup data', e);
       }
-    } catch (error) {
-      console.error('Failed to fetch initial data:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleSupplierSelect = (supplier) => {
-    setFormData(prev => ({
-      ...prev,
-      supplierId: supplier.id,
-      supplierName: supplier.name
-    }));
-    setShowSupplierSearch(false);
-    setSupplierSearch('');
-  };
-
-  const handleItemChange = (index, field, value) => {
-    const updatedItems = [...formData.items];
-    updatedItems[index] = {
-      ...updatedItems[index],
-      [field]: value
     };
+    load();
+  }, []);
 
-    // Recalculate total if quantity or unit price changed
-    if (field === 'quantity' || field === 'poUnitPrice') {
-      const quantity = parseFloat(updatedItems[index].quantity) || 0;
-      const unitPrice = parseFloat(updatedItems[index].poUnitPrice) || 0;
-      updatedItems[index].poTotal = quantity * unitPrice;
-    }
-
-    setFormData(prev => ({ ...prev, items: updatedItems }));
-  };
-
-  const addItem = () => {
-    setFormData(prev => ({
-      ...prev,
-      items: [...prev.items, {
-        id: Date.now(),
-        description: '',
-        quantity: 1,
-        unit: 'PCS',
-        poUnitPrice: 0,
-        poTotal: 0
-      }]
+  // ── Item helpers ───────────────────────────────────────────────────────────
+  const updateItem = (key, field, value) => {
+    setItems(prev => prev.map(item => {
+      if (item._key !== key) return item;
+      const updated = { ...item, [field]: value };
+      if (field === 'quantity' || field === 'unitPrice') {
+        const qty = parseFloat(field === 'quantity' ? value : updated.quantity) || 0;
+        const price = parseFloat(field === 'unitPrice' ? value : updated.unitPrice) || 0;
+        updated.totalPrice = qty * price;
+      }
+      return updated;
     }));
   };
 
-  const removeItem = (index) => {
-    const updatedItems = [...formData.items];
-    updatedItems.splice(index, 1);
-    setFormData(prev => ({ ...prev, items: updatedItems }));
+  const addItem = () => setItems(prev => [...prev, emptyItem()]);
+  const removeItem = (key) => setItems(prev => prev.filter(i => i._key !== key));
+
+  const totalValue = items.reduce((sum, i) => sum + (i.totalPrice || 0), 0);
+
+  // ── Validation ─────────────────────────────────────────────────────────────
+  const validate = () => {
+    const e = {};
+    if (!form.projectName.trim()) e.projectName = 'Project name is required';
+    if (!form.vendorId) e.vendorId = 'Vendor is required';
+    const validItems = items.filter(i => i.description.trim() && parseFloat(i.quantity) > 0 && parseFloat(i.unitPrice) >= 0);
+    if (validItems.length === 0) e.items = 'At least one item with description, quantity and unit price is required';
+    setErrors(e);
+    return Object.keys(e).length === 0;
   };
 
-  const calculateTotals = () => {
-    const subtotal = formData.items.reduce((sum, item) => sum + (item.poTotal || 0), 0);
-    const taxRate = 0.15; // 15% VAT
-    const tax = subtotal * taxRate;
-    const total = subtotal + tax;
-
-    return { subtotal, tax, total };
-  };
-
-  const handleSubmit = async (status = 'DRAFT') => {
+  // ── Submit ─────────────────────────────────────────────────────────────────
+  const submit = async (submitForApproval = false) => {
+    if (!validate()) { setActiveTab('details'); return; }
+    setSubmitting(true);
+    setApiError('');
     try {
-      const totals = calculateTotals();
-      const poData = {
-        ...formData,
-        status,
-        totalValue: totals.total,
-        subtotal: totals.subtotal,
-        tax: totals.tax,
-        createdBy: "Current User"
+      const payload = {
+        projectName: form.projectName,
+        vendorId: parseInt(form.vendorId),
+        rfqId: form.rfqId ? parseInt(form.rfqId) : null,
+        currency: form.currency,
+        requiredDate: form.requiredDate || null,
+        deliveryLocation: form.deliveryLocation,
+        paymentTerms: form.paymentTerms,
+        warrantyPeriod: form.warrantyPeriod,
+        notes: form.notes,
+        items: items
+          .filter(i => i.description.trim())
+          .map(i => ({
+            description: i.description,
+            csiCode: i.csiCode,
+            quantity: parseFloat(i.quantity),
+            unit: i.unit,
+            unitPrice: parseFloat(i.unitPrice),
+            costCode: i.costCode,
+          })),
       };
 
-      console.log('Creating PO:', poData);
-      // In real app, call API here
-      
-      if (status === 'DRAFT') {
-        alert('Purchase Order saved as draft successfully!');
-      } else {
-        alert('Purchase Order issued successfully!');
+      const res = await fetch(`${API_BASE}/api/purchase-orders`, {
+        method: 'POST',
+        headers: authHeaders(),
+        body: JSON.stringify(payload),
+      });
+
+      if (res.status === 401) { router.push('/login'); return; }
+      if (!res.ok) {
+        const err = await res.json();
+        setApiError(err.error || 'Failed to create purchase order');
+        return;
       }
-      
+
+      const created = await res.json();
+
+      // If submit for approval, immediately patch status
+      if (submitForApproval) {
+        await fetch(`${API_BASE}/api/purchase-orders/${created.id}/status`, {
+          method: 'PATCH',
+          headers: authHeaders(),
+          body: JSON.stringify({ status: 'PENDING_APPROVAL' }),
+        });
+      }
+
       router.push('/dashboard/procurement/purchase-orders');
-    } catch (error) {
-      console.error('Failed to create PO:', error);
-      alert('Failed to create Purchase Order. Please try again.');
+    } catch (e) {
+      setApiError('Network error. Please try again.');
+    } finally {
+      setSubmitting(false);
     }
   };
 
-  const filteredSuppliers = suppliers.filter(supplier =>
-    supplier.name.toLowerCase().includes(supplierSearch.toLowerCase()) ||
-    supplier.contact.toLowerCase().includes(supplierSearch.toLowerCase())
-  );
+  // ── Filtered lookups ───────────────────────────────────────────────────────
+  const filteredVendors = vendors.filter(v =>
+    (v.companyLegalName || '').toLowerCase().includes(vendorSearch.toLowerCase())
+  ).slice(0, 8);
 
-  const totals = calculateTotals();
+  const filteredRfqs = rfqs.filter(r =>
+    (r.rfqNumber || '').toLowerCase().includes(rfqSearch.toLowerCase()) ||
+    (r.projectName || '').toLowerCase().includes(rfqSearch.toLowerCase())
+  ).slice(0, 8);
 
-  if (loading) {
-    return (
-      <ResponsiveLayout>
-        <div className="flex items-center justify-center min-h-96">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
-        </div>
-      </ResponsiveLayout>
-    );
-  }
+  // ── UI ─────────────────────────────────────────────────────────────────────
+  const tabs = [
+    { id: 'details', label: 'PO Details', icon: FileText },
+    { id: 'items', label: 'Line Items', icon: Package },
+    { id: 'review', label: 'Review', icon: CheckCircle },
+  ];
 
   return (
     <ResponsiveLayout>
-      <div className="max-w-6xl mx-auto w-full p-4 lg:p-6">
+      <div className="max-w-5xl mx-auto w-full p-4 lg:p-6">
+
         {/* Header */}
-        <div className="mb-6">
-          <button 
-            onClick={() => router.back()}
-            className="flex items-center text-gray-600 hover:text-gray-900 mb-4"
+        <div className="flex items-center gap-3 mb-6">
+          <button
+            onClick={() => router.push('/dashboard/procurement/purchase-orders')}
+            className="p-2 rounded-lg hover:bg-gray-100 text-gray-500"
           >
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Back
+            <ArrowLeft className="w-5 h-5" />
           </button>
-          
-          <div className="flex flex-col lg:flex-row lg:justify-between lg:items-start gap-4">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-800">Create Purchase Order</h1>
-              <p className="text-gray-600">Fill in the details to create a new purchase order</p>
-              {rfqData && (
-                <p className="text-sm text-green-600 mt-1">
-                  Auto-filled from RFQ: {rfqData.rfqNumber} - {rfqData.title}
-                </p>
-              )}
-            </div>
-            
-            <div className="flex space-x-3">
-              <button
-                onClick={() => handleSubmit('DRAFT')}
-                className="flex items-center px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700"
-              >
-                <Save className="w-4 h-4 mr-2" />
-                Save as Draft
-              </button>
-              <button
-                onClick={() => handleSubmit('ISSUED')}
-                className="flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
-              >
-                <Send className="w-4 h-4 mr-2" />
-                Issue PO
-              </button>
-            </div>
+          <div>
+            <h1 className="text-2xl font-bold" style={{ color: '#0A1628' }}>New Purchase Order</h1>
+            <p className="text-sm text-gray-500">Fill in the details to create a purchase order</p>
           </div>
         </div>
 
-        {/* Basic Information */}
-        <div className="bg-white rounded-lg border border-gray-200 p-6 mb-6">
-          <h2 className="text-lg font-semibold mb-4 flex items-center">
-            <FileText className="w-5 h-5 mr-2 text-green-600" />
-            Basic Information
-          </h2>
-          
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* API Error */}
+        {apiError && (
+          <div className="flex items-center gap-2 px-4 py-3 mb-4 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+            <AlertTriangle className="w-4 h-4 flex-shrink-0" />
+            {apiError}
+          </div>
+        )}
+
+        {/* Tabs */}
+        <div className="flex border-b border-gray-200 mb-6 gap-1">
+          {tabs.map(({ id, label, icon: Icon }) => (
+            <button
+              key={id}
+              onClick={() => setActiveTab(id)}
+              className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${
+                activeTab === id
+                  ? 'border-yellow-600 text-yellow-700'
+                  : 'border-transparent text-gray-500 hover:text-gray-700'
+              }`}
+              style={activeTab === id ? { borderColor: '#B8960A', color: '#B8960A' } : {}}
+            >
+              <Icon className="w-4 h-4" />
+              {label}
+            </button>
+          ))}
+        </div>
+
+        {/* ── Tab: Details ──────────────────────────────────────────────── */}
+        {activeTab === 'details' && (
+          <div className="bg-white rounded-lg border border-gray-200 p-6 space-y-5">
+            <h2 className="font-semibold text-gray-800 text-base border-b pb-3">PO Details</h2>
+
+            {/* Project Name */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                PO Number *
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Project Name <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
-                value={formData.poNumber}
-                onChange={(e) => setFormData({...formData, poNumber: e.target.value})}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                required
+                className={`w-full px-3 py-2 text-sm border rounded-lg outline-none focus:ring-2 ${errors.projectName ? 'border-red-400' : 'border-gray-300'}`}
+                placeholder="e.g. Tower B Construction"
+                value={form.projectName}
+                onChange={(e) => setForm({ ...form, projectName: e.target.value })}
               />
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Project Name *
-              </label>
-              <input
-                type="text"
-                value={formData.projectName}
-                onChange={(e) => setFormData({...formData, projectName: e.target.value})}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                required
-              />
+              {errors.projectName && <p className="text-xs text-red-500 mt-1">{errors.projectName}</p>}
             </div>
 
-            {/* Supplier Selection */}
+            {/* Vendor */}
             <div className="relative">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Supplier *
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Vendor <span className="text-red-500">*</span>
               </label>
-              <div className="relative">
-                <button
-                  type="button"
-                  onClick={() => setShowSupplierSearch(true)}
-                  className="w-full p-3 border border-gray-300 rounded-lg text-left focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                >
-                  {formData.supplierName ? (
-                    <div>
-                      <p className="font-medium">{formData.supplierName}</p>
-                      <p className="text-sm text-gray-500">Click to change supplier</p>
-                    </div>
-                  ) : (
-                    <p className="text-gray-500">Select a supplier...</p>
-                  )}
-                </button>
-                <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+              <div
+                className={`flex items-center gap-2 px-3 py-2 border rounded-lg cursor-pointer ${errors.vendorId ? 'border-red-400' : 'border-gray-300'}`}
+                onClick={() => { setShowVendorDropdown(true); setVendorSearch(''); }}
+              >
+                <Building className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                <span className={`text-sm flex-1 ${form.vendorId ? 'text-gray-900' : 'text-gray-400'}`}>
+                  {form.vendorName || 'Select vendor…'}
+                </span>
+                {form.vendorId
+                  ? <X className="w-4 h-4 text-gray-400" onClick={(e) => { e.stopPropagation(); setForm({ ...form, vendorId: '', vendorName: '', vendorClass: '' }); }} />
+                  : <ChevronDown className="w-4 h-4 text-gray-400" />}
               </div>
-
-              {/* Supplier Search Modal */}
-              {showSupplierSearch && (
-                <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg">
-                  <div className="p-3 border-b">
-                    <div className="relative">
-                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+              {showVendorDropdown && (
+                <div className="absolute z-20 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg">
+                  <div className="p-2 border-b">
+                    <div className="flex items-center gap-2 px-2 py-1 bg-gray-50 rounded">
+                      <Search className="w-3.5 h-3.5 text-gray-400" />
                       <input
-                        type="text"
-                        value={supplierSearch}
-                        onChange={(e) => setSupplierSearch(e.target.value)}
-                        placeholder="Search suppliers..."
-                        className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg"
                         autoFocus
+                        className="flex-1 text-sm bg-transparent outline-none"
+                        placeholder="Search vendors…"
+                        value={vendorSearch}
+                        onChange={(e) => setVendorSearch(e.target.value)}
                       />
                     </div>
                   </div>
-                  <div className="max-h-60 overflow-y-auto">
-                    {filteredSuppliers.map(supplier => (
-                      <button
-                        key={supplier.id}
-                        onClick={() => handleSupplierSelect(supplier)}
-                        className="w-full p-3 text-left hover:bg-gray-50 border-b border-gray-100 last:border-b-0"
-                      >
-                        <p className="font-medium">{supplier.name}</p>
-                        <p className="text-sm text-gray-500">Contact: {supplier.contact}</p>
-                      </button>
-                    ))}
-                    {filteredSuppliers.length === 0 && (
-                      <div className="p-4 text-center text-gray-500">
-                        No suppliers found
-                      </div>
-                    )}
-                  </div>
-                  <div className="p-3 border-t">
-                    <button
-                      onClick={() => setShowSupplierSearch(false)}
-                      className="w-full p-2 text-center text-gray-600 hover:text-gray-800"
-                    >
-                      Close
-                    </button>
+                  <div className="max-h-48 overflow-y-auto">
+                    {filteredVendors.length === 0
+                      ? <p className="text-xs text-gray-400 text-center py-4">No vendors found</p>
+                      : filteredVendors.map(v => (
+                        <button
+                          key={v.id}
+                          className="w-full text-left px-4 py-2.5 hover:bg-gray-50 flex items-center justify-between"
+                          onClick={() => {
+                            setForm({ ...form, vendorId: String(v.id), vendorName: v.companyLegalName, vendorClass: v.vendorClass || '' });
+                            setShowVendorDropdown(false);
+                          }}
+                        >
+                          <span className="text-sm text-gray-800">{v.companyLegalName}</span>
+                          {v.vendorClass && (
+                            <span className="text-xs px-2 py-0.5 bg-blue-50 text-blue-700 rounded-full">Class {v.vendorClass}</span>
+                          )}
+                        </button>
+                      ))}
                   </div>
                 </div>
               )}
+              {showVendorDropdown && (
+                <div className="fixed inset-0 z-10" onClick={() => setShowVendorDropdown(false)} />
+              )}
+              {errors.vendorId && <p className="text-xs text-red-500 mt-1">{errors.vendorId}</p>}
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                PO Date *
-              </label>
-              <input
-                type="date"
-                value={formData.poDate}
-                onChange={(e) => setFormData({...formData, poDate: e.target.value})}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                required
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Delivery Date *
-              </label>
-              <input
-                type="date"
-                value={formData.deliveryDate}
-                onChange={(e) => setFormData({...formData, deliveryDate: e.target.value})}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                required
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Payment Terms
-              </label>
-              <input
-                type="text"
-                value={formData.paymentTerms}
-                onChange={(e) => setFormData({...formData, paymentTerms: e.target.value})}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                placeholder="e.g., 30% advance, 70% after delivery"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Currency *
-              </label>
-              <select
-                value={formData.currency}
-                onChange={(e) => setFormData({...formData, currency: e.target.value})}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+            {/* Link to RFQ */}
+            <div className="relative">
+              <label className="block text-sm font-medium text-gray-700 mb-1">Link to RFQ <span className="text-gray-400 font-normal">(optional)</span></label>
+              <div
+                className="flex items-center gap-2 px-3 py-2 border border-gray-300 rounded-lg cursor-pointer"
+                onClick={() => { setShowRfqDropdown(true); setRfqSearch(''); }}
               >
-                <option value="SAR">SAR (Saudi Riyal)</option>
-                <option value="USD">USD (US Dollar)</option>
-                <option value="EUR">EUR (Euro)</option>
-              </select>
-            </div>
-          </div>
-        </div>
-
-        {/* Items Table */}
-        <div className="bg-white rounded-lg border border-gray-200 p-6 mb-6">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-lg font-semibold flex items-center">
-              <Package className="w-5 h-5 mr-2 text-blue-600" />
-              Items ({formData.items.length})
-            </h2>
-            <button
-              onClick={addItem}
-              className="flex items-center px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              Add Item
-            </button>
-          </div>
-
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Description</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Quantity</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Unit</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Unit Price</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Total</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200">
-                {formData.items.length === 0 ? (
-                  <tr>
-                    <td colSpan="6" className="px-4 py-8 text-center text-gray-500">
-                      <Package className="w-12 h-12 text-gray-300 mx-auto mb-2" />
-                      <p>No items added yet. Click "Add Item" to start.</p>
-                    </td>
-                  </tr>
-                ) : (
-                  formData.items.map((item, index) => (
-                    <tr key={item.id}>
-                      <td className="px-4 py-3">
-                        <input
-                          type="text"
-                          value={item.description}
-                          onChange={(e) => handleItemChange(index, 'description', e.target.value)}
-                          className="w-full p-2 border border-gray-300 rounded focus:ring-blue-500 focus:border-blue-500"
-                          placeholder="Item description"
-                        />
-                      </td>
-                      <td className="px-4 py-3">
-                        <input
-                          type="number"
-                          min="1"
-                          value={item.quantity}
-                          onChange={(e) => handleItemChange(index, 'quantity', e.target.value)}
-                          className="w-24 p-2 border border-gray-300 rounded focus:ring-blue-500 focus:border-blue-500"
-                        />
-                      </td>
-                      <td className="px-4 py-3">
-                        <select
-                          value={item.unit}
-                          onChange={(e) => handleItemChange(index, 'unit', e.target.value)}
-                          className="w-full p-2 border border-gray-300 rounded focus:ring-blue-500 focus:border-blue-500"
-                        >
-                          <option value="PCS">PCS</option>
-                          <option value="M">M</option>
-                          <option value="KG">KG</option>
-                          <option value="SET">SET</option>
-                          <option value="LOT">LOT</option>
-                        </select>
-                      </td>
-                      <td className="px-4 py-3">
-                        <div className="relative">
-                          <DollarSign className="absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                          <input
-                            type="number"
-                            step="0.01"
-                            value={item.poUnitPrice}
-                            onChange={(e) => handleItemChange(index, 'poUnitPrice', e.target.value)}
-                            className="w-full pl-8 pr-2 py-2 border border-gray-300 rounded focus:ring-blue-500 focus:border-blue-500"
-                          />
-                        </div>
-                      </td>
-                      <td className="px-4 py-3">
-                        <div className="flex items-center">
-                          <DollarSign className="w-4 h-4 text-green-500 mr-1" />
-                          <span className="font-bold">{item.poTotal?.toLocaleString() || 0}</span>
-                        </div>
-                      </td>
-                      <td className="px-4 py-3">
+                <FileText className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                <span className={`text-sm flex-1 ${form.rfqId ? 'text-gray-900' : 'text-gray-400'}`}>
+                  {form.rfqNumber || 'Select RFQ…'}
+                </span>
+                {form.rfqId
+                  ? <X className="w-4 h-4 text-gray-400" onClick={(e) => { e.stopPropagation(); setForm({ ...form, rfqId: '', rfqNumber: '' }); }} />
+                  : <ChevronDown className="w-4 h-4 text-gray-400" />}
+              </div>
+              {showRfqDropdown && (
+                <div className="absolute z-20 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg">
+                  <div className="p-2 border-b">
+                    <div className="flex items-center gap-2 px-2 py-1 bg-gray-50 rounded">
+                      <Search className="w-3.5 h-3.5 text-gray-400" />
+                      <input
+                        autoFocus
+                        className="flex-1 text-sm bg-transparent outline-none"
+                        placeholder="Search RFQ number or project…"
+                        value={rfqSearch}
+                        onChange={(e) => setRfqSearch(e.target.value)}
+                      />
+                    </div>
+                  </div>
+                  <div className="max-h-48 overflow-y-auto">
+                    {filteredRfqs.length === 0
+                      ? <p className="text-xs text-gray-400 text-center py-4">No RFQs found</p>
+                      : filteredRfqs.map(r => (
                         <button
-                          onClick={() => removeItem(index)}
-                          className="p-2 text-red-600 hover:text-red-800 hover:bg-red-50 rounded"
+                          key={r.id}
+                          className="w-full text-left px-4 py-2.5 hover:bg-gray-50"
+                          onClick={() => {
+                            setForm({ ...form, rfqId: String(r.id), rfqNumber: r.rfqNumber });
+                            setShowRfqDropdown(false);
+                          }}
                         >
-                          <Minus className="w-4 h-4" />
+                          <div className="text-sm font-medium text-gray-800">{r.rfqNumber}</div>
+                          <div className="text-xs text-gray-500">{r.projectName}</div>
                         </button>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Totals */}
-          {formData.items.length > 0 && (
-            <div className="mt-6 border-t border-gray-200 pt-6">
-              <div className="flex justify-end">
-                <div className="w-64">
-                  <div className="flex justify-between py-2">
-                    <span className="text-gray-600">Subtotal:</span>
-                    <span className="font-medium">{totals.subtotal.toLocaleString()} {formData.currency}</span>
-                  </div>
-                  <div className="flex justify-between py-2">
-                    <span className="text-gray-600">Tax (15%):</span>
-                    <span className="font-medium">{totals.tax.toLocaleString()} {formData.currency}</span>
-                  </div>
-                  <div className="flex justify-between py-2 border-t border-gray-200 pt-2">
-                    <span className="text-lg font-bold text-gray-800">Total:</span>
-                    <span className="text-lg font-bold text-green-700">
-                      {totals.total.toLocaleString()} {formData.currency}
-                    </span>
+                      ))}
                   </div>
                 </div>
+              )}
+              {showRfqDropdown && (
+                <div className="fixed inset-0 z-10" onClick={() => setShowRfqDropdown(false)} />
+              )}
+            </div>
+
+            {/* Two-column grid */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Currency</label>
+                <select
+                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg outline-none"
+                  value={form.currency}
+                  onChange={(e) => setForm({ ...form, currency: e.target.value })}
+                >
+                  {CURRENCIES.map(c => <option key={c}>{c}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Required Delivery Date</label>
+                <input
+                  type="date"
+                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg outline-none"
+                  value={form.requiredDate}
+                  onChange={(e) => setForm({ ...form, requiredDate: e.target.value })}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Delivery Location</label>
+                <input
+                  type="text"
+                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg outline-none"
+                  placeholder="e.g. Site B, Jeddah"
+                  value={form.deliveryLocation}
+                  onChange={(e) => setForm({ ...form, deliveryLocation: e.target.value })}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Payment Terms</label>
+                <input
+                  type="text"
+                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg outline-none"
+                  placeholder="e.g. 30% advance, 70% on delivery"
+                  value={form.paymentTerms}
+                  onChange={(e) => setForm({ ...form, paymentTerms: e.target.value })}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Warranty Period</label>
+                <input
+                  type="text"
+                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg outline-none"
+                  placeholder="e.g. 12 months"
+                  value={form.warrantyPeriod}
+                  onChange={(e) => setForm({ ...form, warrantyPeriod: e.target.value })}
+                />
               </div>
             </div>
-          )}
-        </div>
 
-        {/* Notes */}
-        <div className="bg-white rounded-lg border border-gray-200 p-6 mb-6">
-          <h2 className="text-lg font-semibold mb-4 flex items-center">
-            <FileText className="w-5 h-5 mr-2 text-purple-600" />
-            Additional Notes
-          </h2>
-          <textarea
-            value={formData.notes}
-            onChange={(e) => setFormData({...formData, notes: e.target.value})}
-            rows="4"
-            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
-            placeholder="Add any additional notes, special instructions, or terms..."
-          />
-        </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Internal Notes</label>
+              <textarea
+                rows={3}
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg outline-none resize-none"
+                placeholder="Any internal notes for this PO…"
+                value={form.notes}
+                onChange={(e) => setForm({ ...form, notes: e.target.value })}
+              />
+            </div>
 
-        {/* Action Buttons */}
-        <div className="flex justify-end space-x-3">
-          <button
-            onClick={() => router.back()}
-            className="px-6 py-3 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 font-medium"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={() => handleSubmit('DRAFT')}
-            className="flex items-center px-6 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 font-medium"
-          >
-            <Save className="w-4 h-4 mr-2" />
-            Save as Draft
-          </button>
-          <button
-            onClick={() => handleSubmit('ISSUED')}
-            className="flex items-center px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium"
-          >
-            <Send className="w-4 h-4 mr-2" />
-            Issue Purchase Order
-          </button>
-        </div>
+            <div className="flex justify-end pt-2">
+              <button
+                className="px-5 py-2 text-sm text-white rounded-lg font-medium"
+                style={{ backgroundColor: '#B8960A' }}
+                onClick={() => setActiveTab('items')}
+              >
+                Next: Line Items →
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* ── Tab: Items ────────────────────────────────────────────────── */}
+        {activeTab === 'items' && (
+          <div className="bg-white rounded-lg border border-gray-200 p-6">
+            <div className="flex justify-between items-center border-b pb-3 mb-5">
+              <h2 className="font-semibold text-gray-800">Line Items</h2>
+              <button
+                onClick={addItem}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-white rounded-lg"
+                style={{ backgroundColor: '#B8960A' }}
+              >
+                <Plus className="w-4 h-4" /> Add Item
+              </button>
+            </div>
+
+            {errors.items && (
+              <div className="flex items-center gap-2 px-4 py-3 mb-4 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+                <AlertTriangle className="w-4 h-4" /> {errors.items}
+              </div>
+            )}
+
+            <div className="space-y-4">
+              {items.map((item, idx) => (
+                <div key={item._key} className="border border-gray-200 rounded-lg p-4">
+                  <div className="flex justify-between items-center mb-3">
+                    <span className="text-xs font-semibold text-gray-500 uppercase">Item #{idx + 1}</span>
+                    {items.length > 1 && (
+                      <button onClick={() => removeItem(item._key)} className="text-red-400 hover:text-red-600">
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    )}
+                  </div>
+                  <div className="grid grid-cols-1 lg:grid-cols-6 gap-3">
+                    <div className="lg:col-span-2">
+                      <label className="text-xs text-gray-500 mb-1 block">Description *</label>
+                      <input
+                        type="text"
+                        className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg outline-none"
+                        placeholder="Item description"
+                        value={item.description}
+                        onChange={(e) => updateItem(item._key, 'description', e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs text-gray-500 mb-1 block">CSI Code</label>
+                      <input
+                        type="text"
+                        className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg outline-none"
+                        placeholder="Optional"
+                        value={item.csiCode}
+                        onChange={(e) => updateItem(item._key, 'csiCode', e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs text-gray-500 mb-1 block">Qty *</label>
+                      <input
+                        type="number"
+                        min="0"
+                        className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg outline-none"
+                        value={item.quantity}
+                        onChange={(e) => updateItem(item._key, 'quantity', e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs text-gray-500 mb-1 block">Unit</label>
+                      <select
+                        className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg outline-none"
+                        value={item.unit}
+                        onChange={(e) => updateItem(item._key, 'unit', e.target.value)}
+                      >
+                        {UNITS.map(u => <option key={u}>{u}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="text-xs text-gray-500 mb-1 block">Unit Price *</label>
+                      <input
+                        type="number"
+                        min="0"
+                        className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg outline-none"
+                        value={item.unitPrice}
+                        onChange={(e) => updateItem(item._key, 'unitPrice', e.target.value)}
+                      />
+                    </div>
+                  </div>
+                  <div className="flex justify-between items-center mt-3">
+                    <div className="flex items-center gap-2">
+                      <label className="text-xs text-gray-500">Cost Code:</label>
+                      <input
+                        type="text"
+                        className="px-2 py-1 text-xs border border-gray-300 rounded outline-none w-32"
+                        placeholder="Optional"
+                        value={item.costCode}
+                        onChange={(e) => updateItem(item._key, 'costCode', e.target.value)}
+                      />
+                    </div>
+                    <div className="text-sm font-semibold text-gray-800">
+                      Total: {item.totalPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {form.currency}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Running Total */}
+            <div className="mt-5 flex justify-end">
+              <div className="bg-gray-50 border border-gray-200 rounded-lg px-6 py-3 text-right">
+                <p className="text-xs text-gray-500 uppercase tracking-wide">Total Value</p>
+                <p className="text-xl font-bold" style={{ color: '#B8960A' }}>
+                  {totalValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {form.currency}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex justify-between pt-5 border-t mt-5">
+              <button
+                className="px-4 py-2 text-sm text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50"
+                onClick={() => setActiveTab('details')}
+              >
+                ← Back
+              </button>
+              <button
+                className="px-5 py-2 text-sm text-white rounded-lg font-medium"
+                style={{ backgroundColor: '#B8960A' }}
+                onClick={() => setActiveTab('review')}
+              >
+                Next: Review →
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* ── Tab: Review ───────────────────────────────────────────────── */}
+        {activeTab === 'review' && (
+          <div className="space-y-5">
+            <div className="bg-white rounded-lg border border-gray-200 p-6">
+              <h2 className="font-semibold text-gray-800 border-b pb-3 mb-4">Review Summary</h2>
+
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-8 gap-y-3 text-sm">
+                <div className="flex justify-between"><span className="text-gray-500">Project</span><span className="font-medium text-gray-900">{form.projectName || '—'}</span></div>
+                <div className="flex justify-between"><span className="text-gray-500">Vendor</span><span className="font-medium text-gray-900">{form.vendorName || '—'}</span></div>
+                <div className="flex justify-between"><span className="text-gray-500">RFQ</span><span className="font-medium text-gray-900">{form.rfqNumber || '—'}</span></div>
+                <div className="flex justify-between"><span className="text-gray-500">Currency</span><span className="font-medium text-gray-900">{form.currency}</span></div>
+                <div className="flex justify-between"><span className="text-gray-500">Required Date</span><span className="font-medium text-gray-900">{form.requiredDate || '—'}</span></div>
+                <div className="flex justify-between"><span className="text-gray-500">Delivery Location</span><span className="font-medium text-gray-900">{form.deliveryLocation || '—'}</span></div>
+                <div className="flex justify-between"><span className="text-gray-500">Payment Terms</span><span className="font-medium text-gray-900">{form.paymentTerms || '—'}</span></div>
+                <div className="flex justify-between"><span className="text-gray-500">Warranty Period</span><span className="font-medium text-gray-900">{form.warrantyPeriod || '—'}</span></div>
+                {form.notes && <div className="lg:col-span-2 flex justify-between"><span className="text-gray-500">Notes</span><span className="font-medium text-gray-900 max-w-xs text-right">{form.notes}</span></div>}
+              </div>
+            </div>
+
+            <div className="bg-white rounded-lg border border-gray-200 p-6">
+              <h3 className="font-semibold text-gray-800 mb-4">Line Items</h3>
+              <div className="overflow-x-auto">
+                <table className="min-w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-gray-200">
+                      {['#', 'Description', 'CSI Code', 'Qty', 'Unit', 'Unit Price', 'Total'].map(h => (
+                        <th key={h} className="py-2 px-3 text-left text-xs font-semibold text-gray-500 uppercase">{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {items.filter(i => i.description.trim()).map((item, idx) => (
+                      <tr key={item._key}>
+                        <td className="py-2 px-3 text-gray-500">{idx + 1}</td>
+                        <td className="py-2 px-3 text-gray-900 font-medium">{item.description}</td>
+                        <td className="py-2 px-3 text-gray-500">{item.csiCode || '—'}</td>
+                        <td className="py-2 px-3">{item.quantity}</td>
+                        <td className="py-2 px-3 text-gray-500">{item.unit}</td>
+                        <td className="py-2 px-3">{parseFloat(item.unitPrice || 0).toLocaleString()}</td>
+                        <td className="py-2 px-3 font-semibold">{item.totalPrice.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                  <tfoot>
+                    <tr className="border-t-2 border-gray-300 bg-gray-50">
+                      <td colSpan={6} className="py-2 px-3 text-right font-semibold text-gray-700">Total Value</td>
+                      <td className="py-2 px-3 font-bold text-lg" style={{ color: '#B8960A' }}>
+                        {totalValue.toLocaleString(undefined, { minimumFractionDigits: 2 })} {form.currency}
+                      </td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+            </div>
+
+            <div className="flex justify-between items-center pt-2">
+              <button
+                className="px-4 py-2 text-sm text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50"
+                onClick={() => setActiveTab('items')}
+              >
+                ← Back
+              </button>
+              <div className="flex items-center gap-3">
+                <button
+                  disabled={submitting}
+                  className="flex items-center gap-2 px-5 py-2 text-sm border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 disabled:opacity-50"
+                  onClick={() => router.push('/dashboard/procurement/purchase-orders')}
+                >
+                  <X className="w-4 h-4" /> Cancel
+                </button>
+                <button
+                  disabled={submitting}
+                  className="flex items-center gap-2 px-5 py-2 text-sm border-2 text-yellow-800 rounded-lg font-medium disabled:opacity-50"
+                  style={{ borderColor: '#B8960A', color: '#B8960A' }}
+                  onClick={() => submit(false)}
+                >
+                  <Save className="w-4 h-4" />
+                  {submitting ? 'Saving…' : 'Save as Draft'}
+                </button>
+                <button
+                  disabled={submitting}
+                  className="flex items-center gap-2 px-5 py-2 text-sm text-white rounded-lg font-medium disabled:opacity-50"
+                  style={{ backgroundColor: '#0A1628' }}
+                  onClick={() => submit(true)}
+                >
+                  <Send className="w-4 h-4" />
+                  {submitting ? 'Submitting…' : 'Submit for Approval'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </ResponsiveLayout>
   );
-};
-
-export default CreatePurchaseOrderPage;
+}

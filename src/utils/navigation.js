@@ -1,8 +1,9 @@
 // frontend/src/utils/navigation.js - UPDATED WITH TRANSLATION KEYS
-import { 
-  Home, Users, ClipboardList, Briefcase, Receipt, BarChart3, FileText, 
+import {
+  Home, Users, ClipboardList, Briefcase, Receipt, BarChart3, FileText,
   TrendingUp, DollarSign, Shield, CheckCircle, Building, Send, ListOrdered,
-  CheckSquare, UserPlus, Settings, MessageSquare, Grid, Truck, Palette
+  CheckSquare, UserPlus, Settings, MessageSquare, Grid, Truck, Palette,
+  ShoppingCart
 } from 'lucide-react';
 import { ROLES } from '../constants/roles';
 
@@ -49,7 +50,7 @@ export const getNavigationItems = (roleId) => {
         { name: "Task Assignment", translationKey: "taskAssignment", icon: <CheckSquare size={18} />, href: "/dashboard/tasks" },
         { name: "Vendor Management", translationKey: "vendorManagement", icon: <Building size={18} />, href: "/dashboard/procurement/vendors" },
         { name: "RFQs", translationKey: "rfqs", icon: <ClipboardList size={18} />, href: "/dashboard/procurement/rfq" },
-        { name: "POs", translationKey: "pos", icon: <TrendingUp size={18} />, href: "/dashboard/procurement/purchase-orders" },
+        { name: "Purchase Orders", translationKey: "purchaseOrders", icon: <ShoppingCart size={18} />, href: "/dashboard/procurement/purchase-orders" },
         { name: "PRs", translationKey: "prs", icon: <Receipt size={18} />, href: "/dashboard/procurement/purchase-requests" },
         { name: "Contracts", translationKey: "contracts", icon: <FileText size={18} />, href: "/dashboard/procurement/contracts" },
         { name: "Invoice", translationKey: "invoice", icon: <DollarSign size={18} />, href: "/dashboard/procurement/invoices" },
@@ -68,6 +69,7 @@ export const getNavigationItems = (roleId) => {
         { name: "Vendors", translationKey: "vendors", icon: <Users size={18} />, href: "/dashboard/procurement/vendors" },
         { name: "RFOs", translationKey: "rfos", icon: <Send size={18} />, href: "/dashboard/procurement/rfos" },
         { name: "Contracts", translationKey: "contracts", icon: <Briefcase size={18} />, href: "/dashboard/procurement/contracts" },
+        { name: "Purchase Orders", translationKey: "purchaseOrders", icon: <ShoppingCart size={18} />, href: "/dashboard/procurement/purchase-orders" },
         { name: "IPCs", translationKey: "ipcs", icon: <Receipt size={18} />, href: "/dashboard/procurement/ipcs" },
         { name: "Cost Control", translationKey: "costControl", icon: <BarChart3 size={18} />, href: "/dashboard/procurement/cost-control" }
       ];
