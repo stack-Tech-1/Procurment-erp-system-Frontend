@@ -111,6 +111,22 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
         const [previewModal, setPreviewModal] = useState({ isOpen: false, fileUrl: '', fileName: '' });
         const [uploadingDocType, setUploadingDocType] = useState(null);
 
+        // AI Evaluation + Admin Action state
+        const [qualification, setQualification] = useState(null);
+        const [evalLoading, setEvalLoading] = useState(false);
+        const [showEngineerModal, setShowEngineerModal] = useState(false);
+        const [showActionModal, setShowActionModal] = useState(false);
+        const [selectedAction, setSelectedAction] = useState(null);
+        const [actionForm, setActionForm] = useState({
+            vendorClass: 'D', notes: '', nextReviewDate: '',
+            assignedReviewerId: '', sendEmailToVendor: true, conditionNote: ''
+        });
+        const [engineerForm, setEngineerForm] = useState({
+            technicalScore: 5, financialScore: 5, experienceScore: 5,
+            engineerNotes: '', recommendation: 'APPROVE'
+        });
+        const [actionToast, setActionToast] = useState(null);
+
         // Get authentication token
         const getAuthToken = () => {
             if (typeof window !== 'undefined') {
@@ -161,6 +177,18 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
             
             const data = response.data;
             setVendor(data);
+
+            // Populate qualification state
+            const latestQ = data.vendorQualifications?.[0] || null;
+            setQualification(latestQ);
+            if (latestQ) {
+                setEngineerForm(prev => ({
+                    ...prev,
+                    technicalScore: latestQ.technicalScore || 5,
+                    financialScore: latestQ.financialScore || 5,
+                    experienceScore: latestQ.experienceScore || 5,
+                }));
+            }
 
             // Populate state from backend data
             setSelectedCategoryIds(data.categories?.map(c => c.id) || []);
@@ -305,6 +333,69 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
             }
         };
 
+
+        const showToast = (msg, type = 'success') => {
+            setActionToast({ msg, type });
+            setTimeout(() => setActionToast(null), 4000);
+        };
+
+        const handleRunAIEvaluation = async () => {
+            const token = getAuthToken();
+            if (!token) return;
+            setEvalLoading(true);
+            try {
+                const res = await axios.post(
+                    `${API_BASE_URL}/api/vendors/${vendorId}/evaluation/ai`,
+                    {},
+                    { headers: { Authorization: `Bearer ${token}` } }
+                );
+                setQualification(res.data.qualification || res.data);
+                showToast('AI evaluation complete');
+            } catch (err) {
+                showToast(err.response?.data?.error || 'Evaluation failed', 'error');
+            } finally {
+                setEvalLoading(false);
+            }
+        };
+
+        const handleEngineerReviewSubmit = async () => {
+            const token = getAuthToken();
+            if (!token) return;
+            if (!engineerForm.engineerNotes.trim()) {
+                showToast('Engineer notes are required', 'error');
+                return;
+            }
+            try {
+                const res = await axios.post(
+                    `${API_BASE_URL}/api/vendors/${vendorId}/evaluation/review`,
+                    engineerForm,
+                    { headers: { Authorization: `Bearer ${token}` } }
+                );
+                setQualification(res.data);
+                setShowEngineerModal(false);
+                showToast('Engineer review submitted');
+            } catch (err) {
+                showToast(err.response?.data?.error || 'Review failed', 'error');
+            }
+        };
+
+        const handleAdminAction = async () => {
+            const token = getAuthToken();
+            if (!token) return;
+            try {
+                await axios.post(
+                    `${API_BASE_URL}/api/vendors/${vendorId}/qualification/admin-action`,
+                    { action: selectedAction, ...actionForm },
+                    { headers: { Authorization: `Bearer ${token}` } }
+                );
+                setShowActionModal(false);
+                setSelectedAction(null);
+                showToast(`Action "${selectedAction}" applied successfully`);
+                await fetchVendorDetails();
+            } catch (err) {
+                showToast(err.response?.data?.error || 'Action failed', 'error');
+            }
+        };
 
         const DetailItem = ({ label, value, icon: Icon, className = '' }) => (
             <div className={`p-3 bg-gray-50 rounded-lg text-sm border ${className || 'border-gray-200'}`}>
@@ -1002,33 +1093,294 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
                         </section>
                     </div>
                     
-                    {/* Right Column: Review Tabs */}
-                    <div className="lg:col-span-1">
-                        <ReviewTabs
-                            qualificationProps={{
-                                children: (
-                                    <QualificationPanel 
-                                        form={qualificationForm}
-                                        setForm={setQualificationForm}
-                                        onSubmit={handleReviewSubmit}
-                                        isSubmitting={isSubmitting}
-                                        submitMessage={submitMessage}
-                                        currentReviewerName={vendor.assignedReviewer?.name || t('na')}
-                                        lastReviewedBy={vendor.lastReviewedBy?.name || t('na')}
-                                        lastReviewNotes={vendor.reviewNotes}
-                                    />
-                                )
-                            }}
-                            evaluationProps={{
-                                children: (
-                                    <EvaluationPanel 
-                                        vendor={vendor}
-                                        onEvaluationSave={handleEvaluationSave}
-                                        currentReviewer={vendor.assignedReviewer}
-                                    />
-                                )
-                            }}
-                        />
+                    {/* Right Column: AI Evaluation + Admin Action Panel */}
+                    <div className="lg:col-span-1 space-y-6">
+
+                        {/* Toast */}
+                        {actionToast && (
+                            <div className={`fixed top-6 right-6 z-50 px-5 py-3 rounded-xl shadow-xl text-white text-sm font-semibold transition-all ${
+                                actionToast.type === 'error' ? 'bg-red-600' : 'bg-green-600'
+                            }`}>
+                                {actionToast.msg}
+                            </div>
+                        )}
+
+                        {/* Section A: AI Evaluation Panel */}
+                        <div className="bg-white rounded-xl shadow-md border border-gray-200 p-6">
+                            <div className="flex items-center space-x-3 pb-3 border-b-2 border-blue-100/70 mb-5">
+                                <TrendingUp className="w-6 h-6 text-blue-600" />
+                                <h2 className="text-xl font-extrabold text-gray-800">AI Evaluation</h2>
+                            </div>
+
+                            {!qualification?.totalScore ? (
+                                <div className="text-center py-6">
+                                    <p className="text-gray-500 text-sm mb-5">No evaluation yet. Run AI scoring to generate a qualification score.</p>
+                                    <button
+                                        onClick={handleRunAIEvaluation}
+                                        disabled={evalLoading}
+                                        className="px-5 py-2.5 rounded-lg text-white font-semibold text-sm flex items-center mx-auto space-x-2 disabled:opacity-50"
+                                        style={{ backgroundColor: '#B8960A' }}
+                                    >
+                                        {evalLoading ? (
+                                            <><Loader2 className="w-4 h-4 animate-spin" /><span>Running...</span></>
+                                        ) : (
+                                            <><TrendingUp className="w-4 h-4" /><span>Run AI Evaluation</span></>
+                                        )}
+                                    </button>
+                                </div>
+                            ) : (
+                                <div>
+                                    {/* Circular Score */}
+                                    <div className="flex items-center justify-center mb-6">
+                                        <div className="relative w-28 h-28">
+                                            <svg className="w-28 h-28 -rotate-90" viewBox="0 0 100 100">
+                                                <circle cx="50" cy="50" r="42" fill="none" stroke="#e5e7eb" strokeWidth="10" />
+                                                <circle
+                                                    cx="50" cy="50" r="42" fill="none"
+                                                    stroke={qualification.totalScore >= 85 ? '#16a34a' : qualification.totalScore >= 70 ? '#B8960A' : qualification.totalScore >= 55 ? '#f97316' : '#dc2626'}
+                                                    strokeWidth="10"
+                                                    strokeDasharray={`${(qualification.totalScore / 100) * 263.9} 263.9`}
+                                                    strokeLinecap="round"
+                                                />
+                                            </svg>
+                                            <div className="absolute inset-0 flex flex-col items-center justify-center">
+                                                <span className="text-2xl font-extrabold text-gray-800">{Math.round(qualification.totalScore)}</span>
+                                                <span className="text-xs text-gray-500">/ 100</span>
+                                            </div>
+                                        </div>
+                                        <div className="ml-5">
+                                            <p className="text-sm text-gray-500">Vendor Class</p>
+                                            <p className="text-3xl font-black" style={{ color: '#0A1628' }}>
+                                                {vendor.vendorClass || 'D'}
+                                            </p>
+                                            {qualification.isAIGenerated && (
+                                                <span className="text-xs text-blue-600 font-medium">AI Generated</span>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    {/* Score Breakdown Bars */}
+                                    {[
+                                        { label: 'Documents', score: qualification.documentScore, weight: '20%' },
+                                        { label: 'Technical', score: qualification.technicalScore, weight: '25%' },
+                                        { label: 'Financial', score: qualification.financialScore, weight: '20%' },
+                                        { label: 'Experience', score: qualification.experienceScore, weight: '25%' },
+                                        { label: 'Responsiveness', score: qualification.responsivenessScore, weight: '10%' },
+                                    ].map(({ label, score, weight }) => (
+                                        <div key={label} className="mb-3">
+                                            <div className="flex justify-between text-xs text-gray-600 mb-1">
+                                                <span className="font-medium">{label} <span className="text-gray-400">({weight})</span></span>
+                                                <span className="font-bold">{score != null ? Number(score).toFixed(1) : '—'} / 10</span>
+                                            </div>
+                                            <div className="w-full bg-gray-100 rounded-full h-2">
+                                                <div
+                                                    className="h-2 rounded-full"
+                                                    style={{
+                                                        width: `${score != null ? (score / 10) * 100 : 0}%`,
+                                                        backgroundColor: '#B8960A'
+                                                    }}
+                                                />
+                                            </div>
+                                        </div>
+                                    ))}
+
+                                    {/* Engineer Review Status */}
+                                    {qualification.recommendation && (
+                                        <div className={`mt-4 px-3 py-2 rounded-lg text-xs font-semibold ${
+                                            qualification.recommendation === 'APPROVE' ? 'bg-green-50 text-green-700 border border-green-200' :
+                                            qualification.recommendation === 'REJECT' ? 'bg-red-50 text-red-700 border border-red-200' :
+                                            'bg-yellow-50 text-yellow-700 border border-yellow-200'
+                                        }`}>
+                                            Engineer Recommendation: {qualification.recommendation}
+                                            {qualification.engineerReviewer && (
+                                                <span className="ml-1 font-normal text-gray-500">by {qualification.engineerReviewer.name}</span>
+                                            )}
+                                        </div>
+                                    )}
+
+                                    <div className="mt-4 flex gap-2">
+                                        <button
+                                            onClick={handleRunAIEvaluation}
+                                            disabled={evalLoading}
+                                            className="flex-1 px-3 py-2 rounded-lg border border-gray-300 text-gray-700 text-xs font-medium hover:bg-gray-50 disabled:opacity-50"
+                                        >
+                                            {evalLoading ? 'Running...' : 'Re-evaluate'}
+                                        </button>
+                                        <button
+                                            onClick={() => setShowEngineerModal(true)}
+                                            className="flex-1 px-3 py-2 rounded-lg text-white text-xs font-semibold"
+                                            style={{ backgroundColor: '#0A1628' }}
+                                        >
+                                            Engineer Review
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Section B: Manager Action Panel */}
+                        <div className="bg-white rounded-xl shadow-md border border-gray-200 p-6">
+                            <div className="flex items-center space-x-3 pb-3 border-b-2 border-blue-100/70 mb-5">
+                                <CheckSquare className="w-6 h-6 text-blue-600" />
+                                <h2 className="text-xl font-extrabold text-gray-800">Qualification Action</h2>
+                            </div>
+
+                            <p className="text-xs text-gray-500 mb-4">Current status: <span className="font-bold text-gray-800">{vendor.status}</span></p>
+
+                            <div className="space-y-2">
+                                {[
+                                    { action: 'APPROVE', label: 'Approve', color: 'bg-green-600 hover:bg-green-700' },
+                                    { action: 'CONDITIONAL_APPROVE', label: 'Conditional Approve', color: 'bg-teal-600 hover:bg-teal-700' },
+                                    { action: 'REJECT', label: 'Reject', color: 'bg-red-600 hover:bg-red-700' },
+                                    { action: 'NEEDS_RENEWAL', label: 'Needs Renewal', color: 'bg-orange-500 hover:bg-orange-600' },
+                                    { action: 'SEND_FOR_CORRECTION', label: 'Send for Correction', color: 'bg-blue-500 hover:bg-blue-600' },
+                                    { action: 'TEMPORARY_HOLD', label: 'Temporary Hold', color: 'bg-yellow-600 hover:bg-yellow-700' },
+                                    { action: 'BLACKLIST', label: 'Blacklist', color: 'bg-gray-800 hover:bg-gray-900' },
+                                ].map(({ action, label, color }) => (
+                                    <button
+                                        key={action}
+                                        onClick={() => { setSelectedAction(action); setShowActionModal(true); }}
+                                        className={`w-full px-4 py-2.5 rounded-lg text-white text-sm font-semibold text-left ${color} transition-colors`}
+                                    >
+                                        {label}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Engineer Review Modal */}
+                        {showEngineerModal && (
+                            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+                                <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 p-6">
+                                    <h3 className="text-lg font-bold text-gray-800 mb-4">Engineer Review</h3>
+
+                                    {[
+                                        { key: 'technicalScore', label: 'Technical Score' },
+                                        { key: 'financialScore', label: 'Financial Score' },
+                                        { key: 'experienceScore', label: 'Experience Score' },
+                                    ].map(({ key, label }) => (
+                                        <div key={key} className="mb-4">
+                                            <div className="flex justify-between text-sm font-medium text-gray-700 mb-1">
+                                                <span>{label}</span><span>{engineerForm[key]} / 10</span>
+                                            </div>
+                                            <input
+                                                type="range" min="0" max="10" step="0.5"
+                                                value={engineerForm[key]}
+                                                onChange={e => setEngineerForm(prev => ({ ...prev, [key]: parseFloat(e.target.value) }))}
+                                                className="w-full accent-yellow-600"
+                                            />
+                                        </div>
+                                    ))}
+
+                                    <div className="mb-4">
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">Recommendation *</label>
+                                        <div className="flex gap-3">
+                                            {['APPROVE', 'REJECT', 'NEEDS_MORE_INFO'].map(rec => (
+                                                <label key={rec} className="flex items-center gap-1 text-sm cursor-pointer">
+                                                    <input
+                                                        type="radio" name="recommendation" value={rec}
+                                                        checked={engineerForm.recommendation === rec}
+                                                        onChange={() => setEngineerForm(prev => ({ ...prev, recommendation: rec }))}
+                                                    />
+                                                    {rec.replace(/_/g, ' ')}
+                                                </label>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    <div className="mb-5">
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">Engineer Notes *</label>
+                                        <textarea
+                                            rows={3}
+                                            value={engineerForm.engineerNotes}
+                                            onChange={e => setEngineerForm(prev => ({ ...prev, engineerNotes: e.target.value }))}
+                                            placeholder="Detailed review notes..."
+                                            className="w-full border border-gray-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                                        />
+                                    </div>
+
+                                    <div className="flex gap-3">
+                                        <button onClick={() => setShowEngineerModal(false)} className="flex-1 px-4 py-2 rounded-lg border border-gray-300 text-gray-700 text-sm font-medium">Cancel</button>
+                                        <button onClick={handleEngineerReviewSubmit} className="flex-1 px-4 py-2 rounded-lg text-white text-sm font-semibold" style={{ backgroundColor: '#0A1628' }}>Submit Review</button>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Admin Action Modal */}
+                        {showActionModal && selectedAction && (
+                            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+                                <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 p-6 max-h-[90vh] overflow-y-auto">
+                                    <h3 className="text-lg font-bold text-gray-800 mb-1">{selectedAction.replace(/_/g, ' ')}</h3>
+                                    <p className="text-xs text-gray-500 mb-4">Confirm action for <span className="font-semibold">{vendor.companyLegalName || vendor.user?.name}</span></p>
+
+                                    {['APPROVE', 'CONDITIONAL_APPROVE'].includes(selectedAction) && (
+                                        <div className="mb-4">
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">Vendor Class *</label>
+                                            <select
+                                                value={actionForm.vendorClass}
+                                                onChange={e => setActionForm(prev => ({ ...prev, vendorClass: e.target.value }))}
+                                                className="w-full border border-gray-300 rounded-lg p-2 text-sm"
+                                            >
+                                                {['A', 'B', 'C', 'D'].map(c => <option key={c} value={c}>{c}</option>)}
+                                            </select>
+                                        </div>
+                                    )}
+
+                                    {selectedAction === 'CONDITIONAL_APPROVE' && (
+                                        <div className="mb-4">
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">Condition Note *</label>
+                                            <textarea
+                                                rows={2}
+                                                value={actionForm.conditionNote}
+                                                onChange={e => setActionForm(prev => ({ ...prev, conditionNote: e.target.value }))}
+                                                placeholder="Describe the condition..."
+                                                className="w-full border border-gray-300 rounded-lg p-2 text-sm"
+                                            />
+                                        </div>
+                                    )}
+
+                                    <div className="mb-4">
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">Notes</label>
+                                        <textarea
+                                            rows={3}
+                                            value={actionForm.notes}
+                                            onChange={e => setActionForm(prev => ({ ...prev, notes: e.target.value }))}
+                                            placeholder="Review notes..."
+                                            className="w-full border border-gray-300 rounded-lg p-2 text-sm"
+                                        />
+                                    </div>
+
+                                    <div className="mb-4">
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">Next Review Date</label>
+                                        <input
+                                            type="date"
+                                            value={actionForm.nextReviewDate}
+                                            onChange={e => setActionForm(prev => ({ ...prev, nextReviewDate: e.target.value }))}
+                                            className="w-full border border-gray-300 rounded-lg p-2 text-sm"
+                                        />
+                                    </div>
+
+                                    <div className="mb-5">
+                                        <label className="flex items-center gap-2 cursor-pointer">
+                                            <input
+                                                type="checkbox"
+                                                checked={actionForm.sendEmailToVendor}
+                                                onChange={e => setActionForm(prev => ({ ...prev, sendEmailToVendor: e.target.checked }))}
+                                                className="w-4 h-4 accent-blue-600"
+                                            />
+                                            <span className="text-sm text-gray-700">Send notification email to vendor</span>
+                                        </label>
+                                    </div>
+
+                                    <div className="flex gap-3">
+                                        <button onClick={() => { setShowActionModal(false); setSelectedAction(null); }} className="flex-1 px-4 py-2 rounded-lg border border-gray-300 text-gray-700 text-sm font-medium">Cancel</button>
+                                        <button onClick={handleAdminAction} className="flex-1 px-4 py-2 rounded-lg text-white text-sm font-semibold bg-blue-700 hover:bg-blue-800">Confirm</button>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
                     </div>
                 </div>
             </div>
