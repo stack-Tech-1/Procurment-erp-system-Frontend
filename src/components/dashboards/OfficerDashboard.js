@@ -148,6 +148,85 @@ const OfficerDashboard = ({ data }) => {
     fetchDashboardData();
   };
 
+  // ── My Tasks state ──────────────────────────────────────────────────────────
+  const [myTasks, setMyTasks] = useState([]);
+  const [taskFilter, setTaskFilter] = useState('ALL');
+  const [priorityFilter, setPriorityFilter] = useState('ALL');
+  const [expandedTask, setExpandedTask] = useState(null);
+  const [updateForm, setUpdateForm] = useState({ status: '', progressPct: 0, remarks: '' });
+  const [updating, setUpdating] = useState(false);
+  const [updateMsg, setUpdateMsg] = useState(null);
+
+  const fetchMyTasks = async () => {
+    const token = localStorage.getItem('authToken');
+    if (!token) return;
+    try {
+      const params = new URLSearchParams();
+      if (taskFilter !== 'ALL') params.set('status', taskFilter);
+      if (priorityFilter !== 'ALL') params.set('priority', priorityFilter);
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/tasks/my-tasks?${params}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.ok) {
+        const json = await res.json();
+        setMyTasks(json.data || []);
+      }
+    } catch (e) {
+      console.error('fetchMyTasks error:', e);
+    }
+  };
+
+  useEffect(() => { fetchMyTasks(); }, [taskFilter, priorityFilter]);
+  useEffect(() => {
+    const interval = setInterval(fetchMyTasks, 300000);
+    return () => clearInterval(interval);
+  }, [taskFilter, priorityFilter]);
+
+  const handleTaskUpdate = async (taskId) => {
+    const token = localStorage.getItem('authToken');
+    if (!token || !updateForm.status) return;
+    setUpdating(true);
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/tasks/${taskId}/status`, {
+        method: 'PATCH',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify(updateForm),
+      });
+      if (res.ok) {
+        setUpdateMsg('Updated successfully');
+        setExpandedTask(null);
+        await fetchMyTasks();
+        setTimeout(() => setUpdateMsg(null), 2500);
+      }
+    } catch (e) {
+      console.error('Task update error:', e);
+    } finally {
+      setUpdating(false);
+    }
+  };
+
+  const openExpand = (task) => {
+    setExpandedTask(expandedTask === task.id ? null : task.id);
+    setUpdateForm({ status: task.status, progressPct: task.progressPct || 0, remarks: task.remarks || '' });
+  };
+
+  // Derived stats for task KPI row
+  const now = new Date();
+  const tasksDueToday = myTasks.filter(t => t.daysUntilDue === 0 && t.status !== 'COMPLETED' && t.status !== 'CANCELLED').length;
+  const tasksOverdue = myTasks.filter(t => t.status === 'OVERDUE').length;
+  const tasksInProgress = myTasks.filter(t => t.status === 'IN_PROGRESS').length;
+  const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+  const completedThisMonth = myTasks.filter(t => t.status === 'COMPLETED').length;
+
+  const PRIORITY_BORDER = { URGENT: '#dc2626', HIGH: '#f97316', MEDIUM: '#3b82f6', LOW: '#9ca3af' };
+  const STATUS_TABS = ['ALL', 'NOT_STARTED', 'IN_PROGRESS', 'OVERDUE', 'COMPLETED'];
+
+  const filteredTasks = myTasks.filter(t => {
+    if (taskFilter !== 'ALL' && t.status !== taskFilter) return false;
+    if (priorityFilter !== 'ALL' && t.priority !== priorityFilter) return false;
+    return true;
+  });
+
   // Data Source Indicator Component (same as ManagerDashboard)
   const DataSourceIndicator = () => {
     if (dataSource === 'api') {
@@ -395,92 +474,181 @@ const OfficerDashboard = ({ data }) => {
         />
       </div>
 
+      {/* My Tasks — Live Stats Row */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 flex items-center gap-4">
+          <div className="p-3 rounded-lg bg-yellow-100"><Clock className="text-yellow-700" size={20} /></div>
+          <div><p className="text-2xl font-bold text-gray-900">{tasksDueToday}</p><p className="text-xs text-gray-500">Due Today</p></div>
+        </div>
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 flex items-center gap-4">
+          <div className="p-3 rounded-lg bg-red-100"><AlertTriangle className="text-red-600" size={20} /></div>
+          <div><p className="text-2xl font-bold text-gray-900">{tasksOverdue}</p><p className="text-xs text-gray-500">Overdue</p></div>
+        </div>
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 flex items-center gap-4">
+          <div className="p-3 rounded-lg bg-blue-100"><TrendingUp className="text-blue-600" size={20} /></div>
+          <div><p className="text-2xl font-bold text-gray-900">{tasksInProgress}</p><p className="text-xs text-gray-500">In Progress</p></div>
+        </div>
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 flex items-center gap-4">
+          <div className="p-3 rounded-lg bg-green-100"><CheckCircle className="text-green-600" size={20} /></div>
+          <div><p className="text-2xl font-bold text-gray-900">{completedThisMonth}</p><p className="text-xs text-gray-500">Completed (Total)</p></div>
+        </div>
+      </div>
+
       {/* Main Content */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Assigned Work - LEFT COLUMN (2/3 width) */}
         <div className="lg:col-span-2">
           <div className="bg-white rounded-xl shadow-sm border border-gray-200">
-            <div className="p-6 border-b border-gray-200">
-              <div className="flex items-center justify-between">
+            <div className="p-5 border-b border-gray-200">
+              <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
-                  <h3 className="text-xl font-semibold text-gray-800">Your Assigned Work</h3>
-                  <p className="text-gray-600 text-sm">Active tasks and current assignments</p>
+                  <h3 className="text-xl font-semibold text-gray-800">My Tasks</h3>
+                  <p className="text-gray-500 text-sm">{filteredTasks.length} task{filteredTasks.length !== 1 ? 's' : ''}</p>
                 </div>
-                <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium">
-                  {dataToUse.assignedWork?.length || 0} tasks
-                </span>
+                <div className="flex items-center gap-2 flex-wrap">
+                  {/* Status tabs */}
+                  <div className="flex bg-gray-100 rounded-lg p-1 gap-0.5">
+                    {STATUS_TABS.map(tab => (
+                      <button
+                        key={tab}
+                        onClick={() => setTaskFilter(tab)}
+                        className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${
+                          taskFilter === tab ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'
+                        }`}
+                      >
+                        {tab === 'ALL' ? 'All' : tab.replace(/_/g, ' ')}
+                      </button>
+                    ))}
+                  </div>
+                  {/* Priority filter */}
+                  <select
+                    value={priorityFilter}
+                    onChange={e => setPriorityFilter(e.target.value)}
+                    className="border border-gray-300 rounded-lg px-2 py-1 text-xs text-gray-700"
+                  >
+                    <option value="ALL">All Priorities</option>
+                    {['URGENT','HIGH','MEDIUM','LOW'].map(p => (
+                      <option key={p} value={p}>{p}</option>
+                    ))}
+                  </select>
+                </div>
               </div>
+              {updateMsg && (
+                <div className="mt-3 px-3 py-2 bg-green-50 border border-green-200 rounded-lg text-green-700 text-sm">{updateMsg}</div>
+              )}
             </div>
-            
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b border-gray-200">
-                    <th className="text-left py-3 px-6 text-sm font-medium text-gray-500">Task / Deliverable</th>
-                    <th className="text-left py-3 px-6 text-sm font-medium text-gray-500">Project</th>
-                    <th className="text-left py-3 px-6 text-sm font-medium text-gray-500">Due Date</th>
-                    <th className="text-left py-3 px-6 text-sm font-medium text-gray-500">Priority</th>
-                    <th className="text-left py-3 px-6 text-sm font-medium text-gray-500">Progress</th>
-                    <th className="text-left py-3 px-6 text-sm font-medium text-gray-500">Status</th>
-                    <th className="text-left py-3 px-6 text-sm font-medium text-gray-500">Action</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {dataToUse.assignedWork?.map((task) => (
-                    <tr key={task.id} className="border-b border-gray-100 hover:bg-gray-50">
-                      <td className="py-4 px-6">
-                        <div>
-                          <p className="font-medium text-gray-800">{task.title}</p>
-                          <p className="text-xs text-gray-500 capitalize">
-                            {task.taskType?.replace(/_/g, ' ')}
-                          </p>
-                        </div>
-                      </td>
-                      <td className="py-4 px-6">
-                        <ProjectBadge project={task.project} />
-                      </td>
-                      <td className="py-4 px-6">
-                        <div>
-                          <p className="text-gray-700">
-                            {new Date(task.dueDate).toLocaleDateString()}
-                          </p>
-                          {new Date(task.dueDate) < new Date() && task.status !== 'COMPLETED' && (
-                            <span className="inline-block mt-1 px-2 py-1 bg-red-100 text-red-800 text-xs rounded-full">
-                              Overdue
+
+            {/* Task Cards */}
+            <div className="p-4 space-y-3 max-h-[600px] overflow-y-auto">
+              {filteredTasks.length === 0 ? (
+                <div className="text-center py-10 text-gray-400 text-sm">No tasks match the selected filters.</div>
+              ) : filteredTasks.map(task => {
+                const isExpanded = expandedTask === task.id;
+                const borderColor = PRIORITY_BORDER[task.priority] || '#9ca3af';
+                const daysText = task.daysUntilDue < 0
+                  ? `${Math.abs(task.daysUntilDue)} day${Math.abs(task.daysUntilDue) !== 1 ? 's' : ''} overdue`
+                  : task.daysUntilDue === 0 ? 'Due today'
+                  : `Due in ${task.daysUntilDue} day${task.daysUntilDue !== 1 ? 's' : ''}`;
+                const daysColor = task.daysUntilDue < 0 ? 'text-red-600' : task.daysUntilDue <= 2 ? 'text-orange-500' : 'text-green-600';
+
+                return (
+                  <div key={task.id} className="border border-gray-200 rounded-xl overflow-hidden">
+                    <div className="flex" style={{ borderLeft: `4px solid ${borderColor}` }}>
+                      <div className="flex-1 p-4">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <p className="font-semibold text-gray-800 truncate">{task.title}</p>
+                              {task.isEscalated && (
+                                <span className="px-2 py-0.5 bg-red-600 text-white text-xs font-bold rounded-full">ESCALATED</span>
+                              )}
+                            </div>
+                            <span className="inline-block mt-1 px-2 py-0.5 bg-gray-100 text-gray-600 text-xs rounded-full">
+                              {task.taskType?.replace(/_/g, ' ')}
                             </span>
-                          )}
-                        </div>
-                      </td>
-                      <td className="py-4 px-6">
-                        <PriorityBadge priority={task.priority} />
-                      </td>
-                      <td className="py-4 px-6">
-                        <div className="flex items-center gap-3">
-                          <div className="w-24 bg-gray-200 rounded-full h-2">
-                            <div 
-                              className={`h-2 rounded-full ${
-                                task.progress >= 80 ? 'bg-green-500' : 
-                                task.progress >= 50 ? 'bg-blue-500' : 'bg-yellow-500'
-                              }`}
-                              style={{ width: `${task.progress}%` }}
-                            ></div>
                           </div>
-                          <span className="text-sm font-semibold">{task.progress}%</span>
+                          <StatusBadge status={task.status} />
                         </div>
-                      </td>
-                      <td className="py-4 px-6">
-                        <StatusBadge status={task.status} />
-                      </td>
-                      <td className="py-4 px-6">
-                        <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2">
-                          <Play size={14} />
-                          {task.status === 'NOT_STARTED' ? 'Start' : 'Continue'}
+
+                        <div className="flex items-center gap-4 mt-2 text-xs text-gray-500">
+                          {task.assignedByName && <span>By: <span className="font-medium text-gray-700">{task.assignedByName}</span></span>}
+                          <span className={`font-semibold ${daysColor}`}>{daysText}</span>
+                          <PriorityBadge priority={task.priority} />
+                        </div>
+
+                        {/* Progress bar */}
+                        <div className="mt-3 flex items-center gap-2">
+                          <div className="flex-1 bg-gray-100 rounded-full h-1.5">
+                            <div
+                              className="h-1.5 rounded-full"
+                              style={{ width: `${task.progressPct || 0}%`, backgroundColor: '#B8960A' }}
+                            />
+                          </div>
+                          <span className="text-xs text-gray-500 w-8 text-right">{task.progressPct || 0}%</span>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center px-3">
+                        <button
+                          onClick={() => openExpand(task)}
+                          className="px-3 py-1.5 text-xs font-semibold rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50"
+                        >
+                          {isExpanded ? 'Cancel' : 'Update'}
                         </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                      </div>
+                    </div>
+
+                    {/* Inline Update Form */}
+                    {isExpanded && (
+                      <div className="bg-gray-50 border-t border-gray-200 p-4 space-y-3">
+                        <div className="grid grid-cols-2 gap-3">
+                          <div>
+                            <label className="block text-xs font-medium text-gray-600 mb-1">Status</label>
+                            <select
+                              value={updateForm.status}
+                              onChange={e => setUpdateForm(f => ({ ...f, status: e.target.value }))}
+                              className="w-full border border-gray-300 rounded-lg px-2 py-1.5 text-sm"
+                            >
+                              {['NOT_STARTED','IN_PROGRESS','COMPLETED','CANCELLED'].map(s => (
+                                <option key={s} value={s}>{s.replace(/_/g, ' ')}</option>
+                              ))}
+                            </select>
+                          </div>
+                          <div>
+                            <label className="block text-xs font-medium text-gray-600 mb-1">
+                              Progress: {updateForm.progressPct}%
+                            </label>
+                            <input
+                              type="range" min={0} max={100} step={5}
+                              value={updateForm.progressPct}
+                              onChange={e => setUpdateForm(f => ({ ...f, progressPct: parseInt(e.target.value) }))}
+                              className="w-full accent-yellow-600"
+                            />
+                          </div>
+                        </div>
+                        <div>
+                          <label className="block text-xs font-medium text-gray-600 mb-1">Remarks</label>
+                          <textarea
+                            rows={2}
+                            value={updateForm.remarks}
+                            onChange={e => setUpdateForm(f => ({ ...f, remarks: e.target.value }))}
+                            placeholder="Optional notes..."
+                            className="w-full border border-gray-300 rounded-lg px-2 py-1.5 text-sm resize-none"
+                          />
+                        </div>
+                        <button
+                          onClick={() => handleTaskUpdate(task.id)}
+                          disabled={updating}
+                          className="px-4 py-1.5 rounded-lg text-white text-sm font-semibold disabled:opacity-50"
+                          style={{ backgroundColor: '#B8960A' }}
+                        >
+                          {updating ? 'Saving...' : 'Save Update'}
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </div>
         </div>

@@ -110,6 +110,16 @@ const NotificationsPanel = ({ open, onClose }) => {
     }
   };
 
+  const handleNotificationClick = async (notification) => {
+    if (!notification.read) {
+      await markAsRead(notification.id);
+    }
+    if (notification.actionUrl) {
+      onClose();
+      window.location.href = notification.actionUrl;
+    }
+  };
+
   const markAllAsRead = async () => {
     try {
       const token = localStorage.getItem('authToken');
@@ -239,7 +249,9 @@ const NotificationsPanel = ({ open, onClose }) => {
             {notifications.map((notification) => (
               <ListItem
                 key={notification.id}
+                onClick={() => handleNotificationClick(notification)}
                 sx={{
+                  cursor: 'pointer',
                   borderLeft: notification.priority === 'HIGH' ? '4px solid' : 'none',
                   borderColor: 'error.main',
                   backgroundColor: notification.read ? 'transparent' : 'action.hover',

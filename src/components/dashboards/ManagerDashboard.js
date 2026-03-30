@@ -56,6 +56,9 @@ const ManagerDashboard = () => {
   const [lastUpdated, setLastUpdated] = useState(null);
   const [minutesAgo,  setMinutesAgo]  = useState(null);
 
+  // Escalation banner
+  const [escalatedCount, setEscalatedCount] = useState(0);
+
   const getItemRoute = (item) => {
     const typeMap = {
       'Vendor': 'vendors',
@@ -626,6 +629,12 @@ useEffect(() => {
 
   // ──────────────────────────────────────────────────────────────────────────
 
+  // Derive escalated task count from deadlinesData whenever it updates
+  useEffect(() => {
+    const count = (deadlinesData || []).filter(t => t.isEscalated).length;
+    setEscalatedCount(count);
+  }, [deadlinesData]);
+
   const handleRetry = () => {
     fetchDashboardData();
   };
@@ -997,6 +1006,24 @@ const getActionButton = (item) => {
               Retry
             </button>
           </div>
+        </div>
+      )}
+
+      {/* Escalation Banner */}
+      {escalatedCount > 0 && (
+        <div className="mb-2 flex items-center justify-between p-4 bg-red-50 border border-red-300 rounded-xl">
+          <div className="flex items-center gap-3">
+            <AlertTriangle className="text-red-600 w-5 h-5 flex-shrink-0" />
+            <span className="text-red-800 font-semibold text-sm">
+              🚨 {escalatedCount} task{escalatedCount !== 1 ? 's' : ''} have been escalated due to missed deadlines. Immediate action required.
+            </span>
+          </div>
+          <a
+            href="/dashboard/manager/team"
+            className="ml-4 flex-shrink-0 px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 transition-colors"
+          >
+            View Escalated Tasks
+          </a>
         </div>
       )}
 
