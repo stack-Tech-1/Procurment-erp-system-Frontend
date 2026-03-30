@@ -139,9 +139,9 @@ export default function Topbar() {
       );
     } else if (notificationStats.unread > 0) {
       return (
-        <div className="absolute -top-1 -right-1 w-3 h-3 bg-blue-500 rounded-full flex items-center justify-center">
-          <span className="text-white text-xs font-bold">
-            {notificationStats.unread}
+        <div className="absolute -top-1 -right-1 min-w-[18px] h-[18px] rounded-full flex items-center justify-center px-1" style={{ backgroundColor: '#B8960A' }}>
+          <span className="text-white text-xs font-bold leading-none">
+            {notificationStats.unread > 99 ? '99+' : notificationStats.unread}
           </span>
         </div>
       );

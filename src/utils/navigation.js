@@ -3,7 +3,7 @@ import {
   Home, Users, ClipboardList, Briefcase, Receipt, BarChart3, FileText,
   TrendingUp, DollarSign, Shield, CheckCircle, Building, Send, ListOrdered,
   CheckSquare, UserPlus, Settings, MessageSquare, Grid, Truck, Palette,
-  ShoppingCart
+  ShoppingCart, Bell
 } from 'lucide-react';
 import { ROLES } from '../constants/roles';
 
@@ -32,7 +32,8 @@ export const getNavigationItems = (roleId) => {
         { name: "System Settings", translationKey: "systemSettings", icon: <Settings size={18} />, href: "/dashboard/admin/settings" },
         { name: "Account Approvals", translationKey: "accountApprovals", icon: <CheckCircle size={18} />, href: "/dashboard/admin/approvals" },
         { name: "Branding Settings", translationKey: "brandingSettings", icon: <Palette size={18} />, href: "/dashboard/admin/branding" },
-        { name: "Workflow Builder", translationKey: "workflowBuilder", icon: <Settings size={18} />, href: "/dashboard/approvals/workflows"}
+        { name: "Workflow Builder", translationKey: "workflowBuilder", icon: <Settings size={18} />, href: "/dashboard/approvals/workflows"},
+        { name: "Notifications", translationKey: "notifications", icon: <Bell size={18} />, href: "/dashboard/notifications" }
       ];
 
     case ROLES.PROCUREMENT_MANAGER:
@@ -56,8 +57,9 @@ export const getNavigationItems = (roleId) => {
         { name: "Invoice", translationKey: "invoice", icon: <DollarSign size={18} />, href: "/dashboard/procurement/invoices" },
         { name: "IPCs", translationKey: "ipcs", icon: <Receipt size={18} />, href: "/dashboard/procurement/ipcs" },        
         { name: "Performance Metrics", translationKey: "performanceMetrics", icon: <BarChart3 size={18} />, href: "/dashboard/procurement/cost-control" },
-        { name: "Reports", translationKey: "reports", icon: <FileText size={18} />, href: "/dashboard/admin/reports" },        
-        { name: "Workflow Builder", translationKey: "workflowBuilder", icon: <Settings size={18} />, href: "/dashboard/approvals/workflows"}        
+        { name: "Reports", translationKey: "reports", icon: <FileText size={18} />, href: "/dashboard/admin/reports" },
+        { name: "Workflow Builder", translationKey: "workflowBuilder", icon: <Settings size={18} />, href: "/dashboard/approvals/workflows"},
+        { name: "Notifications", translationKey: "notifications", icon: <Bell size={18} />, href: "/dashboard/notifications" }
       ];
 
     case ROLES.PROCUREMENT_OFFICER:
@@ -71,7 +73,8 @@ export const getNavigationItems = (roleId) => {
         { name: "Contracts", translationKey: "contracts", icon: <Briefcase size={18} />, href: "/dashboard/procurement/contracts" },
         { name: "Purchase Orders", translationKey: "purchaseOrders", icon: <ShoppingCart size={18} />, href: "/dashboard/procurement/purchase-orders" },
         { name: "IPCs", translationKey: "ipcs", icon: <Receipt size={18} />, href: "/dashboard/procurement/ipcs" },
-        { name: "Cost Control", translationKey: "costControl", icon: <BarChart3 size={18} />, href: "/dashboard/procurement/cost-control" }
+        { name: "Cost Control", translationKey: "costControl", icon: <BarChart3 size={18} />, href: "/dashboard/procurement/cost-control" },
+        { name: "Notifications", translationKey: "notifications", icon: <Bell size={18} />, href: "/dashboard/notifications" }
       ];
 
     case ROLES.VENDOR:
@@ -81,6 +84,7 @@ export const getNavigationItems = (roleId) => {
         { name: 'Track Submissions', translationKey: 'trackSubmissions', href: '/vendor-dashboard/tracker', icon: <ListOrdered size={18} /> },
         { name: 'Information Requests', translationKey: 'informationRequests', href: '/vendor-dashboard/requests', icon: <MessageSquare size={18} /> }, 
         { name: 'My Profile', translationKey: 'myProfile', href: '/dashboard/vendors/profile', icon: <Briefcase size={18} /> },
+        { name: 'Notifications', translationKey: 'notifications', href: '/dashboard/notifications', icon: <Bell size={18} /> },
       ];
 
     default:

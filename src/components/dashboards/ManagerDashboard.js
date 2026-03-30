@@ -59,6 +59,9 @@ const ManagerDashboard = () => {
   // Escalation banner
   const [escalatedCount, setEscalatedCount] = useState(0);
 
+  // Document alerts widget
+  const [docAlerts, setDocAlerts] = useState({ summary: { critical: 0, warning: 0, notice: 0 }, alerts: [] });
+
   const getItemRoute = (item) => {
     const typeMap = {
       'Vendor': 'vendors',
@@ -621,6 +624,15 @@ useEffect(() => {
         issuedCount: data.issuedCount || 0,
       });
     }
+
+    // Document alerts — non-fatal
+    try {
+      const docAlertsRes = await fetch(`${base}/api/vendors/document-alerts`, { headers });
+      if (docAlertsRes.ok) {
+        const data = await docAlertsRes.json();
+        setDocAlerts(data);
+      }
+    } catch { /* silent */ }
 
     setLoadingStates({ kpis: false, charts: false, queue: false, deadlines: false });
     setRefreshing(false);
@@ -1592,6 +1604,52 @@ const getActionButton = (item) => {
           </div>
         </div>
       </div>
+
+        {/* Document Alerts Widget */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h3 className="text-lg font-semibold text-gray-800">Document Alerts</h3>
+              <p className="text-gray-500 text-sm">Vendor documents expiring in the next 30 days</p>
+            </div>
+            <a href="/dashboard/procurement/document-alerts" className="text-sm font-medium hover:underline" style={{ color: '#B8960A' }}>
+              View All Alerts →
+            </a>
+          </div>
+          {/* Summary pills */}
+          <div className="flex gap-3 mb-4 flex-wrap">
+            <span className="px-3 py-1 bg-red-100 text-red-700 rounded-full text-sm font-medium">
+              {docAlerts.summary.critical} Critical
+            </span>
+            <span className="px-3 py-1 bg-orange-100 text-orange-700 rounded-full text-sm font-medium">
+              {docAlerts.summary.warning} Warning
+            </span>
+            <span className="px-3 py-1 bg-yellow-100 text-yellow-700 rounded-full text-sm font-medium">
+              {docAlerts.summary.notice} Notice
+            </span>
+          </div>
+          {/* Top 10 items */}
+          {docAlerts.alerts.length === 0 ? (
+            <p className="text-sm text-gray-400 py-4 text-center">No documents expiring in the next 30 days.</p>
+          ) : (
+            <div className="space-y-2">
+              {docAlerts.alerts.slice(0, 10).map(alert => (
+                <div key={alert.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  <div>
+                    <span className="font-medium text-sm text-gray-900">{alert.vendor?.companyLegalName}</span>
+                    <span className="ml-2 text-xs text-gray-500">{(alert.docType || '').replace(/_/g, ' ')}</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className={`text-xs font-bold ${alert.daysLeft <= 7 ? 'text-red-600' : alert.daysLeft <= 15 ? 'text-orange-600' : 'text-yellow-600'}`}>
+                      {alert.daysLeft}d left
+                    </span>
+                    <a href={`/dashboard/procurement/vendors/${alert.vendorId}`} className="text-xs text-[#0A1628] hover:underline">View</a>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
 
                 {/* Spend vs Budget Section - UPDATED WITH REAL DATA */}
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
