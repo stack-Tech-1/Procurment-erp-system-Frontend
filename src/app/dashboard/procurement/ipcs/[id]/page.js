@@ -3,16 +3,17 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useParams, useRouter } from 'next/navigation';
-import { 
-  ArrowLeft, Calendar, DollarSign, FileText, CheckCircle, 
+import {
+  ArrowLeft, Calendar, DollarSign, FileText, CheckCircle,
   Clock, XCircle, AlertTriangle, Edit, Download, Send,
   User, Building, BarChart3, Receipt, TrendingUp, ThumbsUp,
   ThumbsDown, Mail, Phone, Hash, Clock4, Printer,
-  MessageSquare, Shield, Banknote, BadgeCheck
+  MessageSquare, Shield, Banknote, BadgeCheck, Eye
 } from 'lucide-react';
 import Sidebar from '@/components/Sidebar';
 import Topbar from '@/components/Topbar';
 import Link from 'next/link';
+import FilePreviewModal from '@/components/documents/FilePreviewModal';
 
 const API_BASE_URL = `${process.env.NEXT_PUBLIC_API_URL}/api`;
 
@@ -31,6 +32,7 @@ const IPCDetailPage = () => {
     deductionReason: ''
   });
   const [showReviewModal, setShowReviewModal] = useState(false);
+  const [previewModal, setPreviewModal] = useState({ isOpen: false, fileUrl: '', fileName: '' });
 
   // Fetch IPC details
   const fetchIPCDetails = async () => {
@@ -343,7 +345,14 @@ const IPCDetailPage = () => {
               {activeTab === 'overview' && <OverviewTab ipc={ipc} />}
               {activeTab === 'financial' && <FinancialTab ipc={ipc} />}
               {activeTab === 'work' && <WorkDescriptionTab ipc={ipc} />}
-              {activeTab === 'documents' && <DocumentsTab documents={ipc.attachments || []} />}
+              {activeTab === 'documents' && (
+                <DocumentsTab
+                  documents={ipc.attachments || []}
+                  onPreview={({ fileUrl, fileName }) =>
+                    setPreviewModal({ isOpen: true, fileUrl, fileName })
+                  }
+                />
+              )}
               {activeTab === 'history' && <ApprovalHistoryTab ipc={ipc} />}
             </div>
           </div>
@@ -360,6 +369,12 @@ const IPCDetailPage = () => {
           )}
         </main>
       </div>
+      <FilePreviewModal
+        isOpen={previewModal.isOpen}
+        onClose={() => setPreviewModal({ isOpen: false, fileUrl: '', fileName: '' })}
+        fileUrl={previewModal.fileUrl}
+        fileName={previewModal.fileName}
+      />
     </div>
   );
 };
@@ -510,10 +525,10 @@ const WorkDescriptionTab = ({ ipc }) => (
 );
 
 // Documents Tab Component
-const DocumentsTab = ({ documents }) => (
+const DocumentsTab = ({ documents, onPreview }) => (
   <div>
     <h3 className="text-lg font-semibold mb-4">Supporting Documents</h3>
-    
+
     {documents.length === 0 ? (
       <div className="text-center py-8 text-gray-500">
         <FileText className="w-12 h-12 text-gray-300 mx-auto mb-2" />
@@ -532,9 +547,28 @@ const DocumentsTab = ({ documents }) => (
                 </p>
               </div>
             </div>
-            <button className="text-blue-600 hover:text-blue-800">
-              <Download className="w-5 h-5" />
-            </button>
+            <div className="flex items-center gap-2">
+              {onPreview && (
+                <button
+                  onClick={() => onPreview({ fileUrl: doc.fileUrl || doc.url, fileName: doc.fileName })}
+                  className="flex items-center gap-1 text-sm px-3 py-1.5 rounded border transition-colors hover:opacity-80"
+                  style={{ borderColor: '#B8960A', color: '#B8960A' }}
+                  title="Preview"
+                >
+                  <Eye className="w-4 h-4" />
+                  Preview
+                </button>
+              )}
+              <a
+                href={doc.fileUrl || doc.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-600 hover:text-blue-800"
+                title="Download"
+              >
+                <Download className="w-5 h-5" />
+              </a>
+            </div>
           </div>
         ))}
       </div>

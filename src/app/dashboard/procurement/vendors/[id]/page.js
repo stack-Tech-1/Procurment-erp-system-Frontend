@@ -5,10 +5,12 @@ import { useParams, useRouter } from 'next/navigation';
 import { useTranslation } from 'react-i18next'; // ADD THIS IMPORT
 import Link from 'next/link';
 import DocumentChecklist from '@/components/DocumentChecklist';
-import EvaluationPanel from '@/components/EvaluationPanel'; 
+import EvaluationPanel from '@/components/EvaluationPanel';
 import CSIClassification from '@/components/CSIClassification';
 import ReviewTabs from '@/components/ReviewTabs';
 import EnhancedCompanyInfo from '@/components/EnhancedCompanyInfo';
+import FilePreviewModal from '@/components/documents/FilePreviewModal';
+import DocumentCard from '@/components/documents/DocumentCard';
 import {
     Building2, FileText, CheckCircle, Clock, XCircle,
     User, Mail, Phone, MapPin, Loader2, Save, Send,
@@ -106,7 +108,9 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
     
         const [isSubmitting, setIsSubmitting] = useState(false);
         const [submitMessage, setSubmitMessage] = useState(null);
-    
+        const [previewModal, setPreviewModal] = useState({ isOpen: false, fileUrl: '', fileName: '' });
+        const [uploadingDocType, setUploadingDocType] = useState(null);
+
         // Get authentication token
         const getAuthToken = () => {
             if (typeof window !== 'undefined') {
@@ -191,6 +195,41 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
     }, [vendorId, t]);
 
 
+
+        const handleDocumentUpload = async (docType, file) => {
+            const token = getAuthToken();
+            if (!token) return;
+            setUploadingDocType(docType);
+            try {
+                const formData = new FormData();
+                formData.append('file', file);
+                await axios.put(
+                    `${API_BASE_URL}/api/vendors/${vendorId}/documents/${docType}`,
+                    formData,
+                    { headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' } }
+                );
+                await fetchVendorDetails();
+            } catch (err) {
+                console.error('Document upload failed:', err);
+            } finally {
+                setUploadingDocType(null);
+            }
+        };
+
+        const handleDocumentVerify = async (docType, verified) => {
+            const token = getAuthToken();
+            if (!token) return;
+            try {
+                await axios.patch(
+                    `${API_BASE_URL}/api/vendors/${vendorId}/documents/${docType}/verify`,
+                    { verified },
+                    { headers: { Authorization: `Bearer ${token}` } }
+                );
+                await fetchVendorDetails();
+            } catch (err) {
+                console.error('Document verify failed:', err);
+            }
+        };
 
         const handleSaveCategories = async (categoryCsiCodes) => {
             try {
@@ -719,6 +758,7 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
         }
 
         return (
+            <>
             <div className="min-h-screen bg-gray-100 p-4 sm:p-6 lg:p-8">
                 {/* Header / Title Bar */}            
                 <header className="bg-white shadow-xl p-6 rounded-xl mb-6">
@@ -904,10 +944,55 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
                         {/* D. Enhanced Documents & Compliance */}
                         <section className="p-6 bg-white rounded-xl shadow-md border border-gray-200">
                             <SectionHeader title={t('documentsCompliance')} icon={FileText} />
-                            <DocumentChecklist 
-                                documents={vendor.documents || []}
-                                vendorType={vendor.vendorType}
-                            />
+                            {(() => {
+                                const userRoleId = typeof window !== 'undefined'
+                                    ? (JSON.parse(localStorage.getItem('user') || '{}').roleId || 99)
+                                    : 99;
+                                const canVerify = userRoleId <= 3;
+                                const DOC_TYPES = [
+                                    { key: 'COMMERCIAL_REGISTRATION', label: 'Commercial Registration (CR)', requiredFor: 'BOTH' },
+                                    { key: 'ZAKAT_CERTIFICATE', label: 'Zakat Certificate', requiredFor: 'BOTH' },
+                                    { key: 'VAT_CERTIFICATE', label: 'VAT Certificate', requiredFor: 'BOTH' },
+                                    { key: 'GOSI_CERTIFICATE', label: 'GOSI Certificate', requiredFor: 'BOTH' },
+                                    { key: 'ISO_CERTIFICATE', label: 'ISO Certificate', requiredFor: 'BOTH' },
+                                    { key: 'SASO_SABER_CERTIFICATE', label: 'SASO/SABER Certificate', requiredFor: 'SUPPLIER' },
+                                    { key: 'HSE_PLAN', label: 'HSE Plan', requiredFor: 'CONTRACTOR' },
+                                    { key: 'WARRANTY_CERTIFICATE', label: 'Warranty Certificate', requiredFor: 'BOTH' },
+                                    { key: 'QUALITY_PLAN', label: 'Quality Plan', requiredFor: 'BOTH' },
+                                    { key: 'BANK_LETTER', label: 'Bank Letter', requiredFor: 'BOTH' },
+                                    { key: 'COMPANY_PROFILE', label: 'Company Profile', requiredFor: 'BOTH' },
+                                    { key: 'TECHNICAL_FILE', label: 'Technical File', requiredFor: 'BOTH' },
+                                    { key: 'FINANCIAL_FILE', label: 'Financial File', requiredFor: 'BOTH' },
+                                    { key: 'INSURANCE_CERTIFICATE', label: 'Insurance Certificate', requiredFor: 'BOTH' },
+                                    { key: 'INDUSTRY_LICENSE', label: 'Industry License', requiredFor: 'BOTH' },
+                                    { key: 'VENDOR_CODE_OF_CONDUCT', label: 'Code of Conduct', requiredFor: 'BOTH' },
+                                    { key: 'ORGANIZATION_CHART', label: 'Organization Chart', requiredFor: 'BOTH' },
+                                ];
+                                const docs = vendor.documents || [];
+                                return (
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+                                        {DOC_TYPES.map(({ key, label, requiredFor }) => {
+                                            const doc = docs.find(d => d.docType === key) || null;
+                                            return (
+                                                <DocumentCard
+                                                    key={key}
+                                                    docType={key}
+                                                    label={label}
+                                                    document={doc}
+                                                    requiredFor={requiredFor}
+                                                    isUploading={uploadingDocType === key}
+                                                    canVerify={canVerify}
+                                                    onUpload={(file) => handleDocumentUpload(key, file)}
+                                                    onPreview={({ fileUrl, fileName }) =>
+                                                        setPreviewModal({ isOpen: true, fileUrl, fileName })
+                                                    }
+                                                    onVerify={(verified) => handleDocumentVerify(key, verified)}
+                                                />
+                                            );
+                                        })}
+                                    </div>
+                                );
+                            })()}
                         </section>
     
                         {/* E. Project Experience */}
@@ -947,7 +1032,15 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
                     </div>
                 </div>
             </div>
+
+            <FilePreviewModal
+                isOpen={previewModal.isOpen}
+                onClose={() => setPreviewModal({ isOpen: false, fileUrl: '', fileName: '' })}
+                fileUrl={previewModal.fileUrl}
+                fileName={previewModal.fileName}
+            />
+            </>
         );
     };
-    
+
     export default VendorDetailPage;

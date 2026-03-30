@@ -7,11 +7,12 @@ import {
     ArrowLeft, Calendar, DollarSign, Package, User, FileText,
     CheckCircle, Clock, Send, Users, Download, Edit, Trash2,
     MessageSquare, Award, BarChart3, Mail, Phone, MapPin,
-    Plus, AlertTriangle, ChevronDown, ChevronUp, Star, X
+    Plus, AlertTriangle, ChevronDown, ChevronUp, Star, X, Eye
   } from 'lucide-react';
 import ResponsiveLayout from '@/components/layout/ResponsiveLayout';
 import Link from 'next/link';
 import VendorEvaluationModal from '@/components/VendorEvaluationModal';
+import FilePreviewModal from '@/components/documents/FilePreviewModal';
 
 const API_BASE_URL = `${process.env.NEXT_PUBLIC_API_URL}/api`;
 
@@ -36,6 +37,7 @@ const RFQDetailPage = () => {
     const [evaluationSummary, setEvaluationSummary] = useState(null);
     const [compLoading, setCompLoading] = useState({ tech: false, fin: false, eval: false });
     const [toastMsg, setToastMsg] = useState(null);
+    const [previewModal, setPreviewModal] = useState({ isOpen: false, fileUrl: '', fileName: '' });
 
     const showToast = (msg, type = 'success') => {
       setToastMsg({ msg, type });
@@ -311,7 +313,12 @@ const RFQDetailPage = () => {
           />
         )}
         {activeTab === 'evaluation' && <EvaluationTab rfq={rfq} submissions={submissions} />}
-        {activeTab === 'documents' && <DocumentsTab rfq={rfq} />}
+        {activeTab === 'documents' && (
+          <DocumentsTab
+            rfq={rfq}
+            onPreview={({ fileUrl, fileName }) => setPreviewModal({ isOpen: true, fileUrl, fileName })}
+          />
+        )}
         {activeTab === 'technical' && (
           <TechnicalComparisonTab
             rfqId={rfqId}
@@ -321,6 +328,7 @@ const RFQDetailPage = () => {
             userRoleId={userRoleId}
             onSaved={(msg) => { fetchTechnicalComps(); showToast(msg); }}
             showToast={showToast}
+            onPreview={({ fileUrl, fileName }) => setPreviewModal({ isOpen: true, fileUrl, fileName })}
           />
         )}
         {activeTab === 'financial' && (
@@ -508,6 +516,13 @@ const RFQDetailPage = () => {
               {toastMsg.msg}
             </div>
           )}
+
+          <FilePreviewModal
+            isOpen={previewModal.isOpen}
+            onClose={() => setPreviewModal({ isOpen: false, fileUrl: '', fileName: '' })}
+            fileUrl={previewModal.fileUrl}
+            fileName={previewModal.fileName}
+          />
         </div>
       </ResponsiveLayout>
     );
@@ -689,37 +704,70 @@ const EvaluationTab = ({ rfq }) => (
   </div>
 );
 
-const DocumentsTab = ({ rfq }) => (
-  <div>
-    <h3 className="text-lg font-semibold mb-4">Related Documents</h3>
-    <div className="space-y-3">
-      <div className="flex justify-between items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50">
-        <div className="flex items-center">
-          <FileText className="w-5 h-5 text-blue-500 mr-3" />
-          <div>
-            <p className="font-medium">RFQ Specification Document</p>
-            <p className="text-sm text-gray-500">PDF • 2.3 MB</p>
-          </div>
+const DocumentsTab = ({ rfq, onPreview }) => {
+  const attachments = rfq.rfqAttachments || [];
+  return (
+    <div>
+      <h3 className="text-lg font-semibold mb-4">Related Documents</h3>
+      {attachments.length === 0 ? (
+        <div className="text-center py-8 text-gray-500">
+          <FileText className="w-12 h-12 text-gray-300 mx-auto mb-2" />
+          <p>No documents attached to this RFQ.</p>
         </div>
-        <button className="text-blue-600 hover:text-blue-800"><Download className="w-5 h-5" /></button>
-      </div>
-      <div className="flex justify-between items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50">
-        <div className="flex items-center">
-          <FileText className="w-5 h-5 text-green-500 mr-3" />
-          <div>
-            <p className="font-medium">Technical Requirements</p>
-            <p className="text-sm text-gray-500">DOCX • 1.1 MB</p>
-          </div>
+      ) : (
+        <div className="space-y-3">
+          {attachments.map((doc) => {
+            const fileUrl = doc.fileUrl || doc.url || doc.filePath;
+            const fileName = doc.fileName || doc.name || fileUrl?.split('/').pop() || 'Document';
+            return (
+              <div key={doc.id} className="flex justify-between items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50">
+                <div className="flex items-center">
+                  <FileText className="w-5 h-5 text-blue-500 mr-3" />
+                  <div>
+                    <p className="font-medium">{fileName}</p>
+                    {doc.uploadedAt && (
+                      <p className="text-sm text-gray-500">
+                        Uploaded {new Date(doc.uploadedAt).toLocaleDateString()}
+                      </p>
+                    )}
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  {onPreview && fileUrl && (
+                    <button
+                      onClick={() => onPreview({ fileUrl, fileName })}
+                      className="flex items-center gap-1 text-sm px-3 py-1.5 rounded border transition-colors hover:opacity-80"
+                      style={{ borderColor: '#B8960A', color: '#B8960A' }}
+                      title="Preview"
+                    >
+                      <Eye className="w-4 h-4" />
+                      Preview
+                    </button>
+                  )}
+                  {fileUrl && (
+                    <a
+                      href={fileUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-600 hover:text-blue-800"
+                      title="Download"
+                    >
+                      <Download className="w-5 h-5" />
+                    </a>
+                  )}
+                </div>
+              </div>
+            );
+          })}
         </div>
-        <button className="text-blue-600 hover:text-blue-800"><Download className="w-5 h-5" /></button>
-      </div>
+      )}
     </div>
-  </div>
-);
+  );
+};
 
 // ─── Technical Comparison Tab ─────────────────────────────────────────────────
 
-const TechnicalComparisonTab = ({ rfqId, rows, loading, invitedVendors, userRoleId, onSaved, showToast }) => {
+const TechnicalComparisonTab = ({ rfqId, rows, loading, invitedVendors, userRoleId, onSaved, showToast, onPreview }) => {
   const [modal, setModal] = useState({ open: false, row: null });
   const [form, setForm] = useState({ vendorId: '', technicalCompliance: 'PARTIAL', technicalScore: 70, technicalNotes: '', attachmentPath: '' });
   const [saving, setSaving] = useState(false);
@@ -822,7 +870,14 @@ const TechnicalComparisonTab = ({ rfqId, rows, loading, invitedVendors, userRole
                   <td className="py-3 px-3 text-gray-500 max-w-xs truncate">{row.technicalNotes || '—'}</td>
                   <td className="py-3 px-3">
                     {row.attachmentPath ? (
-                      <a href={row.attachmentPath} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline text-xs">View</a>
+                      <button
+                        onClick={() => onPreview?.({ fileUrl: row.attachmentPath, fileName: row.attachmentPath.split('/').pop() || 'Attachment' })}
+                        className="flex items-center gap-1 text-xs px-2 py-1 rounded border hover:opacity-80"
+                        style={{ borderColor: '#B8960A', color: '#B8960A' }}
+                      >
+                        <Eye className="w-3 h-3" />
+                        View
+                      </button>
                     ) : '—'}
                   </td>
                   <td className="py-3 px-3">
