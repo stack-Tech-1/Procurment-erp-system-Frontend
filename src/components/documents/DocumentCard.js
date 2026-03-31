@@ -1,5 +1,7 @@
 "use client";
 import React, { useRef } from 'react';
+import { useTranslation } from 'react-i18next';
+import { formatDate } from '@/utils/formatters';
 import { FileText, Eye, Upload, CheckSquare, Square } from 'lucide-react';
 
 function getStatus(doc) {
@@ -15,21 +17,22 @@ function getStatus(doc) {
 }
 
 function StatusBadge({ status }) {
+  const { t } = useTranslation();
   const map = {
     VALID: 'bg-green-100 text-green-700',
     EXPIRED: 'bg-red-100 text-red-700',
     EXPIRING_SOON: 'bg-orange-100 text-orange-700',
     MISSING: 'bg-gray-100 text-gray-500',
   };
-  const labels = {
-    VALID: 'Valid',
-    EXPIRED: 'Expired',
-    EXPIRING_SOON: 'Expiring Soon',
-    MISSING: 'Missing',
+  const keys = {
+    VALID: 'valid',
+    EXPIRED: 'expired',
+    EXPIRING_SOON: 'expiringSoon',
+    MISSING: 'missing',
   };
   return (
     <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${map[status] || map.MISSING}`}>
-      {labels[status] || status}
+      {t(keys[status] || 'missing', status)}
     </span>
   );
 }
@@ -67,6 +70,7 @@ export default function DocumentCard({
   canVerify = false,
   onVerify,
 }) {
+  const { t, i18n } = useTranslation();
   const fileInputRef = useRef(null);
   const status = getStatus(document);
 
@@ -104,21 +108,21 @@ export default function DocumentCard({
           )}
           {document.expiryDate && (
             <span className="text-gray-400">
-              Exp: {new Date(document.expiryDate).toLocaleDateString()}
+              {t('exp')}: {formatDate(document.expiryDate, i18n.language)}
             </span>
           )}
         </div>
       ) : (
-        <p className="text-xs text-gray-400 italic">No document uploaded</p>
+        <p className="text-xs text-gray-400 italic">{t('noDocumentUploaded')}</p>
       )}
 
       {/* Bottom row */}
       <div className="flex items-center justify-between gap-2 mt-auto">
         <span className="text-xs text-gray-400">
           {document?.uploadedAt
-            ? `Uploaded: ${new Date(document.uploadedAt).toLocaleDateString()}`
+            ? `${t('uploaded')}: ${formatDate(document.uploadedAt, i18n.language)}`
             : document?.createdAt
-            ? `Uploaded: ${new Date(document.createdAt).toLocaleDateString()}`
+            ? `${t('uploaded')}: ${formatDate(document.createdAt, i18n.language)}`
             : ''}
         </span>
 
@@ -135,7 +139,7 @@ export default function DocumentCard({
               {document.isVerified
                 ? <CheckSquare className="w-3.5 h-3.5" />
                 : <Square className="w-3.5 h-3.5" />}
-              Verified
+              {t('verified')}
             </button>
           )}
 
@@ -165,7 +169,7 @@ export default function DocumentCard({
             ) : (
               <Upload className="w-3.5 h-3.5" />
             )}
-            {document ? 'Replace' : 'Upload'}
+            {document ? t('replace') : t('upload')}
           </button>
         </div>
       </div>

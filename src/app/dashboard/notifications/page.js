@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
+import { useTranslation } from 'react-i18next';
 import ResponsiveLayout from '@/components/layout/ResponsiveLayout';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
@@ -45,6 +46,7 @@ function groupByDate(items) {
 
 export default function NotificationsPage() {
   const router = useRouter();
+  const { t } = useTranslation();
   const [notifications, setNotifications] = useState([]);
   const [filter, setFilter] = useState('ALL');
   const [loading, setLoading] = useState(true);
@@ -133,15 +135,15 @@ export default function NotificationsPage() {
         {/* Header */}
         <div className="flex items-start justify-between mb-6">
           <div>
-            <h1 className="text-2xl font-bold text-[#0A1628]">Notifications</h1>
-            <p className="text-gray-500 text-sm mt-1">Stay updated on all system activity</p>
+            <h1 className="text-2xl font-bold text-[#0A1628]">{t('notifications')}</h1>
+            <p className="text-gray-500 text-sm mt-1">{t('stayUpdatedActivity')}</p>
           </div>
           <button
             onClick={markAllRead}
             disabled={marking || unreadCount === 0}
             className="px-4 py-2 text-sm bg-[#0A1628] text-white rounded-lg hover:bg-[#0d1f3c] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
           >
-            {marking ? 'Marking...' : 'Mark all as read'}
+            {marking ? t('marking') : t('markAllAsRead')}
           </button>
         </div>
 
@@ -155,25 +157,25 @@ export default function NotificationsPage() {
                 filter === f ? 'bg-white text-[#0A1628] shadow-sm' : 'text-gray-500 hover:text-gray-700'
               }`}
             >
-              {f === 'ALL' ? 'All' : f === 'UNREAD' ? `Unread${unreadCount > 0 ? ` (${unreadCount})` : ''}` : 'Urgent'}
+              {f === 'ALL' ? t('all', 'All') : f === 'UNREAD' ? `${t('unread')}${unreadCount > 0 ? ` (${unreadCount})` : ''}` : t('URGENT')}
             </button>
           ))}
         </div>
 
         {/* Notification groups */}
         {loading ? (
-          <div className="text-center py-16 text-gray-400">Loading notifications...</div>
+          <div className="text-center py-16 text-gray-400">{t('loadingNotifications')}</div>
         ) : filtered.length === 0 ? (
           <div className="text-center py-16">
             <div className="text-6xl mb-4">🔔</div>
-            <p className="text-gray-500 font-medium text-lg">You're all caught up!</p>
-            <p className="text-gray-400 text-sm mt-1">No notifications yet.</p>
+            <p className="text-gray-500 font-medium text-lg">{t('allCaughtUp')}</p>
+            <p className="text-gray-400 text-sm mt-1">{t('noNotificationsYet')}</p>
           </div>
         ) : (
           <div className="space-y-6">
             {Object.entries(groups).filter(([, items]) => items.length > 0).map(([label, items]) => (
               <div key={label}>
-                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">{label}</p>
+                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">{t(label.toLowerCase().replace(' ', ''), label)}</p>
                 <div className="space-y-2">
                   {items.map(notif => (
                     <div
@@ -232,7 +234,7 @@ export default function NotificationsPage() {
                   onClick={() => fetchNotifications(false)}
                   className="px-6 py-2 text-sm text-[#0A1628] border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
                 >
-                  Load more
+                  {t('loadMore')}
                 </button>
               </div>
             )}

@@ -211,9 +211,9 @@ export default function ResponsiveLayout({ children }) {
       {/* SIDEBAR */}
       <aside className={`
         bg-slate-900 text-gray-100 flex flex-col
-        ${isMobile 
-          ? `fixed top-0 left-0 h-full w-80 z-50 transform transition-transform duration-300 ${
-              sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+        ${isMobile
+          ? `fixed top-0 ${currentLanguage === 'ar' ? 'right-0' : 'left-0'} h-full w-80 z-50 transform transition-transform duration-300 ${
+              sidebarOpen ? 'translate-x-0' : currentLanguage === 'ar' ? 'translate-x-full' : '-translate-x-full'
             }`
           : 'w-64 min-h-screen'
         }

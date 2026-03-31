@@ -14,6 +14,7 @@ import {
   Users
 } from 'lucide-react';
 import NotificationsPanel from './NotificationsPanel';
+import LanguageSwitcher from './LanguageSwitcher';
 
 export default function Topbar() {
   const [notificationsOpen, setNotificationsOpen] = useState(false);
@@ -176,8 +177,11 @@ export default function Topbar() {
         </div>
         
         <div className="flex items-center gap-4">
+          {/* Language Switcher */}
+          <LanguageSwitcher />
+
           {/* Notifications */}
-          <button 
+          <button
             className="relative p-2 text-gray-600 hover:text-indigo-500 hover:bg-indigo-50 rounded-lg transition-all duration-200"
             onClick={() => setNotificationsOpen(true)}
           >

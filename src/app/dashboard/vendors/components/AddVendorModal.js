@@ -24,7 +24,7 @@ const DOCUMENT_CHECKLIST = [
 
 // --- Helper Components (Kept your design, slightly enhanced) ---
 
-const FormInput = ({ label, name, type = "text", placeholder, colSpan = 1, required = false, children, value, onChange, error }) => (
+const FormInput = ({ label, name, type = "text", placeholder, colSpan = 1, required = false, children, value, onChange, error, dir }) => (
   <div className={`flex flex-col space-y-1 md:col-span-${colSpan}`}>
     <label htmlFor={name} className={`text-sm font-medium text-gray-600 ${required ? 'after:content-["*"] after:ml-1 after:text-red-500' : ''}`}>
       {label}
@@ -47,6 +47,7 @@ const FormInput = ({ label, name, type = "text", placeholder, colSpan = 1, requi
         value={type !== "file" ? value : undefined}
         placeholder={placeholder}
         onChange={onChange}
+        dir={dir}
         className="w-full border border-gray-300 p-3 rounded-xl focus:ring-blue-500 focus:border-blue-500 transition duration-150 shadow-sm"
       />
     )}
@@ -372,11 +373,12 @@ export default function VendorQualificationForm() {
             <SectionHeader title="A. Company Information" icon={Building2} />
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               
-              <FormInput 
-                label="Company Legal Name" 
+              <FormInput
+                label="Company Legal Name"
                 name="name" // Matches schema
-                placeholder="Enter full legal name" 
-                required 
+                placeholder="Enter full legal name"
+                required
+                dir="auto"
                 value={formData.name || ''}
                 onChange={handleChange}
                 error={errors.name}
@@ -410,13 +412,14 @@ export default function VendorQualificationForm() {
               <FormInput label="Years in Business" name="yearsInBusiness" type="number" placeholder="Number of years (Mandatory)" required value={formData.yearsInBusiness || ''} onChange={handleChange} error={errors.yearsInBusiness} />
               <FormInput label="GOSI Employee Count" name="gosiEmployeeCount" type="number" placeholder="Total employees under GOSI (Mandatory)" required value={formData.gosiEmployeeCount || ''} onChange={handleChange} error={errors.gosiEmployeeCount} />
               
-              <FormInput 
-                label="Products & Services (Multi-select/Text)" 
+              <FormInput
+                label="Products & Services (Multi-select/Text)"
                 name="productsAndServices" // Matches schema (String[])
-                placeholder="Comma-separated list (e.g., HVAC, Electrical, Plumbing)" 
+                placeholder="Comma-separated list (e.g., HVAC, Electrical, Plumbing)"
                 colSpan={2}
                 required
-                value={formData.productsAndServices || ''} 
+                dir="auto"
+                value={formData.productsAndServices || ''}
                 onChange={handleChange}
                 error={errors.productsAndServices}
               />
@@ -430,9 +433,9 @@ export default function VendorQualificationForm() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               
               {/* Primary Contact */}
-              <FormInput label="Primary Contact Name" name="primaryContactName" placeholder="Full Name (Mandatory)" required value={formData.primaryContactName || ''} onChange={handleChange} error={errors.primaryContactName} />
-              <FormInput label="Primary Contact Title" name="primaryContactTitle" placeholder="Title (Mandatory)" required value={formData.primaryContactTitle || ''} onChange={handleChange} error={errors.primaryContactTitle} />
-              <FormInput label="Contact Person" name="contactPerson" placeholder="The person filling the form (Mandatory)" required value={formData.contactPerson || ''} onChange={handleChange} error={errors.contactPerson} />
+              <FormInput label="Primary Contact Name" name="primaryContactName" placeholder="Full Name (Mandatory)" required dir="auto" value={formData.primaryContactName || ''} onChange={handleChange} error={errors.primaryContactName} />
+              <FormInput label="Primary Contact Title" name="primaryContactTitle" placeholder="Title (Mandatory)" required dir="auto" value={formData.primaryContactTitle || ''} onChange={handleChange} error={errors.primaryContactTitle} />
+              <FormInput label="Contact Person" name="contactPerson" placeholder="The person filling the form (Mandatory)" required dir="auto" value={formData.contactPerson || ''} onChange={handleChange} error={errors.contactPerson} />
 
               {/* General Contact Info */}
               <FormInput label="Phone Number" name="contactPhone" type="tel" placeholder="+966 5x xxx xxxx" required value={formData.contactPhone || ''} onChange={handleChange} error={errors.contactPhone} />
@@ -440,13 +443,13 @@ export default function VendorQualificationForm() {
               <FormInput label="Company Website" name="website" type="url" placeholder="https://www.company.com (Optional)" value={formData.website || ''} onChange={handleChange} error={errors.website} />
               
               {/* Technical & Financial Contacts */}
-              <FormInput label="Technical Contact (Name + Email)" name="technicalContact" placeholder="Optional" colSpan={2} value={formData.technicalContact || ''} onChange={handleChange} error={errors.technicalContact} />
-              <FormInput label="Financial Contact (Name + Email)" name="financialContact" placeholder="Optional" colSpan={1} value={formData.financialContact || ''} onChange={handleChange} error={errors.financialContact} />
+              <FormInput label="Technical Contact (Name + Email)" name="technicalContact" placeholder="Optional" colSpan={2} dir="auto" value={formData.technicalContact || ''} onChange={handleChange} error={errors.technicalContact} />
+              <FormInput label="Financial Contact (Name + Email)" name="financialContact" placeholder="Optional" colSpan={1} dir="auto" value={formData.financialContact || ''} onChange={handleChange} error={errors.financialContact} />
 
               {/* Address Fields */}
-              <FormInput label="Street Address" name="addressStreet" placeholder="Street / PO Box (Mandatory)" required value={formData.addressStreet || ''} onChange={handleChange} error={errors.addressStreet} />
-              <FormInput label="City" name="addressCity" placeholder="City (Mandatory)" required value={formData.addressCity || ''} onChange={handleChange} error={errors.addressCity} />
-              <FormInput label="Country" name="addressCountry" placeholder="Country (Mandatory)" required value={formData.addressCountry || ''} onChange={handleChange} error={errors.addressCountry} />
+              <FormInput label="Street Address" name="addressStreet" placeholder="Street / PO Box (Mandatory)" required dir="auto" value={formData.addressStreet || ''} onChange={handleChange} error={errors.addressStreet} />
+              <FormInput label="City" name="addressCity" placeholder="City (Mandatory)" required dir="auto" value={formData.addressCity || ''} onChange={handleChange} error={errors.addressCity} />
+              <FormInput label="Country" name="addressCountry" placeholder="Country (Mandatory)" required dir="auto" value={formData.addressCountry || ''} onChange={handleChange} error={errors.addressCountry} />
 
             </div>
           </section>

@@ -7,6 +7,7 @@ import {
   Package, AlertTriangle, Search, X,
   ChevronDown, CheckCircle
 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import ResponsiveLayout from '@/components/layout/ResponsiveLayout';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL;
@@ -28,6 +29,7 @@ const emptyItem = () => ({
 export default function CreatePurchaseOrderClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { t } = useTranslation();
   const preRfqId = searchParams.get('rfqId');
 
   const [activeTab, setActiveTab] = useState('details'); // details | items | review
@@ -189,9 +191,9 @@ export default function CreatePurchaseOrderClient() {
 
   // ── UI ─────────────────────────────────────────────────────────────────────
   const tabs = [
-    { id: 'details', label: 'PO Details', icon: FileText },
-    { id: 'items', label: 'Line Items', icon: Package },
-    { id: 'review', label: 'Review', icon: CheckCircle },
+    { id: 'details', label: t('poDetails'), icon: FileText },
+    { id: 'items', label: t('lineItems'), icon: Package },
+    { id: 'review', label: t('reviewTab'), icon: CheckCircle },
   ];
 
   return (
@@ -207,8 +209,8 @@ export default function CreatePurchaseOrderClient() {
             <ArrowLeft className="w-5 h-5" />
           </button>
           <div>
-            <h1 className="text-2xl font-bold" style={{ color: '#0A1628' }}>New Purchase Order</h1>
-            <p className="text-sm text-gray-500">Fill in the details to create a purchase order</p>
+            <h1 className="text-2xl font-bold" style={{ color: '#0A1628' }}>{t('newPurchaseOrder')}</h1>
+            <p className="text-sm text-gray-500">{t('fillDetailsToCreate')}</p>
           </div>
         </div>
 
@@ -242,12 +244,12 @@ export default function CreatePurchaseOrderClient() {
         {/* ── Tab: Details ──────────────────────────────────────────────── */}
         {activeTab === 'details' && (
           <div className="bg-white rounded-lg border border-gray-200 p-6 space-y-5">
-            <h2 className="font-semibold text-gray-800 text-base border-b pb-3">PO Details</h2>
+            <h2 className="font-semibold text-gray-800 text-base border-b pb-3">{t('poDetails')}</h2>
 
             {/* Project Name */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Project Name <span className="text-red-500">*</span>
+                {t('projectName')} <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
@@ -262,7 +264,7 @@ export default function CreatePurchaseOrderClient() {
             {/* Vendor */}
             <div className="relative">
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Vendor <span className="text-red-500">*</span>
+                {t('vendor')} <span className="text-red-500">*</span>
               </label>
               <div
                 className={`flex items-center gap-2 px-3 py-2 border rounded-lg cursor-pointer ${errors.vendorId ? 'border-red-400' : 'border-gray-300'}`}
@@ -270,7 +272,7 @@ export default function CreatePurchaseOrderClient() {
               >
                 <Building className="w-4 h-4 text-gray-400 flex-shrink-0" />
                 <span className={`text-sm flex-1 ${form.vendorId ? 'text-gray-900' : 'text-gray-400'}`}>
-                  {form.vendorName || 'Select vendor…'}
+                  {form.vendorName || t('selectVendor')}
                 </span>
                 {form.vendorId
                   ? <X className="w-4 h-4 text-gray-400" onClick={(e) => { e.stopPropagation(); setForm({ ...form, vendorId: '', vendorName: '', vendorClass: '' }); }} />
@@ -284,7 +286,7 @@ export default function CreatePurchaseOrderClient() {
                       <input
                         autoFocus
                         className="flex-1 text-sm bg-transparent outline-none"
-                        placeholder="Search vendors…"
+                        placeholder={t('searchVendors')}
                         value={vendorSearch}
                         onChange={(e) => setVendorSearch(e.target.value)}
                       />
@@ -292,7 +294,7 @@ export default function CreatePurchaseOrderClient() {
                   </div>
                   <div className="max-h-48 overflow-y-auto">
                     {filteredVendors.length === 0
-                      ? <p className="text-xs text-gray-400 text-center py-4">No vendors found</p>
+                      ? <p className="text-xs text-gray-400 text-center py-4">{t('noVendorsFound')}</p>
                       : filteredVendors.map(v => (
                         <button
                           key={v.id}
@@ -319,14 +321,14 @@ export default function CreatePurchaseOrderClient() {
 
             {/* Link to RFQ */}
             <div className="relative">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Link to RFQ <span className="text-gray-400 font-normal">(optional)</span></label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">{t('linkToRFQ')} <span className="text-gray-400 font-normal">({t('optionalField')})</span></label>
               <div
                 className="flex items-center gap-2 px-3 py-2 border border-gray-300 rounded-lg cursor-pointer"
                 onClick={() => { setShowRfqDropdown(true); setRfqSearch(''); }}
               >
                 <FileText className="w-4 h-4 text-gray-400 flex-shrink-0" />
                 <span className={`text-sm flex-1 ${form.rfqId ? 'text-gray-900' : 'text-gray-400'}`}>
-                  {form.rfqNumber || 'Select RFQ…'}
+                  {form.rfqNumber || t('selectRFQ')}
                 </span>
                 {form.rfqId
                   ? <X className="w-4 h-4 text-gray-400" onClick={(e) => { e.stopPropagation(); setForm({ ...form, rfqId: '', rfqNumber: '' }); }} />
@@ -340,7 +342,7 @@ export default function CreatePurchaseOrderClient() {
                       <input
                         autoFocus
                         className="flex-1 text-sm bg-transparent outline-none"
-                        placeholder="Search RFQ number or project…"
+                        placeholder={t('searchRFQs')}
                         value={rfqSearch}
                         onChange={(e) => setRfqSearch(e.target.value)}
                       />
@@ -348,7 +350,7 @@ export default function CreatePurchaseOrderClient() {
                   </div>
                   <div className="max-h-48 overflow-y-auto">
                     {filteredRfqs.length === 0
-                      ? <p className="text-xs text-gray-400 text-center py-4">No RFQs found</p>
+                      ? <p className="text-xs text-gray-400 text-center py-4">{t('noRFQsFound')}</p>
                       : filteredRfqs.map(r => (
                         <button
                           key={r.id}
@@ -373,7 +375,7 @@ export default function CreatePurchaseOrderClient() {
             {/* Two-column grid */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Currency</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{t('currency')}</label>
                 <select
                   className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg outline-none"
                   value={form.currency}
@@ -383,7 +385,7 @@ export default function CreatePurchaseOrderClient() {
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Required Delivery Date</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{t('requiredDeliveryDate')}</label>
                 <input
                   type="date"
                   className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg outline-none"
@@ -392,9 +394,10 @@ export default function CreatePurchaseOrderClient() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Delivery Location</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{t('deliveryLocation')}</label>
                 <input
                   type="text"
+                  dir="auto"
                   className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg outline-none"
                   placeholder="e.g. Site B, Jeddah"
                   value={form.deliveryLocation}
@@ -402,9 +405,10 @@ export default function CreatePurchaseOrderClient() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Payment Terms</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{t('paymentTerms')}</label>
                 <input
                   type="text"
+                  dir="auto"
                   className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg outline-none"
                   placeholder="e.g. 30% advance, 70% on delivery"
                   value={form.paymentTerms}
@@ -412,9 +416,10 @@ export default function CreatePurchaseOrderClient() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Warranty Period</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{t('warrantyPeriod')}</label>
                 <input
                   type="text"
+                  dir="auto"
                   className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg outline-none"
                   placeholder="e.g. 12 months"
                   value={form.warrantyPeriod}
@@ -424,9 +429,10 @@ export default function CreatePurchaseOrderClient() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Internal Notes</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">{t('internalNotes')}</label>
               <textarea
                 rows={3}
+                dir="auto"
                 className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg outline-none resize-none"
                 placeholder="Any internal notes for this PO…"
                 value={form.notes}
@@ -440,7 +446,7 @@ export default function CreatePurchaseOrderClient() {
                 style={{ backgroundColor: '#B8960A' }}
                 onClick={() => setActiveTab('items')}
               >
-                Next: Line Items →
+                {t('nextLineItems')} →
               </button>
             </div>
           </div>
@@ -450,13 +456,13 @@ export default function CreatePurchaseOrderClient() {
         {activeTab === 'items' && (
           <div className="bg-white rounded-lg border border-gray-200 p-6">
             <div className="flex justify-between items-center border-b pb-3 mb-5">
-              <h2 className="font-semibold text-gray-800">Line Items</h2>
+              <h2 className="font-semibold text-gray-800">{t('lineItems')}</h2>
               <button
                 onClick={addItem}
                 className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-white rounded-lg"
                 style={{ backgroundColor: '#B8960A' }}
               >
-                <Plus className="w-4 h-4" /> Add Item
+                <Plus className="w-4 h-4" /> {t('addItem')}
               </button>
             </div>
 
@@ -479,9 +485,10 @@ export default function CreatePurchaseOrderClient() {
                   </div>
                   <div className="grid grid-cols-1 lg:grid-cols-6 gap-3">
                     <div className="lg:col-span-2">
-                      <label className="text-xs text-gray-500 mb-1 block">Description *</label>
+                      <label className="text-xs text-gray-500 mb-1 block">{t('itemDescription')} *</label>
                       <input
                         type="text"
+                        dir="auto"
                         className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg outline-none"
                         placeholder="Item description"
                         value={item.description}
@@ -499,7 +506,7 @@ export default function CreatePurchaseOrderClient() {
                       />
                     </div>
                     <div>
-                      <label className="text-xs text-gray-500 mb-1 block">Qty *</label>
+                      <label className="text-xs text-gray-500 mb-1 block">{t('qty')} *</label>
                       <input
                         type="number"
                         min="0"
@@ -509,7 +516,7 @@ export default function CreatePurchaseOrderClient() {
                       />
                     </div>
                     <div>
-                      <label className="text-xs text-gray-500 mb-1 block">Unit</label>
+                      <label className="text-xs text-gray-500 mb-1 block">{t('unit')}</label>
                       <select
                         className="w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg outline-none"
                         value={item.unit}
@@ -519,7 +526,7 @@ export default function CreatePurchaseOrderClient() {
                       </select>
                     </div>
                     <div>
-                      <label className="text-xs text-gray-500 mb-1 block">Unit Price *</label>
+                      <label className="text-xs text-gray-500 mb-1 block">{t('unitPrice')} *</label>
                       <input
                         type="number"
                         min="0"
@@ -531,7 +538,7 @@ export default function CreatePurchaseOrderClient() {
                   </div>
                   <div className="flex justify-between items-center mt-3">
                     <div className="flex items-center gap-2">
-                      <label className="text-xs text-gray-500">Cost Code:</label>
+                      <label className="text-xs text-gray-500">{t('costCode')}:</label>
                       <input
                         type="text"
                         className="px-2 py-1 text-xs border border-gray-300 rounded outline-none w-32"
@@ -551,7 +558,7 @@ export default function CreatePurchaseOrderClient() {
             {/* Running Total */}
             <div className="mt-5 flex justify-end">
               <div className="bg-gray-50 border border-gray-200 rounded-lg px-6 py-3 text-right">
-                <p className="text-xs text-gray-500 uppercase tracking-wide">Total Value</p>
+                <p className="text-xs text-gray-500 uppercase tracking-wide">{t('totalValue')}</p>
                 <p className="text-xl font-bold" style={{ color: '#B8960A' }}>
                   {totalValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {form.currency}
                 </p>
@@ -563,14 +570,14 @@ export default function CreatePurchaseOrderClient() {
                 className="px-4 py-2 text-sm text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50"
                 onClick={() => setActiveTab('details')}
               >
-                ← Back
+                ← {t('back')}
               </button>
               <button
                 className="px-5 py-2 text-sm text-white rounded-lg font-medium"
                 style={{ backgroundColor: '#B8960A' }}
                 onClick={() => setActiveTab('review')}
               >
-                Next: Review →
+                {t('nextReview')} →
               </button>
             </div>
           </div>
@@ -580,28 +587,28 @@ export default function CreatePurchaseOrderClient() {
         {activeTab === 'review' && (
           <div className="space-y-5">
             <div className="bg-white rounded-lg border border-gray-200 p-6">
-              <h2 className="font-semibold text-gray-800 border-b pb-3 mb-4">Review Summary</h2>
+              <h2 className="font-semibold text-gray-800 border-b pb-3 mb-4">{t('reviewSummary')}</h2>
 
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-8 gap-y-3 text-sm">
-                <div className="flex justify-between"><span className="text-gray-500">Project</span><span className="font-medium text-gray-900">{form.projectName || '—'}</span></div>
-                <div className="flex justify-between"><span className="text-gray-500">Vendor</span><span className="font-medium text-gray-900">{form.vendorName || '—'}</span></div>
+                <div className="flex justify-between"><span className="text-gray-500">{t('projectName')}</span><span className="font-medium text-gray-900">{form.projectName || '—'}</span></div>
+                <div className="flex justify-between"><span className="text-gray-500">{t('vendor')}</span><span className="font-medium text-gray-900">{form.vendorName || '—'}</span></div>
                 <div className="flex justify-between"><span className="text-gray-500">RFQ</span><span className="font-medium text-gray-900">{form.rfqNumber || '—'}</span></div>
-                <div className="flex justify-between"><span className="text-gray-500">Currency</span><span className="font-medium text-gray-900">{form.currency}</span></div>
-                <div className="flex justify-between"><span className="text-gray-500">Required Date</span><span className="font-medium text-gray-900">{form.requiredDate || '—'}</span></div>
-                <div className="flex justify-between"><span className="text-gray-500">Delivery Location</span><span className="font-medium text-gray-900">{form.deliveryLocation || '—'}</span></div>
-                <div className="flex justify-between"><span className="text-gray-500">Payment Terms</span><span className="font-medium text-gray-900">{form.paymentTerms || '—'}</span></div>
-                <div className="flex justify-between"><span className="text-gray-500">Warranty Period</span><span className="font-medium text-gray-900">{form.warrantyPeriod || '—'}</span></div>
-                {form.notes && <div className="lg:col-span-2 flex justify-between"><span className="text-gray-500">Notes</span><span className="font-medium text-gray-900 max-w-xs text-right">{form.notes}</span></div>}
+                <div className="flex justify-between"><span className="text-gray-500">{t('currency')}</span><span className="font-medium text-gray-900">{form.currency}</span></div>
+                <div className="flex justify-between"><span className="text-gray-500">{t('requiredDeliveryDate')}</span><span className="font-medium text-gray-900">{form.requiredDate || '—'}</span></div>
+                <div className="flex justify-between"><span className="text-gray-500">{t('deliveryLocation')}</span><span className="font-medium text-gray-900">{form.deliveryLocation || '—'}</span></div>
+                <div className="flex justify-between"><span className="text-gray-500">{t('paymentTerms')}</span><span className="font-medium text-gray-900">{form.paymentTerms || '—'}</span></div>
+                <div className="flex justify-between"><span className="text-gray-500">{t('warrantyPeriod')}</span><span className="font-medium text-gray-900">{form.warrantyPeriod || '—'}</span></div>
+                {form.notes && <div className="lg:col-span-2 flex justify-between"><span className="text-gray-500">{t('internalNotes')}</span><span className="font-medium text-gray-900 max-w-xs text-right">{form.notes}</span></div>}
               </div>
             </div>
 
             <div className="bg-white rounded-lg border border-gray-200 p-6">
-              <h3 className="font-semibold text-gray-800 mb-4">Line Items</h3>
+              <h3 className="font-semibold text-gray-800 mb-4">{t('lineItems')}</h3>
               <div className="overflow-x-auto">
                 <table className="min-w-full text-sm">
                   <thead>
                     <tr className="border-b border-gray-200">
-                      {['#', 'Description', 'CSI Code', 'Qty', 'Unit', 'Unit Price', 'Total'].map(h => (
+                      {['#', t('itemDescription'), 'CSI Code', t('qty'), t('unit'), t('unitPrice'), t('totalValue')].map(h => (
                         <th key={h} className="py-2 px-3 text-left text-xs font-semibold text-gray-500 uppercase">{h}</th>
                       ))}
                     </tr>
@@ -621,7 +628,7 @@ export default function CreatePurchaseOrderClient() {
                   </tbody>
                   <tfoot>
                     <tr className="border-t-2 border-gray-300 bg-gray-50">
-                      <td colSpan={6} className="py-2 px-3 text-right font-semibold text-gray-700">Total Value</td>
+                      <td colSpan={6} className="py-2 px-3 text-right font-semibold text-gray-700">{t('totalValue')}</td>
                       <td className="py-2 px-3 font-bold text-lg" style={{ color: '#B8960A' }}>
                         {totalValue.toLocaleString(undefined, { minimumFractionDigits: 2 })} {form.currency}
                       </td>
@@ -636,7 +643,7 @@ export default function CreatePurchaseOrderClient() {
                 className="px-4 py-2 text-sm text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50"
                 onClick={() => setActiveTab('items')}
               >
-                ← Back
+                ← {t('back')}
               </button>
               <div className="flex items-center gap-3">
                 <button
@@ -644,7 +651,7 @@ export default function CreatePurchaseOrderClient() {
                   className="flex items-center gap-2 px-5 py-2 text-sm border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 disabled:opacity-50"
                   onClick={() => router.push('/dashboard/procurement/purchase-orders')}
                 >
-                  <X className="w-4 h-4" /> Cancel
+                  <X className="w-4 h-4" /> {t('cancel')}
                 </button>
                 <button
                   disabled={submitting}
@@ -653,7 +660,7 @@ export default function CreatePurchaseOrderClient() {
                   onClick={() => submit(false)}
                 >
                   <Save className="w-4 h-4" />
-                  {submitting ? 'Saving…' : 'Save as Draft'}
+                  {submitting ? `${t('save')}…` : t('saveAsDraft')}
                 </button>
                 <button
                   disabled={submitting}
@@ -662,7 +669,7 @@ export default function CreatePurchaseOrderClient() {
                   onClick={() => submit(true)}
                 >
                   <Send className="w-4 h-4" />
-                  {submitting ? 'Submitting…' : 'Submit for Approval'}
+                  {submitting ? `${t('submit')}…` : t('submitForApproval')}
                 </button>
               </div>
             </div>

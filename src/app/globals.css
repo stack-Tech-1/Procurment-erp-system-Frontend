@@ -89,3 +89,44 @@ body {
 [dir="rtl"] .float-left {
   float: right !important;
 }
+
+/* Border-l-4 accent flip (KPI cards, nav active indicator) */
+[dir="rtl"] .border-l-4 {
+  border-left: none !important;
+  border-right-width: 4px !important;
+}
+
+/* Input / textarea / select text direction */
+[dir="rtl"] input:not([type="checkbox"]):not([type="radio"]):not([dir]),
+[dir="rtl"] textarea:not([dir]),
+[dir="rtl"] select:not([dir]) {
+  text-align: right;
+}
+
+/* Border radius flip */
+[dir="rtl"] .rounded-l-lg {
+  border-radius: 0 0.5rem 0.5rem 0 !important;
+}
+[dir="rtl"] .rounded-r-lg {
+  border-radius: 0.5rem 0 0 0.5rem !important;
+}
+
+/* Additional padding swaps */
+[dir="rtl"] .pl-2 { padding-left: 0 !important; padding-right: 0.5rem !important; }
+[dir="rtl"] .pr-2 { padding-right: 0 !important; padding-left: 0.5rem !important; }
+[dir="rtl"] .pl-6 { padding-left: 0 !important; padding-right: 1.5rem !important; }
+[dir="rtl"] .pr-6 { padding-right: 0 !important; padding-left: 1.5rem !important; }
+[dir="rtl"] .pl-8 { padding-left: 0 !important; padding-right: 2rem !important; }
+[dir="rtl"] .pr-8 { padding-right: 0 !important; padding-left: 2rem !important; }
+
+/* Additional margin swaps */
+[dir="rtl"] .ml-2 { margin-left: 0 !important; margin-right: 0.5rem !important; }
+[dir="rtl"] .mr-2 { margin-right: 0 !important; margin-left: 0.5rem !important; }
+[dir="rtl"] .ml-4 { margin-left: 0 !important; margin-right: 1rem !important; }
+[dir="rtl"] .mr-4 { margin-right: 0 !important; margin-left: 1rem !important; }
+
+/* Arabic font stack — applied when RTL direction is active */
+[dir="rtl"] body,
+[dir="rtl"] * {
+  font-family: 'Cairo', 'Noto Sans Arabic', sans-serif;
+}

@@ -446,6 +446,7 @@ const EditQualificationPage = () => {
                 <input
                   type="text"
                   name="companyLegalName"
+                  dir="auto"
                   value={formData.companyLegalName || ''}
                   onChange={handleChange}
                   className="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
@@ -567,6 +568,7 @@ const EditQualificationPage = () => {
                 <input
                   type="text"
                   name="chamberRegion"
+                  dir="auto"
                   value={formData.chamberRegion || ''}
                   onChange={handleChange}
                   className="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
@@ -580,6 +582,7 @@ const EditQualificationPage = () => {
                 <input
                   type="text"
                   name="mainCategory"
+                  dir="auto"
                   value={formData.mainCategory || ''}
                   onChange={handleChange}
                   className="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
@@ -594,6 +597,7 @@ const EditQualificationPage = () => {
                 <input
                   type="text"
                   name="subCategory"
+                  dir="auto"
                   value={formData.subCategory || ''}
                   onChange={handleChange}
                   className="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
@@ -608,6 +612,7 @@ const EditQualificationPage = () => {
                 <input
                   type="text"
                   name="productsAndServices"
+                  dir="auto"
                   value={formData.productsAndServices || ''}
                   onChange={handleChange}
                   className="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
@@ -648,13 +653,14 @@ const EditQualificationPage = () => {
                 <input
                   type="text"
                   name="primaryContactName"
+                  dir="auto"
                   value={formData.primaryContactName || ''}
                   onChange={handleChange}
                   className="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   required
                 />
               </div>
-              
+
               <div className="flex flex-col space-y-1">
                 <label className="text-sm font-medium text-gray-600">
                   Primary Contact Title *
@@ -662,13 +668,14 @@ const EditQualificationPage = () => {
                 <input
                   type="text"
                   name="primaryContactTitle"
+                  dir="auto"
                   value={formData.primaryContactTitle || ''}
                   onChange={handleChange}
                   className="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   required
                 />
               </div>
-              
+
               <div className="flex flex-col space-y-1">
                 <label className="text-sm font-medium text-gray-600">
                   Contact Person *
@@ -676,6 +683,7 @@ const EditQualificationPage = () => {
                 <input
                   type="text"
                   name="contactPerson"
+                  dir="auto"
                   value={formData.contactPerson || ''}
                   onChange={handleChange}
                   className="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
@@ -786,6 +794,7 @@ const EditQualificationPage = () => {
                 <input
                   type="text"
                   name="addressStreet"
+                  dir="auto"
                   value={formData.addressStreet || ''}
                   onChange={handleChange}
                   className="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
@@ -800,6 +809,7 @@ const EditQualificationPage = () => {
                 <input
                   type="text"
                   name="addressCity"
+                  dir="auto"
                   value={formData.addressCity || ''}
                   onChange={handleChange}
                   className="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
@@ -814,6 +824,7 @@ const EditQualificationPage = () => {
                 <input
                   type="text"
                   name="addressRegion"
+                  dir="auto"
                   value={formData.addressRegion || ''}
                   onChange={handleChange}
                   className="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
@@ -828,6 +839,7 @@ const EditQualificationPage = () => {
                 <input
                   type="text"
                   name="addressCountry"
+                  dir="auto"
                   value={formData.addressCountry || ''}
                   onChange={handleChange}
                   className="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
@@ -930,6 +942,7 @@ const EditQualificationPage = () => {
                         <label className="text-xs font-medium text-gray-500">Project Name *</label>
                         <input
                           type="text"
+                          dir="auto"
                           value={project.projectName}
                           onChange={(e) => handleProjectExperienceChange(index, 'projectName', e.target.value)}
                           className="w-full border border-gray-300 p-2 rounded-lg"
@@ -941,6 +954,7 @@ const EditQualificationPage = () => {
                         <label className="text-xs font-medium text-gray-500">Client Name *</label>
                         <input
                           type="text"
+                          dir="auto"
                           value={project.clientName}
                           onChange={(e) => handleProjectExperienceChange(index, 'clientName', e.target.value)}
                           className="w-full border border-gray-300 p-2 rounded-lg"
@@ -983,6 +997,7 @@ const EditQualificationPage = () => {
                         <label className="text-xs font-medium text-gray-500">Scope Description</label>
                         <input
                           type="text"
+                          dir="auto"
                           value={project.scopeDescription}
                           onChange={(e) => handleProjectExperienceChange(index, 'scopeDescription', e.target.value)}
                           className="w-full border border-gray-300 p-2 rounded-lg"

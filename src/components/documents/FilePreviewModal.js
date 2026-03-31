@@ -1,5 +1,6 @@
 "use client";
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   FileText, Image, X, Minus, Plus, Maximize, Minimize, Download
 } from 'lucide-react';
@@ -19,6 +20,7 @@ export default function FilePreviewModal({ isOpen, onClose, fileUrl, fileName, f
   const [loadState, setLoadState] = useState('loading'); // 'loading' | 'loaded' | 'error'
   const containerRef = useRef(null);
 
+  const { t } = useTranslation();
   const resolvedType = detectFileType(fileType, fileName);
 
   // Reset state when a new file is opened
@@ -93,7 +95,7 @@ export default function FilePreviewModal({ isOpen, onClose, fileUrl, fileName, f
           <div className="flex items-center gap-2 min-w-0">
             <FileIcon className="w-5 h-5 text-white shrink-0" />
             <span className="text-white text-sm font-medium truncate max-w-xs" title={fileName}>
-              {fileName || 'File Preview'}
+              {fileName || t('filePreview')}
             </span>
           </div>
 
@@ -105,7 +107,7 @@ export default function FilePreviewModal({ isOpen, onClose, fileUrl, fileName, f
                   onClick={zoomOut}
                   disabled={zoom <= 0.5}
                   className="p-1.5 rounded text-white hover:bg-white/20 disabled:opacity-40 transition-colors"
-                  title="Zoom out"
+                  title={t('zoomOut')}
                 >
                   <Minus className="w-4 h-4" />
                 </button>
@@ -116,7 +118,7 @@ export default function FilePreviewModal({ isOpen, onClose, fileUrl, fileName, f
                   onClick={zoomIn}
                   disabled={zoom >= 2.0}
                   className="p-1.5 rounded text-white hover:bg-white/20 disabled:opacity-40 transition-colors"
-                  title="Zoom in"
+                  title={t('zoomIn')}
                 >
                   <Plus className="w-4 h-4" />
                 </button>
@@ -126,7 +128,7 @@ export default function FilePreviewModal({ isOpen, onClose, fileUrl, fileName, f
             <button
               onClick={toggleFullscreen}
               className="p-1.5 rounded text-white hover:bg-white/20 transition-colors"
-              title={isFullscreen ? 'Exit fullscreen' : 'Fullscreen'}
+              title={isFullscreen ? t('exitFullscreen') : t('fullscreen')}
             >
               {isFullscreen ? <Minimize className="w-4 h-4" /> : <Maximize className="w-4 h-4" />}
             </button>
@@ -136,7 +138,7 @@ export default function FilePreviewModal({ isOpen, onClose, fileUrl, fileName, f
               target="_blank"
               rel="noopener noreferrer"
               className="p-1.5 rounded text-white hover:bg-white/20 transition-colors"
-              title="Download / open in new tab"
+              title={t('downloadOpenNewTab')}
             >
               <Download className="w-4 h-4" />
             </a>

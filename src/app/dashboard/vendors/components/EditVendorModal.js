@@ -35,6 +35,7 @@ export default function EditVendorModal({ vendor, onClose, onSave, saving }) {
             <input
               type="text"
               name="name"
+              dir="auto"
               value={formData.name}
               onChange={handleChange}
               className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 transition"

@@ -3,6 +3,7 @@ import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "react-hot-toast";
 import { Save, Loader2, Eye, RotateCcw, Upload, X } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import ResponsiveLayout from "@/components/layout/ResponsiveLayout";
 
 // ─── Defaults ────────────────────────────────────────────────────────────────
@@ -184,6 +185,7 @@ function LivePreview({ form }) {
 // ─── Main page ────────────────────────────────────────────────────────────────
 export default function BrandingSettingsPage() {
   const router = useRouter();
+  const { t } = useTranslation();
   const [form, setForm] = useState(DEFAULT_FORM);
   const [saving, setSaving] = useState(false);
   const [pageLoading, setPageLoading] = useState(true);
@@ -285,10 +287,10 @@ export default function BrandingSettingsPage() {
               <div className="w-10 h-10 rounded-xl bg-red-500/20 flex items-center justify-center flex-shrink-0">
                 <RotateCcw className="w-5 h-5 text-red-400" />
               </div>
-              <h3 className="text-white font-bold text-lg">Reset to Defaults?</h3>
+              <h3 className="text-white font-bold text-lg">{t('resetToDefaultsQ')}</h3>
             </div>
             <p className="text-white/70 text-sm mb-6">
-              All branding settings will be restored to KUN Real Estate defaults. This cannot be undone unless you save first.
+              {t('resetConfirmMessage')}
             </p>
             <div className="flex gap-3">
               <button
@@ -299,13 +301,13 @@ export default function BrandingSettingsPage() {
                 }}
                 className="flex-1 py-2.5 bg-red-500/80 hover:bg-red-500 text-white font-bold rounded-xl transition-colors"
               >
-                Reset
+                {t('resetButton')}
               </button>
               <button
                 onClick={() => setShowResetModal(false)}
                 className="flex-1 py-2.5 bg-white/10 hover:bg-white/20 text-white font-bold rounded-xl border border-white/20 transition-colors"
               >
-                Cancel
+                {t('cancel')}
               </button>
             </div>
           </div>
@@ -319,15 +321,15 @@ export default function BrandingSettingsPage() {
           {/* ── Page header ── */}
           <div className="mb-8">
             <nav className="text-sm text-gray-400 mb-2 flex items-center gap-1">
-              <span>Dashboard</span>
+              <span>{t('dashboard')}</span>
               <span className="mx-1">›</span>
-              <span>Administration</span>
+              <span>{t('administration')}</span>
               <span className="mx-1">›</span>
-              <span className="text-[#B8960A] font-medium">Branding Settings</span>
+              <span className="text-[#B8960A] font-medium">{t('brandingSettings')}</span>
             </nav>
-            <h1 className="text-[28px] font-bold text-[#0A1628]">Branding Settings</h1>
+            <h1 className="text-[28px] font-bold text-[#0A1628]">{t('brandingSettings')}</h1>
             <p className="text-gray-500 text-sm mt-1">
-              Control how your system looks to suppliers and staff.
+              {t('controlHowSystemLooks')}
             </p>
           </div>
 
@@ -338,12 +340,13 @@ export default function BrandingSettingsPage() {
             <div className="lg:col-span-2">
 
               {/* Section 1 — Identity */}
-              <SectionCard title="Identity">
+              <SectionCard title={t('identity')}>
                 <div>
-                  <FieldLabel htmlFor="companyName">Company Name</FieldLabel>
+                  <FieldLabel htmlFor="companyName">{t('companyName')}</FieldLabel>
                   <input
                     id="companyName"
                     type="text"
+                    dir="auto"
                     value={form.companyName}
                     onChange={e => set("companyName", e.target.value)}
                     placeholder="e.g. KUN Real Estate"
@@ -352,10 +355,11 @@ export default function BrandingSettingsPage() {
                 </div>
 
                 <div>
-                  <FieldLabel htmlFor="tagline">Tagline</FieldLabel>
+                  <FieldLabel htmlFor="tagline">{t('tagline')}</FieldLabel>
                   <input
                     id="tagline"
                     type="text"
+                    dir="auto"
                     value={form.tagline}
                     onChange={e => set("tagline", e.target.value)}
                     placeholder="e.g. Building excellence through trusted partnerships."
@@ -365,13 +369,14 @@ export default function BrandingSettingsPage() {
 
                 <div>
                   <div className="flex items-center justify-between mb-1.5">
-                    <FieldLabel htmlFor="aboutText">About Text</FieldLabel>
+                    <FieldLabel htmlFor="aboutText">{t('aboutText')}</FieldLabel>
                     <span className={`text-xs font-mono ${form.aboutText.length > 300 ? "text-red-500" : "text-gray-400"}`}>
                       {form.aboutText.length}/300
                     </span>
                   </div>
                   <textarea
                     id="aboutText"
+                    dir="auto"
                     value={form.aboutText}
                     onChange={e => set("aboutText", e.target.value.slice(0, 300))}
                     rows={4}
@@ -381,7 +386,7 @@ export default function BrandingSettingsPage() {
                 </div>
 
                 <div>
-                  <FieldLabel htmlFor="learnMoreUrl">Learn More URL</FieldLabel>
+                  <FieldLabel htmlFor="learnMoreUrl">{t('learnMoreUrl')}</FieldLabel>
                   <input
                     id="learnMoreUrl"
                     type="text"
@@ -394,9 +399,9 @@ export default function BrandingSettingsPage() {
               </SectionCard>
 
               {/* Section 2 — Logo & Images */}
-              <SectionCard title="Logo &amp; Images">
+              <SectionCard title={t('logoAndImages')}>
                 <ImageField
-                  label="Logo"
+                  label={t('logo')}
                   fieldKey="logoUrl"
                   value={form.logoUrl}
                   onUpload={handleImageUpload}
@@ -404,7 +409,7 @@ export default function BrandingSettingsPage() {
                   uploading={uploadingField === "logoUrl"}
                 />
                 <ImageField
-                  label="Favicon"
+                  label={t('favicon')}
                   fieldKey="faviconUrl"
                   value={form.faviconUrl}
                   onUpload={handleImageUpload}
@@ -412,7 +417,7 @@ export default function BrandingSettingsPage() {
                   uploading={uploadingField === "faviconUrl"}
                 />
                 <ImageField
-                  label="Background Image (optional)"
+                  label={t('backgroundImageOptional')}
                   fieldKey="backgroundImageUrl"
                   value={form.backgroundImageUrl}
                   onUpload={handleImageUpload}
@@ -422,9 +427,9 @@ export default function BrandingSettingsPage() {
               </SectionCard>
 
               {/* Section 3 — Brand Colors */}
-              <SectionCard title="Brand Colors">
+              <SectionCard title={t('brandColors')}>
                 <div>
-                  <FieldLabel>Primary Color (Navy)</FieldLabel>
+                  <FieldLabel>{t('primaryColorNavy')}</FieldLabel>
                   <div className="flex items-center gap-3">
                     <input
                       type="color"
@@ -448,7 +453,7 @@ export default function BrandingSettingsPage() {
                 </div>
 
                 <div>
-                  <FieldLabel>Accent Color (Gold)</FieldLabel>
+                  <FieldLabel>{t('accentColorGold')}</FieldLabel>
                   <div className="flex items-center gap-3">
                     <input
                       type="color"
@@ -473,10 +478,10 @@ export default function BrandingSettingsPage() {
               </SectionCard>
 
               {/* Section 4 — Statistics */}
-              <SectionCard title="Statistics (shown on login page)">
+              <SectionCard title={t('statisticsSection')}>
                 <div className="grid grid-cols-3 gap-4">
                   <div>
-                    <FieldLabel htmlFor="statProjects">Projects</FieldLabel>
+                    <FieldLabel htmlFor="statProjects">{t('statProjects')}</FieldLabel>
                     <input
                       id="statProjects"
                       type="text"
@@ -487,7 +492,7 @@ export default function BrandingSettingsPage() {
                     />
                   </div>
                   <div>
-                    <FieldLabel htmlFor="statPartners">Partners</FieldLabel>
+                    <FieldLabel htmlFor="statPartners">{t('statPartners')}</FieldLabel>
                     <input
                       id="statPartners"
                       type="text"
@@ -498,7 +503,7 @@ export default function BrandingSettingsPage() {
                     />
                   </div>
                   <div>
-                    <FieldLabel htmlFor="statYears">Years</FieldLabel>
+                    <FieldLabel htmlFor="statYears">{t('statYears')}</FieldLabel>
                     <input
                       id="statYears"
                       type="text"
@@ -523,7 +528,7 @@ export default function BrandingSettingsPage() {
                   ) : (
                     <Save className="w-4 h-4" />
                   )}
-                  {saving ? "Saving..." : "Save Changes"}
+                  {saving ? t('savingDots') : t('saveChanges')}
                 </button>
 
                 <button
@@ -531,7 +536,7 @@ export default function BrandingSettingsPage() {
                   className="flex items-center gap-2 px-6 py-[10px] bg-white hover:bg-gray-50 text-[#0A1628] font-bold rounded-lg border border-[#CBD5E0] transition-colors duration-200"
                 >
                   <RotateCcw className="w-4 h-4" />
-                  Reset to Defaults
+                  {t('resetToDefaults')}
                 </button>
               </div>
             </div>
@@ -541,14 +546,14 @@ export default function BrandingSettingsPage() {
               <div className="sticky top-6">
                 <div className="flex items-center gap-2 mb-4">
                   <Eye className="w-4 h-4 text-[#B8960A]" />
-                  <h3 className="text-[#0A1628] font-bold">Live Preview</h3>
-                  <span className="text-gray-400 text-xs ml-auto">Login page left panel</span>
+                  <h3 className="text-[#0A1628] font-bold">{t('livePreview')}</h3>
+                  <span className="text-gray-400 text-xs ml-auto">{t('loginPageLeftPanel')}</span>
                 </div>
 
                 <LivePreview form={form} />
 
                 <p className="text-gray-400 text-xs mt-2 text-center">
-                  Updates as you type
+                  {t('updatesAsYouType')}
                 </p>
               </div>
             </div>

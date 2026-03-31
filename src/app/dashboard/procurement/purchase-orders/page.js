@@ -5,6 +5,8 @@ import {
   CheckCircle, XCircle, Truck, Package, ShoppingCart,
   DollarSign, AlertTriangle, ChevronLeft, ChevronRight
 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import { formatDate, formatCurrency } from '@/utils/formatters';
 import ResponsiveLayout from '@/components/layout/ResponsiveLayout';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -44,6 +46,7 @@ const StatCard = ({ label, value, color, icon: Icon }) => (
 
 export default function PurchaseOrdersPage() {
   const router = useRouter();
+  const { t, i18n } = useTranslation();
   const [pos, setPOs] = useState([]);
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -124,9 +127,9 @@ export default function PurchaseOrdersPage() {
           <div>
             <h1 className="text-2xl lg:text-3xl font-bold flex items-center gap-2" style={{ color: '#0A1628' }}>
               <ShoppingCart className="w-7 h-7" style={{ color: '#B8960A' }} />
-              Purchase Orders
+              {t('purchaseOrders')}
             </h1>
-            <p className="text-gray-500 mt-1 text-sm">Manage and track all purchase orders</p>
+            <p className="text-gray-500 mt-1 text-sm">{t('manageAndTrackPOs', 'Manage and track all purchase orders')}</p>
           </div>
           <div className="flex items-center gap-3">
             <button
@@ -135,7 +138,7 @@ export default function PurchaseOrdersPage() {
               className="flex items-center px-3 py-2 text-sm text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50"
             >
               <RefreshCw className={`w-4 h-4 mr-1.5 ${loading ? 'animate-spin' : ''}`} />
-              Refresh
+              {t('refresh')}
             </button>
             <Link
               href="/dashboard/procurement/purchase-orders/create"
@@ -143,7 +146,7 @@ export default function PurchaseOrdersPage() {
               style={{ backgroundColor: '#B8960A' }}
             >
               <Plus className="w-4 h-4 mr-1.5" />
-              New Purchase Order
+              {t('createPO')}
             </Link>
           </div>
         </div>
@@ -158,11 +161,11 @@ export default function PurchaseOrdersPage() {
 
         {/* Stats Row */}
         <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 mb-6">
-          <StatCard label="Total POs"       value={stats?.totalPOs}      color="text-blue-600"    icon={FileText} />
-          <StatCard label="Draft"           value={stats?.draftCount}    color="text-gray-600"    icon={Clock} />
-          <StatCard label="Pending Approval" value={stats?.pendingCount} color="text-yellow-600"  icon={AlertTriangle} />
-          <StatCard label="Approved / Issued" value={(stats?.approvedCount ?? 0) + (stats?.issuedCount ?? 0)} color="text-green-600" icon={CheckCircle} />
-          <StatCard label="Closed"          value={stats?.closedCount}   color="text-emerald-700" icon={Package} />
+          <StatCard label={t('totalPOs')}          value={stats?.totalPOs}      color="text-blue-600"    icon={FileText} />
+          <StatCard label={t('DRAFT')}             value={stats?.draftCount}    color="text-gray-600"    icon={Clock} />
+          <StatCard label={t('PENDING_APPROVAL')}  value={stats?.pendingCount}  color="text-yellow-600"  icon={AlertTriangle} />
+          <StatCard label={`${t('APPROVED')} / ${t('ISSUED')}`} value={(stats?.approvedCount ?? 0) + (stats?.issuedCount ?? 0)} color="text-green-600" icon={CheckCircle} />
+          <StatCard label={t('CLOSED')}            value={stats?.closedCount}   color="text-emerald-700" icon={Package} />
         </div>
 
         {/* Filters */}
@@ -171,7 +174,7 @@ export default function PurchaseOrdersPage() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
             <input
               type="text"
-              placeholder="Search by PO number or vendor name..."
+              placeholder={t('search')}
               className="w-full pl-9 pr-4 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:border-transparent outline-none"
               style={{ '--tw-ring-color': '#B8960A' }}
               value={search}
@@ -183,7 +186,7 @@ export default function PurchaseOrdersPage() {
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
           >
-            <option value="">All Statuses</option>
+            <option value="">{t('allStatuses')}</option>
             {Object.entries(STATUS_CONFIG).map(([val, { label }]) => (
               <option key={val} value={val}>{label}</option>
             ))}
@@ -193,7 +196,7 @@ export default function PurchaseOrdersPage() {
             value={projectFilter}
             onChange={(e) => setProjectFilter(e.target.value)}
           >
-            <option value="">All Projects</option>
+            <option value="">{t('allProjects')}</option>
             {projects.map(p => <option key={p} value={p}>{p}</option>)}
           </select>
           {(search || statusFilter || projectFilter) && (
@@ -211,12 +214,12 @@ export default function PurchaseOrdersPage() {
           {loading ? (
             <div className="py-16 text-center">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 mx-auto mb-3" style={{ borderColor: '#B8960A' }} />
-              <p className="text-gray-400 text-sm">Loading purchase orders…</p>
+              <p className="text-gray-400 text-sm">{t('loading')}</p>
             </div>
           ) : pos.length === 0 && !apiError ? (
             <div className="py-16 text-center">
               <ShoppingCart className="w-12 h-12 text-gray-200 mx-auto mb-3" />
-              <p className="text-gray-500 text-sm">No purchase orders found.</p>
+              <p className="text-gray-500 text-sm">{t('noPurchaseOrders')}</p>
               <Link
                 href="/dashboard/procurement/purchase-orders/create"
                 className="mt-3 inline-flex items-center text-sm font-medium"
@@ -232,7 +235,7 @@ export default function PurchaseOrdersPage() {
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gray-50">
                     <tr>
-                      {['PO Number', 'Project', 'Vendor', 'Total Value', 'Status', 'Required Date', 'Issued By', 'Actions'].map(h => (
+                      {[t('poNumber'), t('projectName'), t('vendor'), t('totalValue'), t('status'), t('deliveryDate'), t('issuedBy', 'Issued By'), t('actions')].map(h => (
                         <th key={h} className="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">
                           {h}
                         </th>
@@ -260,7 +263,7 @@ export default function PurchaseOrdersPage() {
                         </td>
                         <td className="px-5 py-3.5"><StatusBadge status={po.status} /></td>
                         <td className="px-5 py-3.5 text-sm text-gray-600">
-                          {po.requiredDate ? new Date(po.requiredDate).toLocaleDateString() : '—'}
+                          {po.requiredDate ? formatDate(po.requiredDate, i18n.language) : '—'}
                         </td>
                         <td className="px-5 py-3.5 text-sm text-gray-700">{po.issuedBy?.name || '—'}</td>
                         <td className="px-5 py-3.5">
@@ -307,7 +310,7 @@ export default function PurchaseOrdersPage() {
                         href={`/dashboard/procurement/purchase-orders/${po.id}`}
                         className="flex items-center gap-1 text-xs text-blue-600 font-medium"
                       >
-                        <Eye className="w-3.5 h-3.5" /> View
+                        <Eye className="w-3.5 h-3.5" /> {t('view')}
                       </Link>
                     </div>
                   </div>
