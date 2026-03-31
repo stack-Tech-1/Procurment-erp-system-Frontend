@@ -1,475 +1,556 @@
-// frontend/src/app/dashboard/admin/reports/page.js - MOBILE OPTIMIZED
 "use client";
-import React, { useState, useEffect } from 'react';
-import { useTranslation } from 'react-i18next'; // ADD THIS IMPORT
-import { 
-  Search, Filter, Plus, FileText, BarChart3, 
-  Eye, Edit, Trash2, Star, StarOff,
-  ArrowLeft, Download, Play, Settings,
-  Table, PieChart, TrendingUp, Menu, X, RefreshCw
+import React, { useState, useEffect, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
+import {
+  Users, DollarSign, BarChart3, FileText, Shield, Clock,
+  TrendingUp, Download, Eye, Plus, Trash2, X, RefreshCw,
+  Calendar, Mail, ChevronDown, Loader2, ExternalLink, Send
 } from 'lucide-react';
 import ResponsiveLayout from '@/components/layout/ResponsiveLayout';
-import ReportBuilder from '@/components/reports/ReportBuilder';
 import ReportViewer from '@/components/reports/ReportViewer';
-import ReportList from '@/components/reports/ReportList';
 
-const API_BASE_URL = `${process.env.NEXT_PUBLIC_API_URL}/api`;
+const API_BASE = process.env.NEXT_PUBLIC_API_URL;
 
-const ReportsPage = () => {
-  const { t } = useTranslation(); // ADD THIS HOOK
-  const [reports, setReports] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [currentView, setCurrentView] = useState('list'); // 'list', 'builder', 'viewer'
-  const [selectedReport, setSelectedReport] = useState(null);
-  const [filters, setFilters] = useState({ 
-    search: '', 
-    category: '', 
-    favorite: false 
+const REPORT_TYPES = [
+  {
+    key: 'vendor-master-list',
+    dbKey: 'VENDOR_MASTER_LIST',
+    title: 'Vendor Master List',
+    description: 'All registered vendors with compliance status, class, and document completeness.',
+    icon: Users,
+    color: '#0A1628',
+    hasExcel: true,
+    hasPDF: false,
+    minRole: 3,
+  },
+  {
+    key: 'procurement-spend',
+    dbKey: 'PROCUREMENT_SPEND',
+    title: 'Procurement Spend',
+    description: 'Purchase order spend breakdown by project, vendor, and time period.',
+    icon: DollarSign,
+    color: '#B8960A',
+    hasExcel: true,
+    hasPDF: true,
+    minRole: 3,
+  },
+  {
+    key: 'vendor-performance',
+    dbKey: 'VENDOR_PERFORMANCE',
+    title: 'Vendor Performance',
+    description: 'RFQ participation, PO counts, lead times, and qualification scores per vendor.',
+    icon: BarChart3,
+    color: '#0A1628',
+    hasExcel: true,
+    hasPDF: false,
+    minRole: 3,
+  },
+  {
+    key: 'rfq-analytics',
+    dbKey: 'RFQ_ANALYTICS',
+    title: 'RFQ Analytics',
+    description: 'RFQ status distribution, cycle times, and awarded vendor breakdown.',
+    icon: FileText,
+    color: '#B8960A',
+    hasExcel: true,
+    hasPDF: false,
+    minRole: 3,
+  },
+  {
+    key: 'document-compliance',
+    dbKey: 'DOCUMENT_COMPLIANCE',
+    title: 'Document Compliance',
+    description: 'Vendor document completeness: FULL, PARTIAL, and NON_COMPLIANT vendors.',
+    icon: Shield,
+    color: '#0A1628',
+    hasExcel: true,
+    hasPDF: false,
+    minRole: 3,
+  },
+  {
+    key: 'overdue-tasks',
+    dbKey: 'OVERDUE_TASKS',
+    title: 'Overdue Tasks',
+    description: 'All past-due procurement tasks grouped by assignee.',
+    icon: Clock,
+    color: '#ef4444',
+    hasExcel: true,
+    hasPDF: false,
+    minRole: 2,
+  },
+  {
+    key: 'weekly-summary',
+    dbKey: 'WEEKLY_SUMMARY',
+    title: 'Weekly Executive Summary',
+    description: 'KPI snapshot: new vendors, POs issued, tasks completed, pending approvals.',
+    icon: TrendingUp,
+    color: '#B8960A',
+    hasExcel: false,
+    hasPDF: true,
+    hasPreview: true,
+    minRole: 2,
+  },
+];
+
+const FREQUENCIES = ['DAILY', 'WEEKLY', 'MONTHLY'];
+const DAYS_OF_WEEK = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+
+export default function ReportsHubPage() {
+  const { t } = useTranslation();
+  const [activeReport, setActiveReport] = useState(null);
+  const [scheduledList, setScheduledList] = useState([]);
+  const [scheduledLoading, setScheduledLoading] = useState(true);
+  const [showScheduleModal, setShowScheduleModal] = useState(false);
+  const [showPreviewModal, setShowPreviewModal] = useState(false);
+  const [previewHtml, setPreviewHtml] = useState('');
+  const [previewLoading, setPreviewLoading] = useState(false);
+  const [sendTestLoading, setSendTestLoading] = useState(false);
+  const [sendTestMsg, setSendTestMsg] = useState('');
+  const [exportingMap, setExportingMap] = useState({});
+  const [scheduleForm, setScheduleForm] = useState({
+    reportType: 'VENDOR_MASTER_LIST',
+    frequency: 'WEEKLY',
+    dayOfWeek: 1,
+    dayOfMonth: 1,
+    recipientEmails: '',
   });
-  const [showMobileFilters, setShowMobileFilters] = useState(false);
+  const [scheduleSubmitting, setScheduleSubmitting] = useState(false);
+  const [scheduleError, setScheduleError] = useState('');
 
-  // Fetch reports
-  const fetchReports = async () => {
+  const getToken = () => localStorage.getItem('authToken');
+
+  const fetchScheduled = useCallback(async () => {
+    setScheduledLoading(true);
     try {
-      const token = localStorage.getItem('authToken');
-      const params = new URLSearchParams();
-      
-      if (filters.search) params.append('search', filters.search);
-      if (filters.category) params.append('category', filters.category);
-      if (filters.favorite) params.append('favorite', 'true');
-
-      const response = await fetch(`${API_BASE_URL}/reports?${params}`, {
-        headers: { 
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
+      const res = await fetch(`${API_BASE}/api/new-reports/scheduled`, {
+        headers: { Authorization: `Bearer ${getToken()}` },
       });
-
-      if (!response.ok) throw new Error(t('failedToFetchReports'));
-      
-      const data = await response.json();
-      setReports(data.data || []);
-    } catch (error) {
-      console.error("Failed to fetch reports:", error);
-    } finally {
-      setLoading(false);
+      const data = await res.json();
+      if (data.success) setScheduledList(data.scheduled);
+    } catch (e) {
+      console.error('Failed to fetch scheduled reports', e);
     }
-  };
+    setScheduledLoading(false);
+  }, []);
 
-  useEffect(() => {
-    fetchReports();
-  }, [filters.category, filters.favorite]);
+  useEffect(() => { fetchScheduled(); }, [fetchScheduled]);
 
-  const handleFilterChange = (key, value) => {
-    setFilters(prev => ({ ...prev, [key]: value }));
-    // Close mobile filters after selection
-    if (showMobileFilters) {
-      setShowMobileFilters(false);
-    }
-  };
-
-  const handleViewReport = (report) => {
-    setSelectedReport(report);
-    setCurrentView('viewer');
-  };
-
-  const handleEditReport = (report) => {
-    setSelectedReport(report);
-    setCurrentView('builder');
-  };
-
-  const handleCreateReport = () => {
-    setSelectedReport(null);
-    setCurrentView('builder');
-  };
-
-  const handleSaveReport = async (reportData) => {
+  const handleExport = async (reportKey, format) => {
+    const mapKey = `${reportKey}-${format}`;
+    setExportingMap(prev => ({ ...prev, [mapKey]: true }));
     try {
-      const token = localStorage.getItem('authToken');
-      
-      if (selectedReport) {
-        // Update existing report
-        await fetch(`${API_BASE_URL}/reports/${selectedReport.id}`, {
-          method: 'PUT',
-          headers: { 
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(reportData)
-        });
-      } else {
-        // Create new report
-        await fetch(`${API_BASE_URL}/reports`, {
-          method: 'POST',
-          headers: { 
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(reportData)
-        });
-      }
-      
-      setCurrentView('list');
-      setSelectedReport(null);
-      fetchReports(); // Refresh the list
-      
-    } catch (error) {
-      console.error('Failed to save report:', error);
-      alert(t('failedToSaveReport'));
+      const token = getToken();
+      const res = await fetch(`${API_BASE}/api/new-reports/${reportKey}/export/${format}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error('Export failed');
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      const ext = format === 'excel' ? 'xlsx' : 'pdf';
+      a.href = url;
+      a.download = `${reportKey}-${new Date().toISOString().slice(0, 10)}.${ext}`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      console.error('Export error:', e);
+    }
+    setExportingMap(prev => ({ ...prev, [mapKey]: false }));
+  };
+
+  const handleDeleteScheduled = async (id) => {
+    try {
+      await fetch(`${API_BASE}/api/new-reports/scheduled/${id}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${getToken()}` },
+      });
+      setScheduledList(prev => prev.filter(s => s.id !== id));
+    } catch (e) {
+      console.error('Delete failed', e);
     }
   };
 
-  const handleBackToList = () => {
-    setCurrentView('list');
-    setSelectedReport(null);
-    fetchReports(); // Refresh the list
-  };
-
-  const toggleFavorite = async (reportId, isCurrentlyFavorite) => {
+  const handleScheduleSubmit = async (e) => {
+    e.preventDefault();
+    setScheduleError('');
+    const emails = scheduleForm.recipientEmails.split(',').map(s => s.trim()).filter(Boolean);
+    if (!emails.length) { setScheduleError('Enter at least one recipient email.'); return; }
+    setScheduleSubmitting(true);
     try {
-      const token = localStorage.getItem('authToken');
-      
-      // Convert reportId to number if it's a string
-      const numericReportId = parseInt(reportId, 10);
-      
-      await fetch(`${API_BASE_URL}/reports/${numericReportId}/favorite`, {
+      const body = {
+        reportType: scheduleForm.reportType,
+        frequency: scheduleForm.frequency,
+        recipientEmails: emails,
+        ...(scheduleForm.frequency === 'WEEKLY' ? { dayOfWeek: scheduleForm.dayOfWeek } : {}),
+        ...(scheduleForm.frequency === 'MONTHLY' ? { dayOfMonth: scheduleForm.dayOfMonth } : {}),
+      };
+      const res = await fetch(`${API_BASE}/api/new-reports/schedule`, {
         method: 'POST',
-        headers: { 
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
+        body: JSON.stringify(body),
       });
-      
-      fetchReports(); // Refresh to show updated favorite status
-    } catch (error) {
-      console.error('Failed to toggle favorite:', error);
+      const data = await res.json();
+      if (!data.success) throw new Error(data.error || 'Failed to schedule');
+      setShowScheduleModal(false);
+      setScheduleForm({ reportType: 'VENDOR_MASTER_LIST', frequency: 'WEEKLY', dayOfWeek: 1, dayOfMonth: 1, recipientEmails: '' });
+      fetchScheduled();
+    } catch (e) {
+      setScheduleError(e.message);
     }
+    setScheduleSubmitting(false);
   };
 
-  // Mobile Filter Panel Component
-  const MobileFilterPanel = () => {
-    if (!showMobileFilters) return null;
+  const handlePreview = async () => {
+    setShowPreviewModal(true);
+    setPreviewLoading(true);
+    setPreviewHtml('');
+    try {
+      const res = await fetch(`${API_BASE}/api/new-reports/weekly-summary/preview-html`, {
+        headers: { Authorization: `Bearer ${getToken()}` },
+      });
+      const html = await res.text();
+      setPreviewHtml(html);
+    } catch (e) {
+      setPreviewHtml('<p style="padding:2rem;color:red">Failed to load preview.</p>');
+    }
+    setPreviewLoading(false);
+  };
 
+  const handleSendTest = async () => {
+    setSendTestLoading(true);
+    setSendTestMsg('');
+    try {
+      const res = await fetch(`${API_BASE}/api/new-reports/weekly-summary/send-test`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${getToken()}` },
+      });
+      const data = await res.json();
+      setSendTestMsg(data.message || 'Test email sent!');
+    } catch (e) {
+      setSendTestMsg('Failed to send test email.');
+    }
+    setSendTestLoading(false);
+  };
+
+  if (activeReport) {
     return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden">
-        <div className="absolute right-0 top-0 h-full w-80 bg-white shadow-xl">
-          <div className="flex justify-between items-center p-4 border-b">
-            <h3 className="text-lg font-semibold text-gray-900">{t('filters')}</h3>
-            <button 
-              onClick={() => setShowMobileFilters(false)}
-              className="p-2 text-gray-500 hover:text-gray-700"
-            >
-              <X className="w-5 h-5" />
-            </button>
-          </div>
-          
-          <div className="p-4 space-y-4">
-            {/* Search */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                {t('searchReports')}
-              </label>
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                <input
-                  type="text"
-                  value={filters.search}
-                  onChange={(e) => handleFilterChange('search', e.target.value)}
-                  placeholder={t('searchReportsPlaceholder')}
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                />
-              </div>
-            </div>
-
-            {/* Category Filter */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                {t('category')}
-              </label>
-              <select
-                value={filters.category}
-                onChange={(e) => handleFilterChange('category', e.target.value)}
-                className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              >
-                <option value="">{t('allCategories')}</option>
-                <option value="financial">{t('financial')}</option>
-                <option value="vendor">{t('vendorPerformance')}</option>
-                <option value="procurement">{t('procurement')}</option>
-                <option value="compliance">{t('compliance')}</option>
-                <option value="analytics">{t('analytics')}</option>
-              </select>
-            </div>
-
-            {/* Favorite Filter */}
-            <div className="flex items-center">
-              <input
-                type="checkbox"
-                id="mobile-favorite"
-                checked={filters.favorite}
-                onChange={(e) => handleFilterChange('favorite', e.target.checked)}
-                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-              />
-              <label htmlFor="mobile-favorite" className="ml-2 text-sm text-gray-700">
-                {t('showFavoritesOnly')}
-              </label>
-            </div>
-
-            {/* Apply Button */}
-            <button
-              onClick={() => setShowMobileFilters(false)}
-              className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors"
-            >
-              {t('applyFilters')}
-            </button>
-          </div>
-        </div>
-      </div>
+      <ResponsiveLayout>
+        <ReportViewer
+          reportType={activeReport}
+          onBack={() => setActiveReport(null)}
+        />
+      </ResponsiveLayout>
     );
-  };
-
-  // Enhanced Report List with Mobile Support
-  const EnhancedReportList = () => (
-    <div className="space-y-6">
-      {/* Header Section */}
-      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 flex items-center">
-            <BarChart3 className="w-6 h-6 sm:w-7 sm:h-7 mr-2 sm:mr-3 text-blue-600" />
-            {t('reportsAnalytics')}
-          </h1>
-          <p className="text-gray-600 mt-2 text-sm sm:text-base">
-            {t('reportsDescription')}
-          </p>
-        </div>
-        
-        <div className="flex items-center space-x-2 sm:space-x-3">
-          {/* Mobile Filter Button */}
-          <button
-            onClick={() => setShowMobileFilters(true)}
-            className="lg:hidden p-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50"
-            title={t('filters')}
-          >
-            <Filter className="w-4 h-4" />
-          </button>
-
-          {/* Create Report Button */}
-          <button
-            onClick={handleCreateReport}
-            className="flex items-center px-3 py-2 sm:px-4 sm:py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm sm:text-base"
-          >
-            <Plus className="w-4 h-4 mr-1 sm:mr-2" />
-            <span className="hidden sm:inline">{t('createReport')}</span>
-            <span className="sm:hidden">{t('new')}</span>
-          </button>
-        </div>
-      </div>
-
-      {/* Desktop Filters */}
-      <div className="hidden lg:flex items-center space-x-4 p-4 bg-white rounded-lg border border-gray-200">
-        {/* Search */}
-        <div className="flex-1 max-w-md">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-            <input
-              type="text"
-              value={filters.search}
-              onChange={(e) => handleFilterChange('search', e.target.value)}
-              placeholder={t('searchReportsPlaceholder')}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            />
-          </div>
-        </div>
-
-        {/* Category Filter */}
-        <div className="w-48">
-          <select
-            value={filters.category}
-            onChange={(e) => handleFilterChange('category', e.target.value)}
-            className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-          >
-            <option value="">{t('allCategories')}</option>
-            <option value="financial">{t('financial')}</option>
-            <option value="vendor">{t('vendorPerformance')}</option>
-            <option value="procurement">{t('procurement')}</option>
-            <option value="compliance">{t('compliance')}</option>
-            <option value="analytics">{t('analytics')}</option>
-          </select>
-        </div>
-
-        {/* Favorite Filter */}
-        <div className="flex items-center">
-          <input
-            type="checkbox"
-            id="favorite"
-            checked={filters.favorite}
-            onChange={(e) => handleFilterChange('favorite', e.target.checked)}
-            className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-          />
-          <label htmlFor="favorite" className="ml-2 text-sm text-gray-700">
-            {t('favoritesOnly')}
-          </label>
-        </div>
-
-        {/* Refresh Button */}
-        <button
-          onClick={fetchReports}
-          disabled={loading}
-          className="flex items-center px-3 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50"
-        >
-          <RefreshCw className={`w-4 h-4 mr-1 ${loading ? 'animate-spin' : ''}`} />
-          <span className="hidden sm:inline">{t('refresh')}</span>
-        </button>
-      </div>
-
-      {/* Quick Stats - Mobile Optimized */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-        <div className="bg-white p-3 sm:p-4 rounded-lg border border-gray-200 shadow-sm">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-xs sm:text-sm text-gray-500">{t('totalReports')}</p>
-              <p className="text-lg sm:text-2xl font-bold text-gray-900">{reports.length}</p>
-            </div>
-            <FileText className="w-6 h-6 sm:w-8 sm:h-8 text-blue-500" />
-          </div>
-        </div>
-
-        <div className="bg-white p-3 sm:p-4 rounded-lg border border-gray-200 shadow-sm">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-xs sm:text-sm text-gray-500">{t('favorites')}</p>
-              <p className="text-lg sm:text-2xl font-bold text-yellow-600">
-                {reports.filter(r => r.isFavorite).length}
-              </p>
-            </div>
-            <Star className="w-6 h-6 sm:w-8 sm:h-8 text-yellow-500" />
-          </div>
-        </div>
-
-        <div className="bg-white p-3 sm:p-4 rounded-lg border border-gray-200 shadow-sm">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-xs sm:text-sm text-gray-500">{t('thisMonth')}</p>
-              <p className="text-lg sm:text-2xl font-bold text-green-600">
-                {reports.filter(r => {
-                  const reportDate = new Date(r.createdAt);
-                  const now = new Date();
-                  return reportDate.getMonth() === now.getMonth() && 
-                         reportDate.getFullYear() === now.getFullYear();
-                }).length}
-              </p>
-            </div>
-            <TrendingUp className="w-6 h-6 sm:w-8 sm:h-8 text-green-500" />
-          </div>
-        </div>
-
-        <div className="bg-white p-3 sm:p-4 rounded-lg border border-gray-200 shadow-sm">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-xs sm:text-sm text-gray-500">{t('categories')}</p>
-              <p className="text-lg sm:text-2xl font-bold text-purple-600">
-                {new Set(reports.map(r => r.category)).size}
-              </p>
-            </div>
-            <PieChart className="w-6 h-6 sm:w-8 sm:h-8 text-purple-500" />
-          </div>
-        </div>
-      </div>
-
-      {/* Report List Component */}
-      <ReportList
-        reports={reports}
-        loading={loading}
-        filters={filters}
-        onFilterChange={handleFilterChange}
-        onEditReport={handleEditReport}
-        onViewReport={handleViewReport}
-        onCreateReport={handleCreateReport}
-        onToggleFavorite={toggleFavorite}
-      />
-
-      {/* Mobile Filter Panel */}
-      <MobileFilterPanel />
-    </div>
-  );
-
-  // Navigation Header for Builder/Viewer
-  const NavigationHeader = ({ title, subtitle }) => (
-    <div className="flex items-center justify-between mb-6">
-      <div className="flex items-center space-x-4">
-        <button
-          onClick={handleBackToList}
-          className="flex items-center text-gray-600 hover:text-gray-800 transition-colors p-2"
-        >
-          <ArrowLeft className="w-5 h-5 mr-2" />
-          <span className="hidden sm:inline">{t('backToReports')}</span>
-        </button>
-        <div>
-          <h1 className="text-xl sm:text-2xl font-bold text-gray-900">{title}</h1>
-          <p className="text-gray-600 text-sm sm:text-base">{subtitle}</p>
-        </div>
-      </div>
-      
-      {currentView === 'viewer' && selectedReport && (
-        <div className="flex items-center space-x-2">
-          <button className="flex items-center px-3 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 text-sm">
-            <Download className="w-4 h-4 mr-1" />
-            <span className="hidden sm:inline">{t('export')}</span>
-          </button>
-          <button 
-            onClick={() => handleEditReport(selectedReport)}
-            className="flex items-center px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm"
-          >
-            <Edit className="w-4 h-4 mr-1" />
-            <span className="hidden sm:inline">{t('edit')}</span>
-          </button>
-        </div>
-      )}
-    </div>
-  );
-
-  const renderContent = () => {
-    switch (currentView) {
-      case 'builder':
-        return (
-          <div className="space-y-6">
-            <NavigationHeader 
-              title={selectedReport ? t('editReport') : t('createNewReport')} 
-              subtitle={selectedReport ? t('editReportDescription') : t('createReportDescription')}
-            />
-            <ReportBuilder
-              report={selectedReport}
-              onSave={handleSaveReport}
-              onCancel={handleBackToList}
-            />
-          </div>
-        );
-      
-      case 'viewer':
-        return (
-          <div className="space-y-6">
-            <NavigationHeader 
-              title={selectedReport?.name || t('reportViewer')} 
-              subtitle={t('reportViewerDescription')}
-            />
-            <ReportViewer
-              report={selectedReport}
-              onBack={handleBackToList}
-            />
-          </div>
-        );
-      
-      default:
-        return <EnhancedReportList />;
-    }
-  };
+  }
 
   return (
     <ResponsiveLayout>
-      <div className="max-w-7xl mx-auto w-full">
-        {renderContent()}
+      <div className="p-4 md:p-6 max-w-7xl mx-auto">
+        {/* Header */}
+        <div className="mb-8">
+          <h1 className="text-2xl font-bold" style={{ color: '#0A1628' }}>Reports Hub</h1>
+          <p className="text-gray-500 text-sm mt-1">Generate, export, and schedule procurement reports.</p>
+        </div>
+
+        {/* Report Cards Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 mb-10">
+          {REPORT_TYPES.map((report) => {
+            const Icon = report.icon;
+            const excelKey = `${report.key}-excel`;
+            const pdfKey = `${report.key}-pdf`;
+            return (
+              <div key={report.key} className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden flex flex-col">
+                <div className="p-5 flex-1">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ backgroundColor: report.color + '15' }}>
+                      <Icon className="w-5 h-5" style={{ color: report.color }} />
+                    </div>
+                    <h3 className="font-semibold text-gray-800 text-sm leading-tight">{report.title}</h3>
+                  </div>
+                  <p className="text-gray-500 text-xs leading-relaxed">{report.description}</p>
+                </div>
+                <div className="px-5 pb-4 flex flex-wrap gap-2">
+                  <button
+                    onClick={() => setActiveReport(report.key)}
+                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white rounded-lg"
+                    style={{ backgroundColor: report.color }}
+                  >
+                    <Eye className="w-3.5 h-3.5" />
+                    View
+                  </button>
+                  {report.hasExcel && (
+                    <button
+                      onClick={() => handleExport(report.key, 'excel')}
+                      disabled={exportingMap[excelKey]}
+                      className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 disabled:opacity-50"
+                    >
+                      {exportingMap[excelKey] ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
+                      Excel
+                    </button>
+                  )}
+                  {report.hasPDF && report.key !== 'weekly-summary' && (
+                    <button
+                      onClick={() => handleExport(report.key, 'pdf')}
+                      disabled={exportingMap[pdfKey]}
+                      className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 disabled:opacity-50"
+                    >
+                      {exportingMap[pdfKey] ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
+                      PDF
+                    </button>
+                  )}
+                  {report.key === 'weekly-summary' && (
+                    <>
+                      <button
+                        onClick={() => handleExport('weekly-summary', 'pdf')}
+                        disabled={exportingMap[pdfKey]}
+                        className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 disabled:opacity-50"
+                      >
+                        {exportingMap[pdfKey] ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
+                        PDF
+                      </button>
+                      <button
+                        onClick={handlePreview}
+                        className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50"
+                      >
+                        <ExternalLink className="w-3.5 h-3.5" />
+                        Preview
+                      </button>
+                    </>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Weekly Summary Email Actions */}
+        <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5 mb-8">
+          <h2 className="font-semibold text-gray-800 mb-1">Weekly Summary Email</h2>
+          <p className="text-xs text-gray-500 mb-4">Preview the email template or send a test to your account.</p>
+          <div className="flex flex-wrap gap-3 items-center">
+            <button
+              onClick={handlePreview}
+              className="flex items-center gap-2 px-4 py-2 text-sm border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50"
+            >
+              <ExternalLink className="w-4 h-4" />
+              Preview Email Template
+            </button>
+            <button
+              onClick={handleSendTest}
+              disabled={sendTestLoading}
+              className="flex items-center gap-2 px-4 py-2 text-sm text-white rounded-lg"
+              style={{ backgroundColor: '#0A1628' }}
+            >
+              {sendTestLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+              Send Test Email
+            </button>
+            {sendTestMsg && (
+              <span className="text-xs text-green-600 font-medium">{sendTestMsg}</span>
+            )}
+          </div>
+        </div>
+
+        {/* Scheduled Reports */}
+        <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+          <div className="p-5 flex items-center justify-between border-b border-gray-100">
+            <div>
+              <h2 className="font-semibold text-gray-800">Scheduled Reports</h2>
+              <p className="text-xs text-gray-500 mt-0.5">Auto-emailed on your chosen schedule.</p>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={fetchScheduled}
+                className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-50"
+              >
+                <RefreshCw className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => setShowScheduleModal(true)}
+                className="flex items-center gap-1.5 px-3 py-2 text-sm text-white rounded-lg font-medium"
+                style={{ backgroundColor: '#B8960A' }}
+              >
+                <Plus className="w-4 h-4" />
+                Schedule Report
+              </button>
+            </div>
+          </div>
+
+          {scheduledLoading ? (
+            <div className="p-8 text-center text-gray-400 text-sm">Loading scheduled reports...</div>
+          ) : scheduledList.length === 0 ? (
+            <div className="p-8 text-center text-gray-400 text-sm">No scheduled reports yet. Click "Schedule Report" to add one.</div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead className="bg-gray-50 text-xs text-gray-500 uppercase">
+                  <tr>
+                    <th className="px-4 py-3 text-left">Report Type</th>
+                    <th className="px-4 py-3 text-left">Frequency</th>
+                    <th className="px-4 py-3 text-left">Next Run</th>
+                    <th className="px-4 py-3 text-left">Recipients</th>
+                    <th className="px-4 py-3 text-left">Created By</th>
+                    <th className="px-4 py-3 text-left"></th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-50">
+                  {scheduledList.map(sr => (
+                    <tr key={sr.id} className="hover:bg-gray-50">
+                      <td className="px-4 py-3 font-medium text-gray-800">{sr.reportType.replace(/_/g, ' ')}</td>
+                      <td className="px-4 py-3 text-gray-600">{sr.frequency}</td>
+                      <td className="px-4 py-3 text-gray-600">
+                        {sr.nextRunAt ? new Date(sr.nextRunAt).toLocaleDateString('en-SA', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—'}
+                      </td>
+                      <td className="px-4 py-3 text-gray-600 max-w-xs truncate">{sr.recipientEmails?.join(', ')}</td>
+                      <td className="px-4 py-3 text-gray-500">{sr.createdBy?.name || '—'}</td>
+                      <td className="px-4 py-3">
+                        <button
+                          onClick={() => handleDeleteScheduled(sr.id)}
+                          className="p-1.5 text-red-400 hover:text-red-600 hover:bg-red-50 rounded"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
       </div>
+
+      {/* Schedule Modal */}
+      {showScheduleModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-md">
+            <div className="flex items-center justify-between p-5 border-b border-gray-100">
+              <div>
+                <h3 className="font-bold text-gray-800">Schedule a Report</h3>
+                <p className="text-xs text-gray-500 mt-0.5">Set up automatic email delivery</p>
+              </div>
+              <button onClick={() => { setShowScheduleModal(false); setScheduleError(''); }} className="text-gray-400 hover:text-gray-600">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <form onSubmit={handleScheduleSubmit} className="p-5 space-y-4">
+              <div>
+                <label className="block text-xs font-medium text-gray-700 mb-1">Report Type</label>
+                <select
+                  value={scheduleForm.reportType}
+                  onChange={e => setScheduleForm(f => ({ ...f, reportType: e.target.value }))}
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-500"
+                >
+                  {REPORT_TYPES.map(r => (
+                    <option key={r.dbKey} value={r.dbKey}>{r.title}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-700 mb-1">Frequency</label>
+                <div className="flex gap-2">
+                  {FREQUENCIES.map(f => (
+                    <button
+                      key={f}
+                      type="button"
+                      onClick={() => setScheduleForm(prev => ({ ...prev, frequency: f }))}
+                      className={`flex-1 py-2 text-xs font-medium rounded-lg border transition-colors ${scheduleForm.frequency === f ? 'text-white border-transparent' : 'text-gray-600 border-gray-200 hover:bg-gray-50'}`}
+                      style={scheduleForm.frequency === f ? { backgroundColor: '#0A1628' } : {}}
+                    >
+                      {f}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              {scheduleForm.frequency === 'WEEKLY' && (
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Day of Week</label>
+                  <select
+                    value={scheduleForm.dayOfWeek}
+                    onChange={e => setScheduleForm(f => ({ ...f, dayOfWeek: parseInt(e.target.value) }))}
+                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none"
+                  >
+                    {DAYS_OF_WEEK.map((d, i) => <option key={i} value={i}>{d}</option>)}
+                  </select>
+                </div>
+              )}
+              {scheduleForm.frequency === 'MONTHLY' && (
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Day of Month</label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="28"
+                    value={scheduleForm.dayOfMonth}
+                    onChange={e => setScheduleForm(f => ({ ...f, dayOfMonth: parseInt(e.target.value) }))}
+                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none"
+                  />
+                </div>
+              )}
+              <div>
+                <label className="block text-xs font-medium text-gray-700 mb-1">Recipient Emails</label>
+                <div className="flex items-center gap-2 border border-gray-200 rounded-lg px-3 py-2">
+                  <Mail className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                  <input
+                    type="text"
+                    placeholder="manager@kun.sa, ceo@kun.sa"
+                    value={scheduleForm.recipientEmails}
+                    onChange={e => setScheduleForm(f => ({ ...f, recipientEmails: e.target.value }))}
+                    className="flex-1 text-sm focus:outline-none"
+                  />
+                </div>
+                <p className="text-xs text-gray-400 mt-1">Separate multiple emails with commas</p>
+              </div>
+              {scheduleError && <p className="text-xs text-red-500">{scheduleError}</p>}
+              <div className="flex gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => { setShowScheduleModal(false); setScheduleError(''); }}
+                  className="flex-1 py-2 text-sm border border-gray-200 text-gray-600 rounded-lg hover:bg-gray-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={scheduleSubmitting}
+                  className="flex-1 py-2 text-sm text-white rounded-lg font-medium flex items-center justify-center gap-2"
+                  style={{ backgroundColor: '#B8960A' }}
+                >
+                  {scheduleSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Calendar className="w-4 h-4" />}
+                  Schedule
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Weekly Preview Modal */}
+      {showPreviewModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-3xl h-[80vh] flex flex-col">
+            <div className="flex items-center justify-between p-4 border-b border-gray-100">
+              <h3 className="font-bold text-gray-800">Weekly Summary Email Preview</h3>
+              <button onClick={() => setShowPreviewModal(false)} className="text-gray-400 hover:text-gray-600">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="flex-1 overflow-hidden">
+              {previewLoading ? (
+                <div className="flex items-center justify-center h-full text-gray-400">
+                  <Loader2 className="w-6 h-6 animate-spin mr-2" />
+                  Loading preview...
+                </div>
+              ) : (
+                <iframe
+                  srcDoc={previewHtml}
+                  className="w-full h-full border-0"
+                  title="Weekly Summary Preview"
+                />
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </ResponsiveLayout>
   );
-};
-
-export default ReportsPage;
+}

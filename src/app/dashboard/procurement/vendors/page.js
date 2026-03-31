@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { useTranslation } from 'react-i18next'; // ADD THIS IMPORT
-import { Search, Sliders, ChevronDown, CheckCircle, Clock, XCircle, ArrowUp, ArrowDown } from 'lucide-react';
+import { Search, Sliders, ChevronDown, CheckCircle, Clock, XCircle, ArrowUp, ArrowDown, Download, Loader2 } from 'lucide-react';
 import ResponsiveLayout from '@/components/layout/ResponsiveLayout';
 import VendorChart from '@/components/VendorChart'; 
 import StatusChart from '@/components/StatusChart';
@@ -21,6 +21,28 @@ const VendorListPage = () => {
     const [loading, setLoading] = useState(true);
     const [pagination, setPagination] = useState({ page: 1, pageSize: 10, total: 0 });
     const [filters, setFilters] = useState({ search: '', status: '', type: '', sortField: 'updatedAt', sortOrder: 'desc' });
+    const [exportingExcel, setExportingExcel] = useState(false);
+
+    const handleExportExcel = async () => {
+        setExportingExcel(true);
+        try {
+            const token = localStorage.getItem('authToken');
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/new-reports/vendor-master-list/export/excel`, {
+                headers: { Authorization: `Bearer ${token}` },
+            });
+            if (!res.ok) throw new Error('Export failed');
+            const blob = await res.blob();
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `vendor-master-list-${new Date().toISOString().slice(0, 10)}.xlsx`;
+            a.click();
+            URL.revokeObjectURL(url);
+        } catch (e) {
+            console.error('Excel export error:', e);
+        }
+        setExportingExcel(false);
+    };
 
     const fetchVendors = useCallback(async () => {
         setLoading(true);
@@ -140,13 +162,23 @@ const VendorListPage = () => {
         <ResponsiveLayout>
             <div className="space-y-6">
                 {/* Header */}
-                <div>
-                    <h1 className="text-2xl font-bold text-gray-800 sm:text-3xl">
-                        {t('vendorQualificationDashboard')}
-                    </h1>
-                    <p className="text-gray-600 mt-2 text-sm sm:text-base">
-                        {t('vendorDashboardSubtitle')}
-                    </p>
+                <div className="flex items-start justify-between gap-4 flex-wrap">
+                    <div>
+                        <h1 className="text-2xl font-bold text-gray-800 sm:text-3xl">
+                            {t('vendorQualificationDashboard')}
+                        </h1>
+                        <p className="text-gray-600 mt-2 text-sm sm:text-base">
+                            {t('vendorDashboardSubtitle')}
+                        </p>
+                    </div>
+                    <button
+                        onClick={handleExportExcel}
+                        disabled={exportingExcel}
+                        className="flex items-center gap-2 px-4 py-2 text-sm border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 disabled:opacity-50 bg-white shadow-sm"
+                    >
+                        {exportingExcel ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+                        Export Excel
+                    </button>
                 </div>
 
                 {/* KPI Summary - Responsive Grid */}

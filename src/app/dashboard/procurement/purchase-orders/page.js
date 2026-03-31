@@ -4,7 +4,7 @@ import {
   Search, Plus, Eye, Edit, RefreshCw, FileText, Clock,
   CheckCircle, XCircle, Truck, Package, ShoppingCart,
   DollarSign, AlertTriangle, ChevronLeft, ChevronRight,
-  Sparkles, X, Loader2
+  Sparkles, X, Loader2, Download
 } from 'lucide-react';
 import axios from 'axios';
 import { useTranslation } from 'react-i18next';
@@ -64,6 +64,7 @@ export default function PurchaseOrdersPage() {
   const [savingsLoading, setSavingsLoading] = useState(false);
   const [savingsResult, setSavingsResult] = useState(null);
   const [savingsError, setSavingsError] = useState('');
+  const [exportingExcel, setExportingExcel] = useState(false);
 
   const authHeaders = () => ({
     Authorization: `Bearer ${localStorage.getItem('authToken')}`,
@@ -113,6 +114,27 @@ export default function PurchaseOrdersPage() {
   const handlePageChange = (newPage) => {
     setPage(newPage);
     fetchPOs(newPage);
+  };
+
+  const handleExportExcel = async () => {
+    setExportingExcel(true);
+    try {
+      const token = localStorage.getItem('authToken');
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/new-reports/procurement-spend/export/excel`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error('Export failed');
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `procurement-spend-${new Date().toISOString().slice(0, 10)}.xlsx`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      console.error('Excel export error:', e);
+    }
+    setExportingExcel(false);
   };
 
   const handleAnalyzeSavings = async () => {
@@ -167,6 +189,14 @@ export default function PurchaseOrdersPage() {
             >
               <RefreshCw className={`w-4 h-4 mr-1.5 ${loading ? 'animate-spin' : ''}`} />
               {t('refresh')}
+            </button>
+            <button
+              onClick={handleExportExcel}
+              disabled={exportingExcel}
+              className="flex items-center px-4 py-2 text-sm border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 disabled:opacity-50 bg-white shadow-sm"
+            >
+              {exportingExcel ? <Loader2 className="w-4 h-4 mr-1.5 animate-spin" /> : <Download className="w-4 h-4 mr-1.5" />}
+              Export Excel
             </button>
             <button
               onClick={() => { setShowSavingsModal(true); setSavingsResult(null); setSavingsError(''); setSavingsProject(''); }}

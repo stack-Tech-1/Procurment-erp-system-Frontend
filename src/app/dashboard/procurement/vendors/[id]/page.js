@@ -115,6 +115,7 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
         const [qualification, setQualification] = useState(null);
         const [aiEvalResult, setAiEvalResult] = useState(null);
         const [evalLoading, setEvalLoading] = useState(false);
+        const [exportingPDF, setExportingPDF] = useState(false);
         const [loadingMsg, setLoadingMsg] = useState('');
         const [scoreDisplay, setScoreDisplay] = useState(0);
         const [barsVisible, setBarsVisible] = useState(false);
@@ -341,6 +342,27 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
         const showToast = (msg, type = 'success') => {
             setActionToast({ msg, type });
             setTimeout(() => setActionToast(null), 4000);
+        };
+
+        const handleExportPDF = async () => {
+            setExportingPDF(true);
+            try {
+                const token = getAuthToken();
+                const res = await fetch(`${API_BASE_URL}/api/new-reports/vendor-profile/${vendorId}/pdf`, {
+                    headers: { Authorization: `Bearer ${token}` },
+                });
+                if (!res.ok) throw new Error('Export failed');
+                const blob = await res.blob();
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `vendor-profile-${vendorId}.pdf`;
+                a.click();
+                URL.revokeObjectURL(url);
+            } catch (e) {
+                console.error('PDF export error:', e);
+            }
+            setExportingPDF(false);
         };
 
         const handleRunAIEvaluation = async () => {
@@ -940,6 +962,14 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
                         </div>
     
                         <div className="flex items-center gap-3">
+                            <button
+                                onClick={handleExportPDF}
+                                disabled={exportingPDF}
+                                className="flex items-center gap-1.5 px-3 py-2 text-sm border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 disabled:opacity-50"
+                            >
+                                {exportingPDF ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+                                Export PDF
+                            </button>
                             <span className={`px-4 py-2 text-sm font-bold rounded-full shadow-lg border ${getStatusClass(vendor.status)}`}>
                                 {translateStatus(vendor.status) || 'UNKNOWN'}
                             </span>
