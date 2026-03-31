@@ -7,6 +7,7 @@ import Topbar from "@/components/Topbar";
 import ExecutiveDashboard from "@/components/dashboards/ExecutiveDashboard";
 import ManagerDashboard from "@/components/dashboards/ManagerDashboard";
 import OfficerDashboard from "@/components/dashboards/OfficerDashboard";
+import AIAssistant from "@/components/ai/AIAssistant";
 
 export default function DashboardPage() {
   const [user, setUser] = useState(null);
@@ -72,6 +73,7 @@ export default function DashboardPage() {
           {renderRoleBasedDashboard()}
         </div>
       </main>
+      <AIAssistant />
     </div>
   );
 }

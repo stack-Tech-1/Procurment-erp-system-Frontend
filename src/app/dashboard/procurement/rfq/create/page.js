@@ -3,9 +3,10 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import { useRouter } from 'next/navigation';
-import { 
-  Save, Send, Clock, ArrowLeft, FileText, 
-  Settings, Package, Calendar, DollarSign
+import {
+  Save, Send, Clock, ArrowLeft, FileText,
+  Settings, Package, Calendar, DollarSign,
+  Sparkles, RefreshCw, CheckCircle, AlertTriangle
 } from 'lucide-react';
 import ResponsiveLayout from '@/components/layout/ResponsiveLayout';
 
@@ -31,12 +32,40 @@ const CreateRFOPage = () => {
     status: 'DRAFT'
   });
 
+  const [vendorSuggestions, setVendorSuggestions] = useState(null);
+  const [suggestionsLoading, setSuggestionsLoading] = useState(false);
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
       [name]: value
     }));
+  };
+
+  const handleGetSuggestions = async () => {
+    const token = localStorage.getItem('authToken');
+    if (!token) return;
+    setSuggestionsLoading(true);
+    setVendorSuggestions(null);
+    try {
+      const res = await axios.post(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/ai/match-vendors-preview`,
+        {
+          scope: formData.packageScope || formData.description,
+          categories: formData.csiCode ? [formData.csiCode] : [],
+          projectName: formData.projectName,
+          estimatedValue: formData.estimatedUnitPrice ? parseFloat(formData.estimatedUnitPrice) : 0,
+          requiredDate: formData.requiredDate || null,
+        },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setVendorSuggestions(res.data);
+    } catch {
+      setVendorSuggestions({ error: 'Failed to get suggestions. Please try again.' });
+    } finally {
+      setSuggestionsLoading(false);
+    }
   };
 
   const handleSubmit = async (e, status = 'DRAFT') => {
@@ -330,6 +359,85 @@ const CreateRFOPage = () => {
                 </select>
               </div>
             </div>
+          </div>
+
+          {/* AI Vendor Suggestions */}
+          <div className="bg-white rounded-lg border border-gray-200 p-4 sm:p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold flex items-center gap-2">
+                <Sparkles className="w-5 h-5" style={{ color: '#B8960A' }} />
+                AI Vendor Suggestions
+              </h2>
+              <span className="text-xs text-gray-400 bg-gray-50 px-2 py-0.5 rounded-full flex items-center gap-1">
+                <Sparkles className="w-3 h-3" /> Powered by AI
+              </span>
+            </div>
+
+            <p className="text-sm text-gray-500 mb-4">
+              Fill in the Package Scope and CSI Code above, then click below to get AI-ranked vendor recommendations.
+            </p>
+
+            <button
+              type="button"
+              onClick={handleGetSuggestions}
+              disabled={suggestionsLoading || (!formData.packageScope && !formData.description)}
+              className="flex items-center gap-2 px-4 py-2 rounded-lg text-white text-sm font-medium disabled:opacity-50 transition"
+              style={{ backgroundColor: '#B8960A' }}
+            >
+              {suggestionsLoading ? (
+                <><RefreshCw className="w-4 h-4 animate-spin" /> Getting suggestions...</>
+              ) : (
+                <><Sparkles className="w-4 h-4" /> Get AI Suggestions</>
+              )}
+            </button>
+
+            {vendorSuggestions?.error && (
+              <p className="mt-4 text-sm text-red-600">{vendorSuggestions.error}</p>
+            )}
+
+            {vendorSuggestions?.recommendations?.length > 0 && (
+              <div className="mt-4 space-y-3">
+                {vendorSuggestions.recommendations.slice(0, 5).map((v, idx) => {
+                  const riskColor = v.risk === 'LOW' ? 'text-green-700 bg-green-50' : v.risk === 'HIGH' ? 'text-red-700 bg-red-50' : 'text-orange-700 bg-orange-50';
+                  return (
+                    <div key={idx} className="border border-gray-200 rounded-lg p-3">
+                      <div className="flex items-center gap-3 mb-2">
+                        <span className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold text-white" style={{ backgroundColor: '#0A1628' }}>{idx + 1}</span>
+                        <span className="font-semibold text-sm text-gray-800">{v.vendorName}</span>
+                        <span className={`text-xs font-semibold px-1.5 py-0.5 rounded ${riskColor}`}>{v.risk} RISK</span>
+                      </div>
+                      <div className="mb-2">
+                        <div className="flex justify-between text-xs text-gray-500 mb-0.5">
+                          <span>Match Score</span>
+                          <span className="font-bold">{v.matchScore}%</span>
+                        </div>
+                        <div className="w-full bg-gray-100 rounded-full h-1.5">
+                          <div className="h-1.5 rounded-full" style={{ width: `${v.matchScore}%`, backgroundColor: '#B8960A' }} />
+                        </div>
+                      </div>
+                      <div className="flex flex-wrap gap-1">
+                        {v.reasons?.map((r, ri) => (
+                          <span key={ri} className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">{r}</span>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
+                {vendorSuggestions.summary && (
+                  <p className="text-xs italic text-gray-500 bg-gray-50 rounded-lg px-3 py-2 border border-gray-100">
+                    {vendorSuggestions.summary}
+                  </p>
+                )}
+                <button
+                  type="button"
+                  onClick={handleGetSuggestions}
+                  disabled={suggestionsLoading}
+                  className="flex items-center gap-1 text-xs text-gray-500 hover:text-gray-700 mt-1"
+                >
+                  <RefreshCw className="w-3 h-3" /> Refresh Suggestions
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Timeline */}

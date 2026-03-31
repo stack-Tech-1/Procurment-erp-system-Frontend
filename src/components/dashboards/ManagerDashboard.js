@@ -7,8 +7,10 @@ import {
   TrendingUp, TrendingDown, RefreshCw, Calendar, Shield,
   Eye, Database, WifiOff, BarChart, PieChart as PieChartIcon,
   Target, Activity, Zap, Bell, Filter, Download, Settings,
-  ChevronRight, MoreVertical, ExternalLink, Search, DollarSign, Truck
+  ChevronRight, MoreVertical, ExternalLink, Search, DollarSign, Truck,
+  Sparkles, Info
 } from 'lucide-react';
+import axios from 'axios';
 import Link from 'next/link';
 
 const getAvatarColor = (index) => {
@@ -34,6 +36,9 @@ const ManagerDashboard = () => {
   const [dataSource, setDataSource] = useState('unknown');
   const [timeRange, setTimeRange] = useState('month');
   const [searchQuery, setSearchQuery] = useState('');
+  const [insights, setInsights] = useState([]);
+  const [insightsLoading, setInsightsLoading] = useState(true);
+  const [insightsLastFetch, setInsightsLastFetch] = useState(null);
 
   // Per-section live data — empty/zero initial values (no mock data)
   const [kpiData, setKpiData] = useState({
@@ -439,9 +444,32 @@ const ManagerDashboard = () => {
   };
 
 
+const fetchInsights = async () => {
+  const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
+  if (!token) { setInsightsLoading(false); return; }
+  setInsightsLoading(true);
+  try {
+    const res = await axios.post(
+      `${process.env.NEXT_PUBLIC_API_URL}/api/ai/dashboard-insights`,
+      {},
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+    setInsights(res.data.insights || []);
+    setInsightsLastFetch(Date.now());
+  } catch {
+    setInsights([]);
+  } finally {
+    setInsightsLoading(false);
+  }
+};
+
 useEffect(() => {
   fetchAllLive();
   fetchDashboardData();
+  const now = Date.now();
+  if (!insightsLastFetch || now - insightsLastFetch > 30 * 60 * 1000) {
+    fetchInsights();
+  }
   const liveInterval = setInterval(fetchAllLive, 5 * 60 * 1000);
   return () => clearInterval(liveInterval);
 }, []); // eslint-disable-line react-hooks/exhaustive-deps
@@ -1122,6 +1150,83 @@ const getActionButton = (item) => {
     trendPositive={true}
   />
 </div>}
+
+      {/* AI Insights Section */}
+      <div className="mb-6">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="flex items-center gap-2 font-bold text-lg" style={{ color: '#0A1628' }}>
+            <Sparkles className="w-5 h-5" style={{ color: '#B8960A' }} />
+            AI Insights
+            <span className="text-xs text-gray-400 font-normal ml-1">Powered by AI</span>
+          </h2>
+          <button
+            onClick={fetchInsights}
+            disabled={insightsLoading}
+            className="flex items-center gap-1 text-xs text-gray-500 hover:text-gray-700 border border-gray-200 rounded-lg px-3 py-1.5 disabled:opacity-50"
+          >
+            <RefreshCw className={`w-3 h-3 ${insightsLoading ? 'animate-spin' : ''}`} />
+            Refresh
+          </button>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {insightsLoading
+            ? [0, 1, 2, 3].map((i) => (
+                <div key={i} className="bg-white rounded-xl border border-gray-200 p-5 animate-pulse">
+                  <div className="h-3 bg-gray-200 rounded w-2/3 mb-3" />
+                  <div className="h-6 bg-gray-200 rounded w-1/3 mb-3" />
+                  <div className="h-3 bg-gray-200 rounded w-full mb-1" />
+                  <div className="h-3 bg-gray-200 rounded w-4/5" />
+                </div>
+              ))
+            : insights.length > 0
+            ? insights.slice(0, 4).map((insight, idx) => {
+                const typeConfig = {
+                  WARNING:    { border: '#f97316', Icon: AlertTriangle, color: '#f97316' },
+                  OPPORTUNITY: { border: '#22c55e', Icon: TrendingUp,   color: '#22c55e' },
+                  INFO:       { border: '#3b82f6', Icon: Info,          color: '#3b82f6' },
+                  ALERT:      { border: '#ef4444', Icon: Zap,           color: '#ef4444' },
+                };
+                const cfg = typeConfig[insight.type] || typeConfig.INFO;
+                const IconComp = cfg.Icon;
+                return (
+                  <div
+                    key={idx}
+                    className="bg-white rounded-xl border border-gray-200 p-5 border-l-4"
+                    style={{ borderLeftColor: cfg.border }}
+                  >
+                    <div className="flex items-center gap-2 mb-2">
+                      <IconComp className="w-4 h-4 shrink-0" style={{ color: cfg.color }} />
+                      <span className="font-semibold text-sm" style={{ color: '#0A1628' }}>
+                        {insight.title}
+                      </span>
+                    </div>
+                    {insight.metric && (
+                      <p className="text-2xl font-black mb-2" style={{ color: cfg.color }}>
+                        {insight.metric}
+                      </p>
+                    )}
+                    <p className="text-xs text-gray-500 mb-3">{insight.description}</p>
+                    {insight.actionUrl && insight.action && (
+                      <Link
+                        href={insight.actionUrl}
+                        className="text-xs font-medium text-white px-3 py-1 rounded-lg"
+                        style={{ backgroundColor: cfg.border }}
+                      >
+                        {insight.action}
+                      </Link>
+                    )}
+                  </div>
+                );
+              })
+            : (
+              <div className="col-span-4 text-center py-8 text-gray-400 text-sm">
+                <Sparkles className="w-8 h-8 mx-auto mb-2 opacity-30" />
+                No insights available. Click Refresh to generate AI insights.
+              </div>
+            )
+          }
+        </div>
+      </div>
 
       {/* Charts Section (Row 2) */}
       {errorStates.charts && <SectionError />}

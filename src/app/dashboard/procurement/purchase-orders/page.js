@@ -3,8 +3,10 @@ import React, { useState, useEffect, useCallback } from 'react';
 import {
   Search, Plus, Eye, Edit, RefreshCw, FileText, Clock,
   CheckCircle, XCircle, Truck, Package, ShoppingCart,
-  DollarSign, AlertTriangle, ChevronLeft, ChevronRight
+  DollarSign, AlertTriangle, ChevronLeft, ChevronRight,
+  Sparkles, X, Loader2
 } from 'lucide-react';
+import axios from 'axios';
 import { useTranslation } from 'react-i18next';
 import { formatDate, formatCurrency } from '@/utils/formatters';
 import ResponsiveLayout from '@/components/layout/ResponsiveLayout';
@@ -57,6 +59,11 @@ export default function PurchaseOrdersPage() {
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
   const PAGE_SIZE = 20;
+  const [showSavingsModal, setShowSavingsModal] = useState(false);
+  const [savingsProject, setSavingsProject] = useState('');
+  const [savingsLoading, setSavingsLoading] = useState(false);
+  const [savingsResult, setSavingsResult] = useState(null);
+  const [savingsError, setSavingsError] = useState('');
 
   const authHeaders = () => ({
     Authorization: `Bearer ${localStorage.getItem('authToken')}`,
@@ -108,10 +115,31 @@ export default function PurchaseOrdersPage() {
     fetchPOs(newPage);
   };
 
+  const handleAnalyzeSavings = async () => {
+    if (!savingsProject.trim()) return;
+    setSavingsLoading(true);
+    setSavingsResult(null);
+    setSavingsError('');
+    try {
+      const token = localStorage.getItem('authToken');
+      const res = await axios.post(
+        `${API_BASE}/api/ai/analyze-savings`,
+        { projectName: savingsProject },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setSavingsResult(res.data);
+    } catch (err) {
+      setSavingsError(err.response?.data?.error || 'Analysis failed. Please try again.');
+    } finally {
+      setSavingsLoading(false);
+    }
+  };
+
   const totalPages = Math.ceil(total / PAGE_SIZE);
   const projects = [...new Set(pos.map(p => p.projectName).filter(Boolean))];
 
   return (
+    <>
     <ResponsiveLayout>
       <div className="max-w-7xl mx-auto w-full p-4 lg:p-6">
 
@@ -139,6 +167,14 @@ export default function PurchaseOrdersPage() {
             >
               <RefreshCw className={`w-4 h-4 mr-1.5 ${loading ? 'animate-spin' : ''}`} />
               {t('refresh')}
+            </button>
+            <button
+              onClick={() => { setShowSavingsModal(true); setSavingsResult(null); setSavingsError(''); setSavingsProject(''); }}
+              className="flex items-center px-4 py-2 text-sm text-white rounded-lg font-medium shadow-sm"
+              style={{ backgroundColor: '#0A1628' }}
+            >
+              <Sparkles className="w-4 h-4 mr-1.5" />
+              AI Cost Analysis
             </button>
             <Link
               href="/dashboard/procurement/purchase-orders/create"
@@ -347,5 +383,111 @@ export default function PurchaseOrdersPage() {
         </div>
       </div>
     </ResponsiveLayout>
+    {/* AI Savings Analysis Modal */}
+      {showSavingsModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden">
+            {/* Modal header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b" style={{ backgroundColor: '#0A1628' }}>
+              <div className="flex items-center gap-2">
+                <Sparkles className="w-5 h-5 text-yellow-400" />
+                <h2 className="text-white font-semibold">AI Savings Analysis</h2>
+                <span className="text-xs text-yellow-300 bg-yellow-400/20 px-2 py-0.5 rounded-full font-medium">AI Generated</span>
+              </div>
+              <button onClick={() => setShowSavingsModal(false)} className="text-gray-400 hover:text-white transition">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-6">
+              {/* Project input */}
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-1">Project Name</label>
+                <input
+                  type="text"
+                  value={savingsProject}
+                  onChange={(e) => setSavingsProject(e.target.value)}
+                  placeholder="Enter project name to analyze..."
+                  dir="auto"
+                  className="w-full p-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 outline-none"
+                  onKeyDown={(e) => e.key === 'Enter' && handleAnalyzeSavings()}
+                />
+              </div>
+
+              <button
+                onClick={handleAnalyzeSavings}
+                disabled={!savingsProject.trim() || savingsLoading}
+                className="flex items-center gap-2 px-4 py-2 text-white rounded-lg text-sm font-medium disabled:opacity-50 mb-5"
+                style={{ backgroundColor: '#B8960A' }}
+              >
+                {savingsLoading ? (
+                  <><Loader2 className="w-4 h-4 animate-spin" /> Analyzing cost data...</>
+                ) : (
+                  <><Sparkles className="w-4 h-4" /> Analyze</>
+                )}
+              </button>
+
+              {savingsError && (
+                <p className="text-sm text-red-600 mb-4">{savingsError}</p>
+              )}
+
+              {savingsResult && (
+                <div className="space-y-4">
+                  {/* Big savings number */}
+                  <div className="bg-green-50 border border-green-200 rounded-xl p-4 text-center">
+                    <p className="text-xs text-green-600 font-medium mb-1">Estimated Savings</p>
+                    <p className="text-3xl font-black text-green-700">
+                      {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'SAR', maximumFractionDigits: 0 }).format(savingsResult.estimatedSavings || 0)}
+                    </p>
+                    {savingsResult.savingsPercentage > 0 && (
+                      <span className="inline-block mt-1 text-xs font-semibold text-white bg-green-600 px-2 py-0.5 rounded-full">
+                        {savingsResult.savingsPercentage?.toFixed(1)}% potential reduction
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Opportunities */}
+                  {savingsResult.opportunities?.length > 0 && (
+                    <div>
+                      <h4 className="text-sm font-semibold text-gray-700 mb-2">Opportunities</h4>
+                      <ul className="space-y-2">
+                        {savingsResult.opportunities.map((opp, i) => (
+                          <li key={i} className="flex items-start gap-2 text-sm">
+                            <CheckCircle className="w-4 h-4 text-green-500 mt-0.5 shrink-0" />
+                            <div>
+                              <span className="text-gray-700">{opp.description}</span>
+                              {opp.potentialSaving > 0 && (
+                                <span className="ml-2 text-xs font-semibold text-green-700">
+                                  +{new Intl.NumberFormat('en-US', { style: 'currency', currency: 'SAR', maximumFractionDigits: 0 }).format(opp.potentialSaving)}
+                                </span>
+                              )}
+                              {opp.action && <p className="text-xs text-gray-400 mt-0.5">{opp.action}</p>}
+                            </div>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {/* Summary */}
+                  {savingsResult.summary && (
+                    <div className="bg-gray-50 rounded-lg p-3 text-xs text-gray-600 italic border border-gray-100">
+                      {savingsResult.summary}
+                    </div>
+                  )}
+
+                  <button
+                    onClick={() => alert('Export feature coming soon')}
+                    className="flex items-center gap-1 text-xs text-gray-500 hover:text-gray-700 border border-gray-200 rounded-lg px-3 py-1.5"
+                  >
+                    Export Analysis
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }

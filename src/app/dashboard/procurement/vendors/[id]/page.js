@@ -16,7 +16,7 @@ import {
     User, Mail, Phone, MapPin, Loader2, Save, Send,
     FileText as FileIcon, Calendar, Hash,
     Briefcase, Award, Users, Home, CheckSquare, TrendingUp,
-    ArrowLeft, History, Download, Tag
+    ArrowLeft, History, Download, Tag, Sparkles, AlertTriangle
 } from 'lucide-react';
 
 // Use your actual API endpoints
@@ -113,7 +113,11 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
 
         // AI Evaluation + Admin Action state
         const [qualification, setQualification] = useState(null);
+        const [aiEvalResult, setAiEvalResult] = useState(null);
         const [evalLoading, setEvalLoading] = useState(false);
+        const [loadingMsg, setLoadingMsg] = useState('');
+        const [scoreDisplay, setScoreDisplay] = useState(0);
+        const [barsVisible, setBarsVisible] = useState(false);
         const [showEngineerModal, setShowEngineerModal] = useState(false);
         const [showActionModal, setShowActionModal] = useState(false);
         const [selectedAction, setSelectedAction] = useState(null);
@@ -343,18 +347,55 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
             const token = getAuthToken();
             if (!token) return;
             setEvalLoading(true);
+            setBarsVisible(false);
+            setScoreDisplay(0);
+
+            const loadingMessages = [
+                'Analyzing vendor documents...',
+                'Evaluating technical capability...',
+                'Assessing financial strength...',
+                'Calculating scores...',
+                'Generating recommendation...',
+            ];
+            let msgIdx = 0;
+            setLoadingMsg(loadingMessages[0]);
+            const msgInterval = setInterval(() => {
+                msgIdx = (msgIdx + 1) % loadingMessages.length;
+                setLoadingMsg(loadingMessages[msgIdx]);
+            }, 1500);
+
             try {
                 const res = await axios.post(
-                    `${API_BASE_URL}/api/vendors/${vendorId}/evaluation/ai`,
+                    `${API_BASE_URL}/api/ai/evaluate-vendor/${vendorId}`,
                     {},
                     { headers: { Authorization: `Bearer ${token}` } }
                 );
-                setQualification(res.data.qualification || res.data);
+                clearInterval(msgInterval);
+                const evalData = res.data.evaluation;
+                const qualData = res.data.qualification || res.data;
+                setAiEvalResult(evalData);
+                setQualification(qualData);
+
+                // Animate score count-up
+                const targetScore = Math.round(evalData.totalScore || 0);
+                let current = 0;
+                const step = Math.ceil(targetScore / 20);
+                const countUp = setInterval(() => {
+                    current = Math.min(current + step, targetScore);
+                    setScoreDisplay(current);
+                    if (current >= targetScore) {
+                        clearInterval(countUp);
+                        setTimeout(() => setBarsVisible(true), 200);
+                    }
+                }, 50);
+
                 showToast('AI evaluation complete');
             } catch (err) {
+                clearInterval(msgInterval);
                 showToast(err.response?.data?.error || 'Evaluation failed', 'error');
             } finally {
                 setEvalLoading(false);
+                setLoadingMsg('');
             }
         };
 
@@ -1108,114 +1149,187 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
                         {/* Section A: AI Evaluation Panel */}
                         <div className="bg-white rounded-xl shadow-md border border-gray-200 p-6">
                             <div className="flex items-center space-x-3 pb-3 border-b-2 border-blue-100/70 mb-5">
-                                <TrendingUp className="w-6 h-6 text-blue-600" />
+                                <Sparkles className="w-6 h-6" style={{ color: '#B8960A' }} />
                                 <h2 className="text-xl font-extrabold text-gray-800">AI Evaluation</h2>
+                                {(qualification?.isAIGenerated || aiEvalResult) && (
+                                    <span className="ml-auto flex items-center gap-1 text-xs font-medium text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full">
+                                        <Sparkles className="w-3 h-3" /> AI Generated
+                                    </span>
+                                )}
                             </div>
 
-                            {!qualification?.totalScore ? (
+                            {/* Loading state */}
+                            {evalLoading && (
+                                <div className="text-center py-8">
+                                    <Loader2 className="w-8 h-8 animate-spin mx-auto mb-3" style={{ color: '#B8960A' }} />
+                                    <p className="text-sm font-medium text-gray-600 animate-pulse">{loadingMsg}</p>
+                                </div>
+                            )}
+
+                            {/* No evaluation yet */}
+                            {!evalLoading && !qualification?.totalScore && !aiEvalResult && (
                                 <div className="text-center py-6">
                                     <p className="text-gray-500 text-sm mb-5">No evaluation yet. Run AI scoring to generate a qualification score.</p>
                                     <button
                                         onClick={handleRunAIEvaluation}
-                                        disabled={evalLoading}
-                                        className="px-5 py-2.5 rounded-lg text-white font-semibold text-sm flex items-center mx-auto space-x-2 disabled:opacity-50"
+                                        className="px-5 py-2.5 rounded-lg text-white font-semibold text-sm flex items-center mx-auto gap-2"
                                         style={{ backgroundColor: '#B8960A' }}
                                     >
-                                        {evalLoading ? (
-                                            <><Loader2 className="w-4 h-4 animate-spin" /><span>Running...</span></>
-                                        ) : (
-                                            <><TrendingUp className="w-4 h-4" /><span>Run AI Evaluation</span></>
-                                        )}
+                                        <Sparkles className="w-4 h-4" />
+                                        Run AI Evaluation
                                     </button>
                                 </div>
-                            ) : (
-                                <div>
-                                    {/* Circular Score */}
-                                    <div className="flex items-center justify-center mb-6">
-                                        <div className="relative w-28 h-28">
-                                            <svg className="w-28 h-28 -rotate-90" viewBox="0 0 100 100">
-                                                <circle cx="50" cy="50" r="42" fill="none" stroke="#e5e7eb" strokeWidth="10" />
-                                                <circle
-                                                    cx="50" cy="50" r="42" fill="none"
-                                                    stroke={qualification.totalScore >= 85 ? '#16a34a' : qualification.totalScore >= 70 ? '#B8960A' : qualification.totalScore >= 55 ? '#f97316' : '#dc2626'}
-                                                    strokeWidth="10"
-                                                    strokeDasharray={`${(qualification.totalScore / 100) * 263.9} 263.9`}
-                                                    strokeLinecap="round"
-                                                />
-                                            </svg>
-                                            <div className="absolute inset-0 flex flex-col items-center justify-center">
-                                                <span className="text-2xl font-extrabold text-gray-800">{Math.round(qualification.totalScore)}</span>
-                                                <span className="text-xs text-gray-500">/ 100</span>
-                                            </div>
-                                        </div>
-                                        <div className="ml-5">
-                                            <p className="text-sm text-gray-500">Vendor Class</p>
-                                            <p className="text-3xl font-black" style={{ color: '#0A1628' }}>
-                                                {vendor.vendorClass || 'D'}
-                                            </p>
-                                            {qualification.isAIGenerated && (
-                                                <span className="text-xs text-blue-600 font-medium">AI Generated</span>
-                                            )}
-                                        </div>
-                                    </div>
-
-                                    {/* Score Breakdown Bars */}
-                                    {[
-                                        { label: 'Documents', score: qualification.documentScore, weight: '20%' },
-                                        { label: 'Technical', score: qualification.technicalScore, weight: '25%' },
-                                        { label: 'Financial', score: qualification.financialScore, weight: '20%' },
-                                        { label: 'Experience', score: qualification.experienceScore, weight: '25%' },
-                                        { label: 'Responsiveness', score: qualification.responsivenessScore, weight: '10%' },
-                                    ].map(({ label, score, weight }) => (
-                                        <div key={label} className="mb-3">
-                                            <div className="flex justify-between text-xs text-gray-600 mb-1">
-                                                <span className="font-medium">{label} <span className="text-gray-400">({weight})</span></span>
-                                                <span className="font-bold">{score != null ? Number(score).toFixed(1) : '—'} / 10</span>
-                                            </div>
-                                            <div className="w-full bg-gray-100 rounded-full h-2">
-                                                <div
-                                                    className="h-2 rounded-full"
-                                                    style={{
-                                                        width: `${score != null ? (score / 10) * 100 : 0}%`,
-                                                        backgroundColor: '#B8960A'
-                                                    }}
-                                                />
-                                            </div>
-                                        </div>
-                                    ))}
-
-                                    {/* Engineer Review Status */}
-                                    {qualification.recommendation && (
-                                        <div className={`mt-4 px-3 py-2 rounded-lg text-xs font-semibold ${
-                                            qualification.recommendation === 'APPROVE' ? 'bg-green-50 text-green-700 border border-green-200' :
-                                            qualification.recommendation === 'REJECT' ? 'bg-red-50 text-red-700 border border-red-200' :
-                                            'bg-yellow-50 text-yellow-700 border border-yellow-200'
-                                        }`}>
-                                            Engineer Recommendation: {qualification.recommendation}
-                                            {qualification.engineerReviewer && (
-                                                <span className="ml-1 font-normal text-gray-500">by {qualification.engineerReviewer.name}</span>
-                                            )}
-                                        </div>
-                                    )}
-
-                                    <div className="mt-4 flex gap-2">
-                                        <button
-                                            onClick={handleRunAIEvaluation}
-                                            disabled={evalLoading}
-                                            className="flex-1 px-3 py-2 rounded-lg border border-gray-300 text-gray-700 text-xs font-medium hover:bg-gray-50 disabled:opacity-50"
-                                        >
-                                            {evalLoading ? 'Running...' : 'Re-evaluate'}
-                                        </button>
-                                        <button
-                                            onClick={() => setShowEngineerModal(true)}
-                                            className="flex-1 px-3 py-2 rounded-lg text-white text-xs font-semibold"
-                                            style={{ backgroundColor: '#0A1628' }}
-                                        >
-                                            Engineer Review
-                                        </button>
-                                    </div>
-                                </div>
                             )}
+
+                            {/* Rich results panel — shows after evaluation */}
+                            {!evalLoading && (qualification?.totalScore || aiEvalResult) && (() => {
+                                const eval_ = aiEvalResult || {};
+                                const score = eval_.totalScore || qualification?.totalScore || 0;
+                                const displayScore = aiEvalResult ? scoreDisplay : Math.round(score);
+                                const scoreColor = score >= 85 ? '#22c55e' : score >= 70 ? '#B8960A' : score >= 50 ? '#f97316' : '#ef4444';
+                                const vc = eval_.vendorClass || vendor.vendorClass || 'D';
+                                const vcColor = vc === 'A' ? '#22c55e' : vc === 'B' ? '#B8960A' : vc === 'C' ? '#f97316' : '#ef4444';
+                                const riskColor = eval_.riskLevel === 'LOW' ? 'text-green-700 bg-green-50' : eval_.riskLevel === 'HIGH' ? 'text-red-700 bg-red-50' : 'text-orange-700 bg-orange-50';
+                                const bars = [
+                                    { label: 'Document Compliance', weight: '20%', score: eval_.documentScore ?? qualification?.documentScore, color: '#0A1628' },
+                                    { label: 'Technical Capability', weight: '25%', score: eval_.technicalScore ?? qualification?.technicalScore, color: '#B8960A' },
+                                    { label: 'Financial Strength', weight: '20%', score: eval_.financialScore ?? qualification?.financialScore, color: '#22c55e' },
+                                    { label: 'Experience', weight: '25%', score: eval_.experienceScore ?? qualification?.experienceScore, color: '#3b82f6' },
+                                    { label: 'Responsiveness', weight: '10%', score: eval_.responsivenessScore ?? qualification?.responsivenessScore, color: '#8b5cf6' },
+                                ];
+                                const recBanner = eval_.recommendation === 'APPROVE'
+                                    ? { text: 'AI Recommends: Approve this vendor', cls: 'bg-green-50 border-green-300 text-green-800' }
+                                    : eval_.recommendation === 'CONDITIONAL_APPROVE'
+                                    ? { text: 'AI Recommends: Conditional Approval — review conditions', cls: 'bg-amber-50 border-amber-300 text-amber-800' }
+                                    : eval_.recommendation === 'REJECT'
+                                    ? { text: 'AI Recommends: Do not approve this vendor', cls: 'bg-red-50 border-red-300 text-red-800' }
+                                    : null;
+
+                                return (
+                                    <div>
+                                        {/* Score card */}
+                                        <div className="flex items-center justify-center mb-5">
+                                            <div className="relative w-28 h-28">
+                                                <svg className="w-28 h-28 -rotate-90" viewBox="0 0 100 100">
+                                                    <circle cx="50" cy="50" r="42" fill="none" stroke="#e5e7eb" strokeWidth="10" />
+                                                    <circle
+                                                        cx="50" cy="50" r="42" fill="none"
+                                                        stroke={scoreColor}
+                                                        strokeWidth="10"
+                                                        strokeDasharray={`${(displayScore / 100) * 263.9} 263.9`}
+                                                        strokeLinecap="round"
+                                                        style={{ transition: 'stroke-dasharray 0.05s linear' }}
+                                                    />
+                                                </svg>
+                                                <div className="absolute inset-0 flex flex-col items-center justify-center">
+                                                    <span className="text-2xl font-extrabold text-gray-800">{displayScore}</span>
+                                                    <span className="text-xs text-gray-500">/ 100</span>
+                                                </div>
+                                            </div>
+                                            <div className="ml-4 space-y-1">
+                                                <div className="flex items-center gap-2">
+                                                    <span className="text-sm text-gray-500">Class</span>
+                                                    <span className="text-2xl font-black" style={{ color: vcColor }}>{vc}</span>
+                                                </div>
+                                                {eval_.riskLevel && (
+                                                    <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${riskColor}`}>
+                                                        {eval_.riskLevel} RISK
+                                                    </span>
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        {/* Score bars */}
+                                        <div className="space-y-2 mb-4">
+                                            {bars.map(({ label, weight, score: s, color }, idx) => (
+                                                <div key={label}>
+                                                    <div className="flex justify-between text-xs text-gray-600 mb-0.5">
+                                                        <span className="font-medium">{label} <span className="text-gray-400">({weight})</span></span>
+                                                        <span className="font-bold">{s != null ? Number(s).toFixed(1) : '—'}/10</span>
+                                                    </div>
+                                                    <div className="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
+                                                        <div
+                                                            className="h-2 rounded-full transition-all duration-700"
+                                                            style={{
+                                                                width: barsVisible && s != null ? `${(s / 10) * 100}%` : '0%',
+                                                                backgroundColor: color,
+                                                                transitionDelay: `${idx * 150}ms`,
+                                                            }}
+                                                        />
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+
+                                        {/* Strengths & Weaknesses */}
+                                        {(eval_.strengths?.length > 0 || eval_.weaknesses?.length > 0) && (
+                                            <div className="grid grid-cols-2 gap-3 mb-4">
+                                                {eval_.strengths?.length > 0 && (
+                                                    <div>
+                                                        <p className="text-xs font-semibold text-green-700 mb-1">Strengths</p>
+                                                        <ul className="space-y-1">
+                                                            {eval_.strengths.map((s, i) => (
+                                                                <li key={i} className="flex items-start gap-1 text-xs text-gray-700">
+                                                                    <CheckCircle className="w-3 h-3 text-green-500 mt-0.5 flex-shrink-0" />
+                                                                    {s}
+                                                                </li>
+                                                            ))}
+                                                        </ul>
+                                                    </div>
+                                                )}
+                                                {eval_.weaknesses?.length > 0 && (
+                                                    <div>
+                                                        <p className="text-xs font-semibold text-red-700 mb-1">Weaknesses</p>
+                                                        <ul className="space-y-1">
+                                                            {eval_.weaknesses.map((w, i) => (
+                                                                <li key={i} className="flex items-start gap-1 text-xs text-gray-700">
+                                                                    <AlertTriangle className="w-3 h-3 text-red-500 mt-0.5 flex-shrink-0" />
+                                                                    {w}
+                                                                </li>
+                                                            ))}
+                                                        </ul>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        )}
+
+                                        {/* AI Evaluation Notes */}
+                                        {(eval_.evaluationNotes || qualification?.aiEvaluationNotes) && (
+                                            <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 mb-4">
+                                                <p className="text-xs italic text-gray-600">
+                                                    {eval_.evaluationNotes || qualification?.aiEvaluationNotes}
+                                                </p>
+                                            </div>
+                                        )}
+
+                                        {/* Recommendation banner */}
+                                        {recBanner && (
+                                            <div className={`border rounded-lg px-3 py-2 mb-4 text-xs font-semibold ${recBanner.cls}`}>
+                                                {recBanner.text}
+                                                <p className="mt-1 font-normal text-gray-500">Engineer Review Required before final action.</p>
+                                            </div>
+                                        )}
+
+                                        {/* Actions */}
+                                        <div className="flex gap-2">
+                                            <button
+                                                onClick={handleRunAIEvaluation}
+                                                disabled={evalLoading}
+                                                className="flex-1 px-3 py-2 rounded-lg border border-gray-300 text-gray-700 text-xs font-medium hover:bg-gray-50 disabled:opacity-50 flex items-center justify-center gap-1"
+                                            >
+                                                <Sparkles className="w-3 h-3" /> Re-evaluate
+                                            </button>
+                                            <button
+                                                onClick={() => setShowEngineerModal(true)}
+                                                className="flex-1 px-3 py-2 rounded-lg text-white text-xs font-semibold"
+                                                style={{ backgroundColor: '#0A1628' }}
+                                            >
+                                                Engineer Review
+                                            </button>
+                                        </div>
+                                    </div>
+                                );
+                            })()}
                         </div>
 
                         {/* Section B: Manager Action Panel */}
