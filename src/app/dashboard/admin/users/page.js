@@ -1,2066 +1,840 @@
-// frontend/src/app/dashboard/admin/users/page.js - MOBILE OPTIMIZED
 "use client";
-import React, { useState, useEffect } from 'react';
-import { useTranslation } from 'react-i18next'; // ADD THIS IMPORT
-import axios from 'axios';
+import React, { useState, useEffect, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
-    Users, Loader2, CheckCircle, XCircle, User, Mail, ToggleRight,
-    Building, Briefcase, IdCard, Clock, Eye, Edit, Shield, Key,
-    Save, X, Settings, Check, Square, Activity, FileText, Search,
-    Filter, Calendar, Download, RefreshCw, Bell, ListTodo, Workflow,
-    CheckSquare, AlertCircle, ArrowRight, Plus, MoreVertical, Inbox
+  Users, Search, Filter, Download, RefreshCw, Plus, Mail, Upload,
+  Shield, Lock, Unlock, Eye, Edit, Key, UserX, UserCheck, ChevronDown,
+  MoreVertical, X, Check, AlertTriangle, Activity, Clock, Building,
+  Briefcase, IdCard, Phone, Globe, FileText, CheckSquare, Square,
+  LogIn, Settings, Loader2, ChevronRight, Trash2, Send
 } from 'lucide-react';
-import { toast } from 'react-hot-toast'; 
-import ResponsiveLayout from '@/components/layout/ResponsiveLayout';
 
-const API_BASE_URL = `${process.env.NEXT_PUBLIC_API_URL}/api/users`;
+const API_BASE = `${process.env.NEXT_PUBLIC_API_URL}/api/admin`;
 
-// --- Notification Center Component ---
-const NotificationCenter = ({ isOpen, onClose, notifications, onMarkAsRead, onMarkAllAsRead }) => {
-  const { t } = useTranslation(); // ADD THIS HOOK
-  
-  if (!isOpen) return null;
+const ROLE_COLORS = {
+  1: { bg: '#FEE2E2', text: '#991B1B', label: 'Executive' },
+  2: { bg: '#FEF3C7', text: '#92400E', label: 'Proc. Manager' },
+  3: { bg: '#DBEAFE', text: '#1E40AF', label: 'Proc. Officer' },
+  4: { bg: '#D1FAE5', text: '#065F46', label: 'Vendor' },
+};
 
-  const getNotificationIcon = (type) => {
-    const icons = {
-      TASK_ASSIGNED: <ListTodo className="w-5 h-5 text-blue-500" />,
-      APPROVAL_REQUIRED: <CheckSquare className="w-5 h-5 text-orange-500" />,
-      APPROVAL_APPROVED: <CheckCircle className="w-5 h-5 text-green-500" />,
-      APPROVAL_REJECTED: <XCircle className="w-5 h-5 text-red-500" />,
-      ESCALATION: <AlertCircle className="w-5 h-5 text-red-500" />,
-      SYSTEM: <Bell className="w-5 h-5 text-purple-500" />
-    };
-    return icons[type] || <Bell className="w-5 h-5 text-gray-500" />;
-  };
+const ROLE_AVATAR_BG = { 1: '#DC2626', 2: '#D97706', 3: '#2563EB', 4: '#059669' };
 
-  const getNotificationColor = (type) => {
-    const colors = {
-      TASK_ASSIGNED: 'bg-blue-50 border-blue-200',
-      APPROVAL_REQUIRED: 'bg-orange-50 border-orange-200',
-      APPROVAL_APPROVED: 'bg-green-50 border-green-200',
-      APPROVAL_REJECTED: 'bg-red-50 border-red-200',
-      ESCALATION: 'bg-red-50 border-red-200',
-      SYSTEM: 'bg-purple-50 border-purple-200'
-    };
-    return colors[type] || 'bg-gray-50 border-gray-200';
-  };
-  
-    return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-        <div className="bg-white rounded-xl w-full max-w-2xl max-h-[80vh] overflow-y-auto">
-          <div className="flex justify-between items-center p-6 border-b">
-            <h3 className="text-xl font-bold text-gray-900 flex items-center">
-              <Inbox className="w-6 h-6 mr-2 text-blue-600" />
-              {t('notifications')} ({notifications.filter(n => !n.read).length} {t('unread')})
-            </h3>
-            <div className="flex items-center space-x-2">
-              {notifications.some(n => !n.read) && (
-                <button
-                  onClick={onMarkAllAsRead}
-                  className="text-sm text-blue-600 hover:text-blue-800"
-                >
-                  {t('markAllAsRead')}
-                </button>
-              )}
-              <button onClick={onClose} className="text-gray-500 hover:text-gray-700">
-                <X className="w-6 h-6" />
-              </button>
-            </div>
-          </div>
-  
-          <div className="p-4 space-y-3">
-            {notifications.length === 0 ? (
-              <div className="text-center py-12">
-                <Inbox className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                <p className="text-gray-500 text-lg">{t('noNotifications')}</p>
-                <p className="text-gray-400 text-sm">{t('allCaughtUp')}</p>
-              </div>
-            ) : (
-              notifications.map((notification) => (
-                <div
-                  key={notification.id}
-                  className={`p-4 rounded-lg border transition-all ${
-                    getNotificationColor(notification.type)
-                  } ${!notification.read ? 'ring-2 ring-blue-200' : ''}`}
-                >
-                  <div className="flex items-start space-x-3">
-                    {getNotificationIcon(notification.type)}
-                    <div className="flex-1">
-                      <p className="text-sm font-medium text-gray-900">
-                        {t(notification.title.toLowerCase().replace(/\s+/g, '_')) || notification.title}
-                      </p>
-                      <p className="text-sm text-gray-600 mt-1">
-                        {notification.message}
-                      </p>
-                      <p className="text-xs text-gray-400 mt-2">
-                        {new Date(notification.createdAt).toLocaleString()}
-                      </p>
-                    </div>
-                    {!notification.read && (
-                      <button
-                        onClick={() => onMarkAsRead(notification.id)}
-                        className="text-xs text-blue-600 hover:text-blue-800"
-                      >
-                        {t('markRead')}
-                      </button>
-                    )}
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-        </div>
+function getLastLoginDot(lastLoginDate) {
+  if (!lastLoginDate) return '#9CA3AF';
+  const days = (Date.now() - new Date(lastLoginDate)) / 86400000;
+  if (days < 7) return '#22C55E';
+  if (days < 30) return '#EAB308';
+  return '#EF4444';
+}
+
+function formatDate(d) {
+  if (!d) return '—';
+  return new Date(d).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+}
+
+function formatDateTime(d) {
+  if (!d) return '—';
+  return new Date(d).toLocaleString('en-GB', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
+}
+
+// ── Password strength ──────────────────────────────────────────────
+function passwordStrength(p) {
+  let score = 0;
+  if (p.length >= 8) score++;
+  if (/[A-Z]/.test(p)) score++;
+  if (/[a-z]/.test(p)) score++;
+  if (/[0-9]/.test(p)) score++;
+  if (/[^A-Za-z0-9]/.test(p)) score++;
+  return score;
+}
+
+const strengthLabel = ['', 'Very Weak', 'Weak', 'Fair', 'Strong', 'Very Strong'];
+const strengthColor = ['', '#EF4444', '#F97316', '#EAB308', '#22C55E', '#16A34A'];
+
+// ── Sub-components ─────────────────────────────────────────────────
+
+function StatCard({ icon, label, value, color }) {
+  return (
+    <div style={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: 12, padding: '16px 20px', display: 'flex', alignItems: 'center', gap: 16, flex: 1, minWidth: 160 }}>
+      <div style={{ background: color + '20', borderRadius: 10, padding: 10, color }}>{icon}</div>
+      <div>
+        <div style={{ fontSize: 24, fontWeight: 700, color: '#0A1628' }}>{value ?? '—'}</div>
+        <div style={{ fontSize: 12, color: '#6B7280' }}>{label}</div>
       </div>
-    );
-  };
-  
-  // --- Approval Workflow Component ---
-  const ApprovalWorkflow = ({ workflow, onApprove, onReject, onClose }) => {
-    const { t } = useTranslation(); // ADD THIS HOOK
-    const [comment, setComment] = useState('');
-    const [actionLoading, setActionLoading] = useState(null);
-  
-    const handleAction = async (action) => {
-      setActionLoading(action);
-      try {
-        // Simulate API call
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        if (action === 'approve') {
-          onApprove(workflow.id, comment);
-        } else {
-          onReject(workflow.id, comment);
-        }
-        
-        setComment('');
-        toast.success(t('workflowActionSuccess', { action }));
-      } catch (error) {
-        toast.error(t('workflowActionFailed', { action }));
-      } finally {
-        setActionLoading(null);
-      }
-    };
-  
-    if (!workflow) return null;
-  
-    const getStatusColor = (status) => {
-      const colors = {
-        PENDING: 'bg-yellow-100 text-yellow-800',
-        APPROVED: 'bg-green-100 text-green-800',
-        REJECTED: 'bg-red-100 text-red-800',
-        IN_PROGRESS: 'bg-blue-100 text-blue-800'
-      };
-      return colors[status] || 'bg-gray-100 text-gray-800';
-    };
-  
-    const getStepStatus = (step, currentStep) => {
-      if (step.stepNumber < currentStep) return 'completed';
-      if (step.stepNumber === currentStep) return 'current';
-      return 'pending';
-    };
-  
-    return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-        <div className="bg-white rounded-xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
-          <div className="flex justify-between items-center p-6 border-b">
-            <div>
-              <h3 className="text-xl font-bold text-gray-900 flex items-center">
-                <Workflow className="w-6 h-6 mr-2 text-blue-600" />
-                {t('approvalWorkflow')} - {workflow.title}
-              </h3>
-              <p className="text-sm text-gray-500 mt-1">
-                {t('reviewWorkflowItem')}
-              </p>
-            </div>
-            <button onClick={onClose} className="text-gray-500 hover:text-gray-700">
-              <X className="w-6 h-6" />
-            </button>
-          </div>
-  
-          <div className="p-6 space-y-6">
-            {/* Workflow Header */}
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700">{t('status')}</label>
-                <span className={`px-3 py-1 text-sm font-semibold rounded-full ${getStatusColor(workflow.status)}`}>
-                  {t(workflow.status.toLowerCase())}
-                </span>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">{t('priority')}</label>
-                <span className={`px-3 py-1 text-sm font-semibold rounded-full ${
-                  workflow.priority === 'HIGH' ? 'bg-red-100 text-red-800' :
-                  workflow.priority === 'MEDIUM' ? 'bg-orange-100 text-orange-800' :
-                  'bg-blue-100 text-blue-800'
-                }`}>
-                  {t(workflow.priority.toLowerCase())}
-                </span>
-              </div>
-            </div>
-  
-            {/* Workflow Steps */}
-            <div>
-              <h4 className="font-semibold text-gray-800 mb-4">{t('approvalSteps')}</h4>
-              <div className="space-y-3">
-                {workflow.steps?.map((step) => {
-                  const stepStatus = getStepStatus(step, workflow.currentStep);
-                  return (
-                    <div key={step.stepNumber} className="flex items-center space-x-3 p-3 border rounded-lg">
-                      <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                        stepStatus === 'completed' ? 'bg-green-100 text-green-600' :
-                        stepStatus === 'current' ? 'bg-blue-100 text-blue-600' :
-                        'bg-gray-100 text-gray-400'
-                      }`}>
-                        {stepStatus === 'completed' ? <Check className="w-4 h-4" /> : step.stepNumber}
-                      </div>
-                      <div className="flex-1">
-                        <p className="font-medium text-gray-900">{t(step.role.toLowerCase().replace(/\s+/g, '_')) || step.role}</p>
-                        <p className="text-sm text-gray-500">
-                          {stepStatus === 'completed' ? t('approvedBy', { approver: step.approver }) :
-                           stepStatus === 'current' ? t('waitingForApproval') :
-                           t('pending')}
-                        </p>
-                        {step.comment && (
-                          <p className="text-sm text-gray-600 mt-1">{t('comment')}: {step.comment}</p>
-                        )}
-                      </div>
-                      <div className="text-sm text-gray-500">
-                        {step.completedAt ? new Date(step.completedAt).toLocaleDateString() : '-'}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-  
-            {/* Approval Actions */}
-            {workflow.status === 'PENDING' && workflow.currentStep && (
-              <div className="border-t pt-6">
-                <h4 className="font-semibold text-gray-800 mb-4">{t('takeAction')}</h4>
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      {t('commentsOptional')}
-                    </label>
-                    <textarea
-                      value={comment}
-                      onChange={(e) => setComment(e.target.value)}
-                      rows="3"
-                      className="w-full p-3 border border-gray-300 rounded-lg"
-                      placeholder={t('commentsPlaceholder')}
-                    />
-                  </div>
-                  <div className="flex justify-end space-x-3">
-                    <button
-                      onClick={() => handleAction('reject')}
-                      disabled={actionLoading}
-                      className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 flex items-center disabled:opacity-50"
-                    >
-                      {actionLoading === 'reject' ? (
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      ) : (
-                        <XCircle className="w-4 h-4 mr-2" />
-                      )}
-                      {t('reject')}
-                    </button>
-                    <button
-                      onClick={() => handleAction('approve')}
-                      disabled={actionLoading}
-                      className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center disabled:opacity-50"
-                    >
-                      {actionLoading === 'approve' ? (
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      ) : (
-                        <CheckCircle className="w-4 h-4 mr-2" />
-                      )}
-                      {t('approve')}
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-    );
-  };
+    </div>
+  );
+}
 
-// --- Task Assignment Modal ---
-const TaskAssignmentModal = ({ user, isOpen, onClose, onTaskAssigned }) => {
-    const { t } = useTranslation(); // ADD THIS HOOK
-    const [formData, setFormData] = useState({
-        title: '',
-        description: '',
-        priority: 'MEDIUM',
-        dueDate: '',
-        type: 'REVIEW',
-        requiresApproval: true,
-        approvalWorkflow: 'SINGLE_APPROVAL'
-      });
-    
-      const [assigning, setAssigning] = useState(false);
-    
-      const taskTypes = [
-        { value: 'REVIEW', label: t('reviewTask'), icon: Eye },
-        { value: 'APPROVAL', label: t('approvalTask'), icon: CheckSquare },
-        { value: 'UPDATE', label: t('updateTask'), icon: Edit },
-        { value: 'VERIFICATION', label: t('verificationTask'), icon: Shield }
-      ];
-    
-      const workflowTypes = [
-        { value: 'SINGLE_APPROVAL', label: t('singleApproval') },
-        { value: 'DOUBLE_APPROVAL', label: t('doubleApproval') },
-        { value: 'TRIPLE_APPROVAL', label: t('tripleApproval') }
-      ];
-    
-      const handleAssignTask = async () => {
-        if (!formData.title || !formData.dueDate) {
-          toast.error(t('titleDateRequired'));
-          return;
-        }
-    
-        setAssigning(true);
-        try {
-          // Simulate API call
-          await new Promise(resolve => setTimeout(resolve, 1000));
-          
-          // Create notification for assigned task
-          const newNotification = {
-            id: Date.now(),
-            type: 'TASK_ASSIGNED',
-            title: t('newTaskAssigned'),
-            message: t('taskAssignedMessage', { title: formData.title }),
-            read: false,
-            createdAt: new Date().toISOString()
-          };
-          
-          // In a real app, this would be sent to the backend
-          console.log('Task assigned with workflow:', formData);
-          
-          toast.success(t('taskAssignedSuccess', { name: user.name }));
-          onTaskAssigned();
-          onClose();
-        } catch (error) {
-          toast.error(t('failedToAssignTask'));
-        } finally {
-          setAssigning(false);
-        }
-      };
-    
-      if (!isOpen || !user) return null;
-    
-      return (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl w-full max-w-md">
-            <div className="flex justify-between items-center p-6 border-b">
-              <h3 className="text-xl font-bold text-gray-900 flex items-center">
-                <ListTodo className="w-6 h-6 mr-2 text-blue-600" />
-                {t('assignTaskWorkflow')}
-              </h3>
-              <button onClick={onClose} className="text-gray-500 hover:text-gray-700">
-                <X className="w-6 h-6" />
-              </button>
-            </div>
-    
-            <div className="p-6 space-y-4">
-              {/* Assigned To */}
-              <div className="p-3 bg-blue-50 rounded-lg">
-                <p className="text-sm text-gray-600">{t('assigningTo')}:</p>
-                <p className="font-semibold text-blue-800">{user.name} ({user.role?.name})</p>
-              </div>
-    
-              {/* Task Details */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  {t('taskTitle')} *
-                </label>
-                <input
-                  type="text"
-                  value={formData.title}
-                  onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
-                  className="w-full p-2 border border-gray-300 rounded-lg"
-                  placeholder={t('enterTaskTitle')}
-                />
-              </div>
-    
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  {t('taskType')}
-                </label>
-                <select
-                  value={formData.type}
-                  onChange={(e) => setFormData(prev => ({ ...prev, type: e.target.value }))}
-                  className="w-full p-2 border border-gray-300 rounded-lg"
-                >
-                  {taskTypes.map(type => (
-                    <option key={type.value} value={type.value}>
-                      {type.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-    
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  {t('priority')}
-                </label>
-                <select
-                  value={formData.priority}
-                  onChange={(e) => setFormData(prev => ({ ...prev, priority: e.target.value }))}
-                  className="w-full p-2 border border-gray-300 rounded-lg"
-                >
-                  <option value="LOW">{t('low')}</option>
-                  <option value="MEDIUM">{t('medium')}</option>
-                  <option value="HIGH">{t('high')}</option>
-                  <option value="URGENT">{t('urgent')}</option>
-                </select>
-              </div>
-    
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  {t('dueDate')} *
-                </label>
-                <input
-                  type="date"
-                  value={formData.dueDate}
-                  onChange={(e) => setFormData(prev => ({ ...prev, dueDate: e.target.value }))}
-                  className="w-full p-2 border border-gray-300 rounded-lg"
-                  min={new Date().toISOString().split('T')[0]}
-                />
-              </div>
-    
-              {/* Workflow Settings */}
-              <div className="border-t pt-4">
-                <h4 className="font-semibold text-gray-800 mb-3">{t('approvalWorkflow')}</h4>
-                
-                <div className="space-y-3">
-                  <div className="flex items-center">
-                    <input
-                      type="checkbox"
-                      checked={formData.requiresApproval}
-                      onChange={(e) => setFormData(prev => ({ 
-                        ...prev, 
-                        requiresApproval: e.target.checked 
-                      }))}
-                      className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                    />
-                    <label className="ml-2 text-sm text-gray-700">
-                      {t('requiresApproval')}
-                    </label>
-                  </div>
-    
-                  {formData.requiresApproval && (
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        {t('workflowType')}
-                      </label>
-                      <select
-                        value={formData.approvalWorkflow}
-                        onChange={(e) => setFormData(prev => ({ 
-                          ...prev, 
-                          approvalWorkflow: e.target.value 
-                        }))}
-                        className="w-full p-2 border border-gray-300 rounded-lg"
-                      >
-                        {workflowTypes.map(workflow => (
-                          <option key={workflow.value} value={workflow.value}>
-                            {workflow.label}
-                          </option>
-                        ))}
-                      </select>
-                      <p className="text-xs text-gray-500 mt-1">
-                        {formData.approvalWorkflow === 'SINGLE_APPROVAL' && t('singleApprovalDescription')}
-                        {formData.approvalWorkflow === 'DOUBLE_APPROVAL' && t('doubleApprovalDescription')}
-                        {formData.approvalWorkflow === 'TRIPLE_APPROVAL' && t('tripleApprovalDescription')}
-                      </p>
-                    </div>
-                  )}
-                </div>
-              </div>
-    
-              {/* Description */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  {t('description')}
-                </label>
-                <textarea
-                  value={formData.description}
-                  onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                  rows="3"
-                  className="w-full p-2 border border-gray-300 rounded-lg"
-                  placeholder={t('enterTaskDescription')}
-                />
-              </div>
-            </div>
-    
-            <div className="flex justify-end space-x-3 p-6 border-t">
-              <button
-                onClick={onClose}
-                className="px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50"
-              >
-                {t('cancel')}
-              </button>
-              <button
-                onClick={handleAssignTask}
-                disabled={assigning}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center disabled:opacity-50"
-              >
-                {assigning ? (
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                ) : (
-                  <CheckSquare className="w-4 h-4 mr-2" />
-                )}
-                {t('assignTask')}
-              </button>
-            </div>
-          </div>
-        </div>
-      );
-    };
-  
-  // --- User Tasks Panel ---
-  const UserTasksPanel = ({ userId, userName, isOpen, onClose }) => {
-    const { t } = useTranslation(); // ADD THIS HOOK
-    const [tasks, setTasks] = useState([]);
-    const [loading, setLoading] = useState(false);
-  
-    // Mock tasks data
-    const mockTasks = [
-      {
-        id: 1,
-        title: t('reviewVendorApplication'),
-        type: 'REVIEW',
-        priority: 'HIGH',
-        status: 'PENDING',
-        dueDate: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString(),
-        assignedBy: t('adminUser'),
-        createdAt: new Date().toISOString()
-      },
-      {
-        id: 2,
-        title: t('approveRfqSubmission'),
-        type: 'APPROVAL',
-        priority: 'MEDIUM',
-        status: 'IN_PROGRESS',
-        dueDate: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString(),
-        assignedBy: t('procurementManager'),
-        createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString()
-      }
-    ];
-  
-    const fetchTasks = async () => {
-      setLoading(true);
-      try {
-        // Simulate API call
-        await new Promise(resolve => setTimeout(resolve, 500));
-        setTasks(mockTasks);
-      } catch (error) {
-        console.error('Error fetching tasks:', error);
-        setTasks(mockTasks); // Fallback to mock data
-      } finally {
-        setLoading(false);
-      }
-    };
-  
-    const getPriorityColor = (priority) => {
-      const colors = {
-        LOW: 'bg-gray-100 text-gray-800',
-        MEDIUM: 'bg-blue-100 text-blue-800',
-        HIGH: 'bg-orange-100 text-orange-800',
-        URGENT: 'bg-red-100 text-red-800'
-      };
-      return colors[priority] || 'bg-gray-100 text-gray-800';
-    };
-  
-    const getStatusColor = (status) => {
-      const colors = {
-        PENDING: 'bg-yellow-100 text-yellow-800',
-        IN_PROGRESS: 'bg-blue-100 text-blue-800',
-        COMPLETED: 'bg-green-100 text-green-800',
-        OVERDUE: 'bg-red-100 text-red-800'
-      };
-      return colors[status] || 'bg-gray-100 text-gray-800';
-    };
-  
-    useEffect(() => {
-      if (isOpen && userId) {
-        fetchTasks();
-      }
-    }, [isOpen, userId]);
-  
-    if (!isOpen) return null;
-  
-    return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-        <div className="bg-white rounded-xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
-          <div className="flex justify-between items-center p-6 border-b">
-            <div>
-              <h3 className="text-xl font-bold text-gray-900 flex items-center">
-                <ListTodo className="w-6 h-6 mr-2 text-blue-600" />
-                {t('userTasks')} - {userName}
-              </h3>
-              <p className="text-sm text-gray-500 mt-1">
-                {t('assignedTasksWorkflow')}
-              </p>
-            </div>
-            <button onClick={onClose} className="text-gray-500 hover:text-gray-700">
-              <X className="w-6 h-6" />
-            </button>
-          </div>
-  
-          <div className="p-6">
-            {loading ? (
-              <div className="flex justify-center items-center py-12">
-                <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
-                <span className="ml-3 text-gray-600">{t('loadingTasks')}</span>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {tasks.map((task) => (
-                  <div key={task.id} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors">
-                    <div className="flex justify-between items-start">
-                      <div className="flex-1">
-                        <div className="flex items-center space-x-3 mb-2">
-                          <h4 className="text-lg font-semibold text-gray-900">{task.title}</h4>
-                          <span className={`px-2 py-1 text-xs font-medium rounded-full ${getPriorityColor(task.priority)}`}>
-                            {t(task.priority.toLowerCase())}
-                          </span>
-                          <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(task.status)}`}>
-                            {t(task.status.toLowerCase().replace('_', ' '))}
-                          </span>
-                        </div>
-                        
-                        <div className="grid grid-cols-2 gap-4 text-sm text-gray-600">
-                          <div>
-                            <span className="font-medium">{t('type')}:</span> {t(task.type.toLowerCase())}
-                          </div>
-                          <div>
-                            <span className="font-medium">{t('due')}:</span> {new Date(task.dueDate).toLocaleDateString()}
-                          </div>
-                          <div>
-                            <span className="font-medium">{t('assignedBy')}:</span> {task.assignedBy}
-                          </div>
-                          <div>
-                            <span className="font-medium">{t('created')}:</span> {new Date(task.createdAt).toLocaleDateString()}
-                          </div>
-                        </div>
-                      </div>
-                      
-                      <div className="flex space-x-2">
-                        <button className="p-2 text-blue-600 hover:text-blue-800 transition" title={t('view')}>
-                          <Eye className="w-4 h-4" />
-                        </button>
-                        <button className="p-2 text-green-600 hover:text-green-800 transition" title={t('approve')}>
-                          <CheckSquare className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-                
-                {tasks.length === 0 && (
-                  <div className="text-center py-12">
-                    <ListTodo className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-                    <p className="text-gray-500 text-lg">{t('noTasksAssigned')}</p>
-                    <p className="text-gray-400 text-sm">{t('noPendingTasks')}</p>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-    );
-  };
+function RoleBadge({ roleId }) {
+  const r = ROLE_COLORS[roleId] || { bg: '#F3F4F6', text: '#374151', label: 'Unknown' };
+  return (
+    <span style={{ background: r.bg, color: r.text, borderRadius: 6, padding: '2px 8px', fontSize: 11, fontWeight: 600 }}>{r.label}</span>
+  );
+}
 
-// --- User Activity Log Component ---
-const UserActivityLog = ({ userId, userName, isOpen, onClose }) => {
-  const { t } = useTranslation(); // ADD THIS HOOK
-  const [auditLogs, setAuditLogs] = useState([]);
+function StatusPill({ user }) {
+  if (user.isSuspended) return <span style={{ background: '#FEE2E2', color: '#991B1B', borderRadius: 20, padding: '2px 10px', fontSize: 11, fontWeight: 600 }}>Suspended</span>;
+  if (!user.isActive) return <span style={{ background: '#F3F4F6', color: '#6B7280', borderRadius: 20, padding: '2px 10px', fontSize: 11, fontWeight: 600 }}>Inactive</span>;
+  return <span style={{ background: '#D1FAE5', color: '#065F46', borderRadius: 20, padding: '2px 10px', fontSize: 11, fontWeight: 600 }}>Active</span>;
+}
+
+function Avatar({ user }) {
+  const bg = ROLE_AVATAR_BG[user.roleId] || '#6B7280';
+  const initials = (user.name || 'U').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+  return (
+    <div style={{ width: 36, height: 36, borderRadius: '50%', background: bg, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 13, fontWeight: 700, flexShrink: 0 }}>
+      {user.avatarUrl ? <img src={user.avatarUrl} alt="" style={{ width: 36, height: 36, borderRadius: '50%', objectFit: 'cover' }} /> : initials}
+    </div>
+  );
+}
+
+function Toggle({ checked, onChange, disabled }) {
+  return (
+    <button onClick={() => !disabled && onChange(!checked)} disabled={disabled}
+      style={{ width: 40, height: 22, borderRadius: 11, background: checked ? '#B8960A' : '#D1D5DB', border: 'none', cursor: disabled ? 'not-allowed' : 'pointer', position: 'relative', transition: 'background 0.2s', padding: 0, flexShrink: 0 }}>
+      <span style={{ position: 'absolute', top: 3, left: checked ? 21 : 3, width: 16, height: 16, borderRadius: '50%', background: '#fff', transition: 'left 0.2s', display: 'block' }} />
+    </button>
+  );
+}
+
+function Modal({ title, onClose, children, width = 480 }) {
+  return (
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+      <div style={{ background: '#fff', borderRadius: 16, width: '100%', maxWidth: width, maxHeight: '90vh', overflow: 'auto', boxShadow: '0 20px 60px rgba(0,0,0,0.3)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px 24px 0' }}>
+          <h3 style={{ margin: 0, fontSize: 18, fontWeight: 700, color: '#0A1628' }}>{title}</h3>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#6B7280', padding: 4 }}><X size={20} /></button>
+        </div>
+        <div style={{ padding: 24 }}>{children}</div>
+      </div>
+    </div>
+  );
+}
+
+function Field({ label, children, required }) {
+  return (
+    <div style={{ marginBottom: 16 }}>
+      <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#374151', marginBottom: 6 }}>
+        {label}{required && <span style={{ color: '#EF4444' }}> *</span>}
+      </label>
+      {children}
+    </div>
+  );
+}
+
+const inputStyle = { width: '100%', padding: '9px 12px', border: '1px solid #D1D5DB', borderRadius: 8, fontSize: 14, outline: 'none', boxSizing: 'border-box', color: '#111827' };
+const selectStyle = { ...inputStyle, background: '#fff', cursor: 'pointer' };
+
+// ── Add User Modal ─────────────────────────────────────────────────
+function AddUserModal({ onClose, onSaved, token }) {
+  const [form, setForm] = useState({ name: '', email: '', password: '', roleId: 3, employeeId: '', jobTitle: '', department: '', phoneNumber: '', accessScope: 'ALL_PROJECTS' });
   const [loading, setLoading] = useState(false);
-  const [filters, setFilters] = useState({
-    dateRange: '',
-    actionType: '',
-    entity: ''
-  });
+  const [error, setError] = useState('');
+  const score = passwordStrength(form.password);
 
-  const fetchAuditLogs = async () => {
-    if (!userId) return;
-    
-    setLoading(true);
+  const genPassword = () => {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789!@#$%';
+    let p = '';
+    for (let i = 0; i < 12; i++) p += chars[Math.floor(Math.random() * chars.length)];
+    setForm(f => ({ ...f, password: p }));
+  };
+
+  const handleSubmit = async () => {
+    if (!form.name || !form.email || !form.password) { setError('Name, email and password are required.'); return; }
+    setLoading(true); setError('');
     try {
-      const token = localStorage.getItem('authToken');
-      const response = await axios.get(`${API_BASE_URL}/${userId}/audit-logs`, {
-        headers: { Authorization: `Bearer ${token}` },
-        params: filters
-      });
-      setAuditLogs(response.data);
-    } catch (error) {
-      console.error('Error fetching audit logs:', error);
-      // For now, we'll use mock data since you may not have the backend yet
-      setAuditLogs(getMockAuditLogs());
-      toast.error(t('failedLoadAuditLogs'));
-    } finally {
-      setLoading(false);
-    }
+      await fetch(`${API_BASE}/users`, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ ...form, roleId: Number(form.roleId) }) });
+      onSaved();
+    } catch (e) { setError('Failed to create user.'); }
+    setLoading(false);
   };
-
-  const getMockAuditLogs = () => [
-    {
-      id: 1,
-      action: 'LOGIN',
-      entity: t('user'),
-      entityId: userId,
-      description: t('userLoggedIn'),
-      ipAddress: '192.168.1.100',
-      userAgent: 'Chrome/120.0.0.0',
-      createdAt: new Date().toISOString()
-    },
-    {
-      id: 2,
-      action: 'VIEW_VENDOR',
-      entity: t('vendor'),
-      entityId: 123,
-      description: t('viewedVendorProfile', { name: 'ABC Construction' }),
-      ipAddress: '192.168.1.100',
-      userAgent: 'Chrome/120.0.0.0',
-      createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString()
-    },
-    {
-      id: 3,
-      action: 'UPDATE_PROFILE',
-      entity: t('user'),
-      entityId: userId,
-      description: t('updatedProfile'),
-      ipAddress: '192.168.1.100',
-      userAgent: 'Chrome/120.0.0.0',
-      createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
-    }
-  ];
-
-  const exportLogs = () => {
-    // Simple CSV export functionality
-    const csvContent = auditLogs.map(log => 
-      `${log.createdAt},${log.action},${log.entity},${log.description},${log.ipAddress}`
-    ).join('\n');
-    
-    const blob = new Blob([csvContent], { type: 'text/csv' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `user-activity-${userName}-${new Date().toISOString().split('T')[0]}.csv`;
-    a.click();
-    window.URL.revokeObjectURL(url);
-    
-    toast.success(t('activityLogExported'));
-  };
-
-  const getActionColor = (action) => {
-    const actionColors = {
-      LOGIN: 'bg-blue-100 text-blue-800',
-      LOGOUT: 'bg-gray-100 text-gray-800',
-      CREATE: 'bg-green-100 text-green-800',
-      UPDATE: 'bg-yellow-100 text-yellow-800',
-      DELETE: 'bg-red-100 text-red-800',
-      VIEW: 'bg-purple-100 text-purple-800',
-      APPROVE: 'bg-indigo-100 text-indigo-800',
-      REJECT: 'bg-pink-100 text-pink-800'
-    };
-    return actionColors[action] || 'bg-gray-100 text-gray-800';
-  };
-
-  useEffect(() => {
-    if (isOpen && userId) {
-      fetchAuditLogs();
-    }
-  }, [isOpen, userId, filters]);
-
-  if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl w-full max-w-6xl max-h-[90vh] overflow-y-auto">
-        <div className="flex justify-between items-center p-6 border-b">
-          <div>
-            <h3 className="text-xl font-bold text-gray-900 flex items-center">
-              <Activity className="w-6 h-6 mr-2 text-blue-600" />
-              {t('userActivityLog')} - {userName}
-            </h3>
-            <p className="text-sm text-gray-500 mt-1">
-              {t('trackingUserActions')}
-            </p>
+    <Modal title="Add New User" onClose={onClose} width={540}>
+      {error && <div style={{ background: '#FEE2E2', color: '#991B1B', padding: '10px 14px', borderRadius: 8, marginBottom: 16, fontSize: 13 }}>{error}</div>}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 16px' }}>
+        <Field label="Full Name" required><input style={inputStyle} value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} /></Field>
+        <Field label="Email" required><input style={inputStyle} type="email" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} /></Field>
+        <Field label="Password" required>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <input style={{ ...inputStyle, flex: 1 }} type="text" value={form.password} onChange={e => setForm(f => ({ ...f, password: e.target.value }))} />
+            <button onClick={genPassword} style={{ background: '#F3F4F6', border: '1px solid #D1D5DB', borderRadius: 8, padding: '0 10px', cursor: 'pointer', fontSize: 11, whiteSpace: 'nowrap' }}>Generate</button>
           </div>
-          <button onClick={onClose} className="text-gray-500 hover:text-gray-700">
-            <X className="w-6 h-6" />
+          {form.password && <div style={{ marginTop: 6 }}>
+            <div style={{ height: 4, background: '#E5E7EB', borderRadius: 2, overflow: 'hidden' }}>
+              <div style={{ width: `${(score / 5) * 100}%`, height: '100%', background: strengthColor[score], transition: 'all 0.3s' }} />
+            </div>
+            <span style={{ fontSize: 11, color: strengthColor[score] }}>{strengthLabel[score]}</span>
+          </div>}
+        </Field>
+        <Field label="Role" required>
+          <select style={selectStyle} value={form.roleId} onChange={e => setForm(f => ({ ...f, roleId: e.target.value }))}>
+            <option value={1}>Executive (Admin)</option>
+            <option value={2}>Procurement Manager</option>
+            <option value={3}>Procurement Officer</option>
+            <option value={4}>Vendor</option>
+          </select>
+        </Field>
+        <Field label="Employee ID"><input style={inputStyle} value={form.employeeId} onChange={e => setForm(f => ({ ...f, employeeId: e.target.value }))} /></Field>
+        <Field label="Job Title"><input style={inputStyle} value={form.jobTitle} onChange={e => setForm(f => ({ ...f, jobTitle: e.target.value }))} /></Field>
+        <Field label="Department"><input style={inputStyle} value={form.department} onChange={e => setForm(f => ({ ...f, department: e.target.value }))} /></Field>
+        <Field label="Phone"><input style={inputStyle} value={form.phoneNumber} onChange={e => setForm(f => ({ ...f, phoneNumber: e.target.value }))} /></Field>
+      </div>
+      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12, marginTop: 8 }}>
+        <button onClick={onClose} style={{ padding: '9px 20px', border: '1px solid #D1D5DB', borderRadius: 8, background: '#fff', cursor: 'pointer' }}>Cancel</button>
+        <button onClick={handleSubmit} disabled={loading} style={{ padding: '9px 20px', background: '#0A1628', color: '#fff', border: 'none', borderRadius: 8, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8 }}>
+          {loading ? <Loader2 size={14} className="spin" /> : <Plus size={14} />} Create User
+        </button>
+      </div>
+    </Modal>
+  );
+}
+
+// ── Invite User Modal ──────────────────────────────────────────────
+function InviteUserModal({ onClose, token }) {
+  const [email, setEmail] = useState('');
+  const [roleId, setRoleId] = useState(3);
+  const [loading, setLoading] = useState(false);
+  const [inviteLink, setInviteLink] = useState('');
+  const [error, setError] = useState('');
+  const [copied, setCopied] = useState(false);
+
+  const handleInvite = async () => {
+    if (!email) { setError('Email is required.'); return; }
+    setLoading(true); setError('');
+    try {
+      const res = await fetch(`${API_BASE}/invitations`, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ email, roleId: Number(roleId) }) });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      const link = `${window.location.origin}/signup?invitation=${data.token}`;
+      setInviteLink(link);
+    } catch (e) { setError(e.message || 'Failed to create invitation.'); }
+    setLoading(false);
+  };
+
+  const copy = () => { navigator.clipboard.writeText(inviteLink); setCopied(true); setTimeout(() => setCopied(false), 2000); };
+
+  return (
+    <Modal title="Invite User" onClose={onClose}>
+      {error && <div style={{ background: '#FEE2E2', color: '#991B1B', padding: '10px 14px', borderRadius: 8, marginBottom: 16, fontSize: 13 }}>{error}</div>}
+      {!inviteLink ? <>
+        <Field label="Email Address" required><input style={inputStyle} type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="user@company.com" /></Field>
+        <Field label="Role">
+          <select style={selectStyle} value={roleId} onChange={e => setRoleId(e.target.value)}>
+            <option value={2}>Procurement Manager</option>
+            <option value={3}>Procurement Officer</option>
+            <option value={4}>Vendor</option>
+          </select>
+        </Field>
+        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12 }}>
+          <button onClick={onClose} style={{ padding: '9px 20px', border: '1px solid #D1D5DB', borderRadius: 8, background: '#fff', cursor: 'pointer' }}>Cancel</button>
+          <button onClick={handleInvite} disabled={loading} style={{ padding: '9px 20px', background: '#B8960A', color: '#fff', border: 'none', borderRadius: 8, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8 }}>
+            {loading ? <Loader2 size={14} /> : <Send size={14} />} Send Invitation
           </button>
         </div>
-        
-        {/* Filters */}
-        <div className="p-6 border-b bg-gray-50">
-          <div className="flex flex-wrap gap-4 items-center">
-            <div className="flex items-center space-x-2">
-              <Filter className="w-4 h-4 text-gray-500" />
-              <select 
-                value={filters.dateRange}
-                onChange={(e) => setFilters(prev => ({ ...prev, dateRange: e.target.value }))}
-                className="border border-gray-300 rounded-lg px-3 py-2 text-sm"
-              >
-                <option value="">{t('allTime')}</option>
-                <option value="today">{t('today')}</option>
-                <option value="week">{t('thisWeek')}</option>
-                <option value="month">{t('thisMonth')}</option>
-              </select>
+      </> : <>
+        <div style={{ background: '#D1FAE5', color: '#065F46', padding: '12px 16px', borderRadius: 8, marginBottom: 16, fontSize: 13 }}>
+          Invitation created! Share this link with the user (expires in 48 hours):
+        </div>
+        <div style={{ display: 'flex', gap: 8, marginBottom: 20 }}>
+          <input style={{ ...inputStyle, flex: 1, background: '#F9FAFB', fontSize: 12 }} readOnly value={inviteLink} />
+          <button onClick={copy} style={{ padding: '9px 14px', background: copied ? '#22C55E' : '#0A1628', color: '#fff', border: 'none', borderRadius: 8, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, fontSize: 13 }}>
+            {copied ? <Check size={14} /> : null}{copied ? 'Copied!' : 'Copy'}
+          </button>
+        </div>
+        <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+          <button onClick={onClose} style={{ padding: '9px 20px', background: '#0A1628', color: '#fff', border: 'none', borderRadius: 8, cursor: 'pointer' }}>Done</button>
+        </div>
+      </>}
+    </Modal>
+  );
+}
+
+// ── Import Users Modal ─────────────────────────────────────────────
+function ImportUsersModal({ onClose, onDone, token }) {
+  const [file, setFile] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [result, setResult] = useState(null);
+  const [dragging, setDragging] = useState(false);
+
+  const handleFile = f => { if (f) setFile(f); };
+  const onDrop = e => { e.preventDefault(); setDragging(false); handleFile(e.dataTransfer.files[0]); };
+
+  const handleImport = async () => {
+    if (!file) return;
+    setLoading(true);
+    const fd = new FormData();
+    fd.append('file', file);
+    try {
+      const res = await fetch(`${API_BASE}/users/import`, { method: 'POST', headers: { Authorization: `Bearer ${token}` }, body: fd });
+      const data = await res.json();
+      setResult(data);
+    } catch { setResult({ error: 'Import failed.' }); }
+    setLoading(false);
+  };
+
+  return (
+    <Modal title="Import Users" onClose={onClose}>
+      {!result ? <>
+        <div onDragOver={e => { e.preventDefault(); setDragging(true); }} onDragLeave={() => setDragging(false)} onDrop={onDrop}
+          style={{ border: `2px dashed ${dragging ? '#B8960A' : '#D1D5DB'}`, borderRadius: 12, padding: 32, textAlign: 'center', background: dragging ? '#FFFBEB' : '#F9FAFB', cursor: 'pointer', transition: 'all 0.2s' }}
+          onClick={() => document.getElementById('import-file').click()}>
+          <Upload size={32} color="#9CA3AF" style={{ marginBottom: 12 }} />
+          <p style={{ margin: 0, color: '#374151', fontWeight: 600 }}>Drop your Excel/CSV file here</p>
+          <p style={{ margin: '4px 0 0', color: '#9CA3AF', fontSize: 13 }}>Columns: name, email, roleId, employeeId, jobTitle, department</p>
+          {file && <p style={{ margin: '12px 0 0', color: '#0A1628', fontWeight: 600, fontSize: 13 }}>{file.name}</p>}
+          <input id="import-file" type="file" accept=".xlsx,.csv" style={{ display: 'none' }} onChange={e => handleFile(e.target.files[0])} />
+        </div>
+        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12, marginTop: 20 }}>
+          <button onClick={onClose} style={{ padding: '9px 20px', border: '1px solid #D1D5DB', borderRadius: 8, background: '#fff', cursor: 'pointer' }}>Cancel</button>
+          <button onClick={handleImport} disabled={!file || loading} style={{ padding: '9px 20px', background: '#0A1628', color: '#fff', border: 'none', borderRadius: 8, cursor: 'pointer', opacity: !file ? 0.5 : 1, display: 'flex', alignItems: 'center', gap: 8 }}>
+            {loading ? <Loader2 size={14} /> : <Upload size={14} />} Import
+          </button>
+        </div>
+      </> : <>
+        {result.error
+          ? <div style={{ background: '#FEE2E2', color: '#991B1B', padding: 16, borderRadius: 8 }}>{result.error}</div>
+          : <div>
+            <div style={{ display: 'flex', gap: 16, marginBottom: 16 }}>
+              <div style={{ background: '#D1FAE5', color: '#065F46', padding: '12px 20px', borderRadius: 8, flex: 1, textAlign: 'center' }}>
+                <div style={{ fontSize: 24, fontWeight: 700 }}>{result.created}</div><div style={{ fontSize: 12 }}>Created</div>
+              </div>
+              <div style={{ background: '#FEF3C7', color: '#92400E', padding: '12px 20px', borderRadius: 8, flex: 1, textAlign: 'center' }}>
+                <div style={{ fontSize: 24, fontWeight: 700 }}>{result.skipped}</div><div style={{ fontSize: 12 }}>Skipped</div>
+              </div>
             </div>
-            
-            <div className="flex items-center space-x-2">
-              <select 
-                value={filters.actionType}
-                onChange={(e) => setFilters(prev => ({ ...prev, actionType: e.target.value }))}
-                className="border border-gray-300 rounded-lg px-3 py-2 text-sm"
-              >
-                <option value="">{t('allActions')}</option>
-                <option value="LOGIN">{t('login')}</option>
-                <option value="LOGOUT">{t('logout')}</option>
-                <option value="CREATE">{t('create')}</option>
-                <option value="UPDATE">{t('update')}</option>
-                <option value="DELETE">{t('delete')}</option>
-                <option value="VIEW">{t('view')}</option>
-              </select>
-            </div>
-            
-            <button
-              onClick={fetchAuditLogs}
-              className="flex items-center space-x-2 px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm"
-            >
-              <RefreshCw className="w-4 h-4" />
-              <span>{t('refresh')}</span>
+            {result.errors?.length > 0 && <div style={{ background: '#FEE2E2', borderRadius: 8, padding: 12, fontSize: 12, maxHeight: 120, overflowY: 'auto' }}>
+              {result.errors.map((e, i) => <div key={i} style={{ color: '#991B1B' }}>Row {e.row}: {e.reason}</div>)}
+            </div>}
+          </div>}
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 16 }}>
+          <button onClick={onDone} style={{ padding: '9px 20px', background: '#0A1628', color: '#fff', border: 'none', borderRadius: 8, cursor: 'pointer' }}>Done</button>
+        </div>
+      </>}
+    </Modal>
+  );
+}
+
+// ── Action Modal ───────────────────────────────────────────────────
+function ActionModal({ type, user, onClose, onDone, token }) {
+  const [confirmText, setConfirmText] = useState('');
+  const [reason, setReason] = useState('');
+  const [suspendedUntil, setSuspendedUntil] = useState('');
+  const [newRoleId, setNewRoleId] = useState(user?.roleId || 3);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const needsConfirm = ['deactivate', 'suspend'].includes(type);
+
+  const titles = { 'change-role': 'Change Role', 'reset-password': 'Reset Password', deactivate: 'Deactivate Account', suspend: 'Suspend Account', unsuspend: 'Unsuspend Account', activate: 'Activate Account' };
+  const isDestructive = needsConfirm && confirmText !== 'CONFIRM';
+
+  const handleAction = async () => {
+    if (needsConfirm && confirmText !== 'CONFIRM') return;
+    setLoading(true); setError('');
+    try {
+      const h = { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` };
+      if (type === 'change-role') {
+        await fetch(`${API_BASE}/users/${user.id}/role`, { method: 'PATCH', headers: h, body: JSON.stringify({ roleId: Number(newRoleId) }) });
+      } else if (type === 'reset-password') {
+        await fetch(`${API_BASE}/users/${user.id}/reset-password`, { method: 'PATCH', headers: h });
+      } else if (type === 'deactivate') {
+        await fetch(`${API_BASE}/users/${user.id}/status`, { method: 'PATCH', headers: h, body: JSON.stringify({ isActive: false }) });
+      } else if (type === 'activate') {
+        await fetch(`${API_BASE}/users/${user.id}/status`, { method: 'PATCH', headers: h, body: JSON.stringify({ isActive: true }) });
+      } else if (type === 'suspend') {
+        await fetch(`${API_BASE}/users/${user.id}/suspend`, { method: 'PATCH', headers: h, body: JSON.stringify({ reason, suspendedUntil: suspendedUntil || null }) });
+      } else if (type === 'unsuspend') {
+        await fetch(`${API_BASE}/users/${user.id}/unsuspend`, { method: 'PATCH', headers: h });
+      }
+      onDone();
+    } catch { setError('Action failed. Please try again.'); }
+    setLoading(false);
+  };
+
+  return (
+    <Modal title={titles[type]} onClose={onClose}>
+      {error && <div style={{ background: '#FEE2E2', color: '#991B1B', padding: '10px 14px', borderRadius: 8, marginBottom: 16, fontSize: 13 }}>{error}</div>}
+      <p style={{ margin: '0 0 16px', color: '#374151', fontSize: 14 }}>
+        {type === 'reset-password' && `A temporary password will be generated and sent to ${user?.email}. The user will be required to change it on next login.`}
+        {type === 'deactivate' && `This will deactivate ${user?.name}'s account. They will no longer be able to log in.`}
+        {type === 'activate' && `This will re-activate ${user?.name}'s account.`}
+        {type === 'unsuspend' && `This will lift the suspension on ${user?.name}'s account.`}
+        {type === 'change-role' && `Change role for ${user?.name}:`}
+        {type === 'suspend' && `Suspend ${user?.name}'s account:`}
+      </p>
+      {type === 'change-role' && (
+        <Field label="New Role">
+          <select style={selectStyle} value={newRoleId} onChange={e => setNewRoleId(e.target.value)}>
+            <option value={1}>Executive (Admin)</option>
+            <option value={2}>Procurement Manager</option>
+            <option value={3}>Procurement Officer</option>
+            <option value={4}>Vendor</option>
+          </select>
+        </Field>
+      )}
+      {type === 'suspend' && <>
+        <Field label="Reason" required><input style={inputStyle} value={reason} onChange={e => setReason(e.target.value)} placeholder="e.g. Policy violation" /></Field>
+        <Field label="Suspend Until (optional)"><input style={inputStyle} type="date" value={suspendedUntil} onChange={e => setSuspendedUntil(e.target.value)} /></Field>
+      </>}
+      {needsConfirm && <div style={{ marginBottom: 16 }}>
+        <div style={{ background: '#FEF3C7', border: '1px solid #F59E0B', borderRadius: 8, padding: '10px 14px', marginBottom: 12, fontSize: 13, color: '#92400E' }}>
+          <AlertTriangle size={14} style={{ display: 'inline', marginRight: 6 }} />Type <strong>CONFIRM</strong> to proceed.
+        </div>
+        <input style={inputStyle} value={confirmText} onChange={e => setConfirmText(e.target.value)} placeholder="Type CONFIRM" />
+      </div>}
+      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12 }}>
+        <button onClick={onClose} style={{ padding: '9px 20px', border: '1px solid #D1D5DB', borderRadius: 8, background: '#fff', cursor: 'pointer' }}>Cancel</button>
+        <button onClick={handleAction} disabled={loading || (needsConfirm && isDestructive) || (type === 'suspend' && !reason)}
+          style={{ padding: '9px 20px', background: ['deactivate', 'suspend'].includes(type) ? '#DC2626' : '#0A1628', color: '#fff', border: 'none', borderRadius: 8, cursor: 'pointer', opacity: (needsConfirm && isDestructive) ? 0.4 : 1, display: 'flex', alignItems: 'center', gap: 8 }}>
+          {loading ? <Loader2 size={14} /> : null}{titles[type]}
+        </button>
+      </div>
+    </Modal>
+  );
+}
+
+// ── User Action Menu ───────────────────────────────────────────────
+function UserActionMenu({ user, onAction }) {
+  const [open, setOpen] = useState(false);
+  const items = [
+    { label: 'View Profile', action: 'view', icon: <Eye size={14} /> },
+    { label: 'Edit', action: 'edit', icon: <Edit size={14} /> },
+    { label: 'Change Role', action: 'change-role', icon: <Shield size={14} /> },
+    { label: 'Reset Password', action: 'reset-password', icon: <Key size={14} /> },
+    user.isSuspended ? { label: 'Unsuspend', action: 'unsuspend', icon: <Unlock size={14} /> } : { label: 'Suspend', action: 'suspend', icon: <Lock size={14} /> },
+    user.isActive ? { label: 'Deactivate', action: 'deactivate', icon: <UserX size={14} />, danger: true } : { label: 'Activate', action: 'activate', icon: <UserCheck size={14} /> },
+    { label: 'View Audit Log', action: 'audit', icon: <Activity size={14} /> },
+  ];
+
+  return (
+    <div style={{ position: 'relative' }}>
+      <button onClick={e => { e.stopPropagation(); setOpen(o => !o); }} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, color: '#6B7280', borderRadius: 4 }}>
+        <MoreVertical size={16} />
+      </button>
+      {open && <>
+        <div style={{ position: 'fixed', inset: 0, zIndex: 99 }} onClick={() => setOpen(false)} />
+        <div style={{ position: 'absolute', right: 0, top: '100%', background: '#fff', border: '1px solid #E5E7EB', borderRadius: 10, boxShadow: '0 8px 24px rgba(0,0,0,0.12)', minWidth: 170, zIndex: 100, overflow: 'hidden' }}>
+          {items.map(item => (
+            <button key={item.action} onClick={() => { setOpen(false); onAction(item.action, user); }}
+              style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', padding: '9px 14px', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', fontSize: 13, color: item.danger ? '#DC2626' : '#374151' }}
+              onMouseEnter={e => e.currentTarget.style.background = '#F9FAFB'} onMouseLeave={e => e.currentTarget.style.background = 'none'}>
+              {item.icon}{item.label}
             </button>
-            
-            <button
-              onClick={exportLogs}
-              className="flex items-center space-x-2 px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm"
-            >
-              <Download className="w-4 h-4" />
-              <span>{t('exportCSV')}</span>
-            </button>
+          ))}
+        </div>
+      </>}
+    </div>
+  );
+}
+
+// ── Side Drawer ────────────────────────────────────────────────────
+function UserDrawer({ user, onClose, onAction, token, onRefresh }) {
+  const [notes, setNotes] = useState(user.notes || '');
+  const [savingNotes, setSavingNotes] = useState(false);
+  const [activity, setActivity] = useState([]);
+  const [toggling2fa, setToggling2fa] = useState(false);
+
+  useEffect(() => {
+    fetch(`${API_BASE}/users/${user.id}/activity?page=1&pageSize=5`, { headers: { Authorization: `Bearer ${token}` } })
+      .then(r => r.json()).then(d => setActivity(d.logs || [])).catch(() => {});
+  }, [user.id, token]);
+
+  const saveNotes = async () => {
+    setSavingNotes(true);
+    await fetch(`${API_BASE}/users/${user.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ notes }) });
+    setSavingNotes(false);
+  };
+
+  const toggle2fa = async () => {
+    setToggling2fa(true);
+    await fetch(`${API_BASE}/users/${user.id}/toggle-2fa`, { method: 'PATCH', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ twoFactorEnabled: !user.twoFactorEnabled }) });
+    setToggling2fa(false);
+    onRefresh();
+  };
+
+  const Section = ({ title, children }) => (
+    <div style={{ borderBottom: '1px solid #F3F4F6', paddingBottom: 20, marginBottom: 20 }}>
+      <h4 style={{ margin: '0 0 14px', fontSize: 13, fontWeight: 700, color: '#6B7280', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{title}</h4>
+      {children}
+    </div>
+  );
+
+  const Row = ({ icon, label, value }) => (
+    <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, marginBottom: 10 }}>
+      <span style={{ color: '#9CA3AF', marginTop: 1, flexShrink: 0 }}>{icon}</span>
+      <div>
+        <div style={{ fontSize: 11, color: '#9CA3AF' }}>{label}</div>
+        <div style={{ fontSize: 13, color: '#111827', fontWeight: 500 }}>{value || '—'}</div>
+      </div>
+    </div>
+  );
+
+  return (
+    <div style={{ position: 'fixed', top: 0, right: 0, width: 400, height: '100vh', background: '#fff', boxShadow: '-8px 0 32px rgba(0,0,0,0.12)', zIndex: 500, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+      {/* Header */}
+      <div style={{ background: '#0A1628', padding: '20px 20px 16px', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexShrink: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+          <Avatar user={user} />
+          <div>
+            <div style={{ color: '#fff', fontWeight: 700, fontSize: 16 }}>{user.name}</div>
+            <div style={{ color: '#93C5FD', fontSize: 12 }}>{user.email}</div>
           </div>
         </div>
-
-        {/* Activity Log Content */}
-        <div className="p-6">
-          {loading ? (
-            <div className="flex justify-center items-center py-12">
-              <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
-              <span className="ml-3 text-gray-600">{t('loadingActivityLogs')}</span>
+        <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9CA3AF' }}><X size={20} /></button>
+      </div>
+      {/* Status row */}
+      <div style={{ background: '#F8FAFC', borderBottom: '1px solid #E5E7EB', padding: '10px 20px', display: 'flex', gap: 8, alignItems: 'center', flexShrink: 0 }}>
+        <StatusPill user={user} />
+        <RoleBadge roleId={user.roleId} />
+        {user.twoFactorEnabled && <span style={{ background: '#FEF3C7', color: '#B8960A', fontSize: 11, borderRadius: 6, padding: '2px 8px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4 }}><Lock size={10} /> 2FA</span>}
+      </div>
+      {/* Content */}
+      <div style={{ flex: 1, overflowY: 'auto', padding: 20 }}>
+        {/* A — Identity */}
+        <Section title="A — Identity">
+          <Row icon={<IdCard size={14} />} label="Employee ID" value={user.employeeId} />
+          <Row icon={<Briefcase size={14} />} label="Job Title" value={user.jobTitle} />
+          <Row icon={<Building size={14} />} label="Department" value={user.department} />
+          <Row icon={<Phone size={14} />} label="Phone" value={user.phoneNumber} />
+          <Row icon={<Globe size={14} />} label="Access Scope" value={user.accessScope} />
+        </Section>
+        {/* B — Security */}
+        <Section title="B — Security">
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+            <div>
+              <div style={{ fontSize: 13, fontWeight: 600, color: '#374151' }}>Two-Factor Auth</div>
+              <div style={{ fontSize: 11, color: '#9CA3AF' }}>Method: {user.twoFactorMethod || 'Not set'}</div>
             </div>
-          ) : (
-            <div className="space-y-4">
-              {auditLogs.map((log) => (
-                <div key={log.id} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors">
-                  <div className="flex justify-between items-start">
-                    <div className="flex-1">
-                      <div className="flex items-center space-x-3 mb-2">
-                        <span className={`px-2 py-1 text-xs font-medium rounded-full ${getActionColor(log.action)}`}>
-                          {t(log.action.toLowerCase().replace('_', ' '))}
-                        </span>
-                        <span className="text-sm text-gray-500">{log.entity}</span>
-                        {log.entityId && (
-                          <span className="text-sm text-gray-400">{t('id')}: {log.entityId}</span>
-                        )}
-                      </div>
-                      <p className="text-gray-800 font-medium">{log.description}</p>
-                      {log.ipAddress && (
-                        <p className="text-sm text-gray-500 mt-1">
-                          {t('ip')}: {log.ipAddress} • {log.userAgent}
-                        </p>
-                      )}
-                    </div>
-                    <div className="text-right text-sm text-gray-500">
-                      <div className="flex items-center space-x-1 justify-end">
-                        <Calendar className="w-4 h-4" />
-                        <span>{new Date(log.createdAt).toLocaleDateString()}</span>
-                      </div>
-                      <div>{new Date(log.createdAt).toLocaleTimeString()}</div>
-                    </div>
+            <Toggle checked={!!user.twoFactorEnabled} onChange={toggle2fa} disabled={toggling2fa} />
+          </div>
+          <Row icon={<Key size={14} />} label="Last Password Change" value={formatDate(user.lastPasswordChange)} />
+          {user.isSuspended && <div style={{ background: '#FEE2E2', color: '#991B1B', padding: '10px 12px', borderRadius: 8, fontSize: 12, marginTop: 8 }}>
+            <strong>Suspended:</strong> {user.suspendedReason || 'No reason given'}
+            {user.suspendedUntil && <div>Until: {formatDate(user.suspendedUntil)}</div>}
+          </div>}
+          {user.mustChangePassword && <div style={{ background: '#FEF3C7', color: '#92400E', padding: '8px 12px', borderRadius: 8, fontSize: 12, marginTop: 8 }}>
+            Password change required on next login.
+          </div>}
+        </Section>
+        {/* C — Activity */}
+        <Section title="C — Recent Activity">
+          <Row icon={<Clock size={14} />} label="Last Login" value={formatDateTime(user.lastLoginDate)} />
+          <Row icon={<Clock size={14} />} label="Account Created" value={formatDate(user.createdAt)} />
+          <div style={{ marginTop: 12 }}>
+            {activity.length === 0 ? <div style={{ color: '#9CA3AF', fontSize: 12 }}>No recent activity.</div>
+              : activity.map(a => (
+                <div key={a.id} style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginBottom: 8, fontSize: 12 }}>
+                  <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#B8960A', marginTop: 5, flexShrink: 0 }} />
+                  <div>
+                    <span style={{ fontWeight: 600, color: '#374151' }}>{a.action}</span>
+                    <span style={{ color: '#9CA3AF', marginLeft: 6 }}>{formatDateTime(a.createdAt)}</span>
                   </div>
                 </div>
               ))}
-              
-              {auditLogs.length === 0 && (
-                <div className="text-center py-12">
-                  <Activity className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-                  <p className="text-gray-500 text-lg">{t('noActivityRecords')}</p>
-                  <p className="text-gray-400 text-sm">{t('activityWillAppear')}</p>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-};
-
-// --- Permission Matrix Component ---
-const PermissionMatrix = ({ roles, permissions, onPermissionChange, onClose }) => {
-  const { t } = useTranslation(); // ADD THIS HOOK
-  
-  // Sample permission structure - you can customize based on your modules
-  const modules = [
-    { id: 'vendors', name: t('vendors'), actions: ['view', 'create', 'edit', 'approve'] },
-    { id: 'rfqs', name: t('rfqs'), actions: ['view', 'create', 'edit', 'approve'] },
-    { id: 'contracts', name: t('contracts'), actions: ['view', 'create', 'edit', 'approve'] },
-    { id: 'purchase_orders', name: t('purchaseOrders'), actions: ['view', 'create', 'edit', 'approve'] },
-    { id: 'reports', name: t('reports'), actions: ['view', 'export'] },
-    { id: 'user_management', name: t('userManagement'), actions: ['view', 'edit', 'delete'] },
-  ];
-
-  const togglePermission = (roleId, moduleId, action) => {
-    const updatedPermissions = {
-      ...permissions,
-      [roleId]: {
-        ...permissions[roleId],
-        [moduleId]: {
-          ...permissions[roleId]?.[moduleId],
-          [action]: !permissions[roleId]?.[moduleId]?.[action]
-        }
-      }
-    };
-    onPermissionChange(updatedPermissions);
-  };
-
-  const savePermissions = () => {
-    onPermissionChange(permissions);
-    toast.success(t('permissionsUpdated'));
-  };
-
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl w-full max-w-6xl max-h-[90vh] overflow-y-auto">
-        <div className="flex justify-between items-center p-6 border-b">
-          <h3 className="text-xl font-bold text-gray-900 flex items-center">
-            <Shield className="w-6 h-6 mr-2 text-blue-600" />
-            {t('rolePermissionMatrix')}
-          </h3>
-          <button onClick={onClose} className="text-gray-500 hover:text-gray-700">
-            <X className="w-6 h-6" />
-          </button>
-        </div>
-        
-        <div className="p-6">
-          <div className="overflow-x-auto">
-            <table className="min-w-full border border-gray-200">
-              <thead>
-                <tr className="bg-gray-50">
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 border">
-                    {t('moduleAction')}
-                  </th>
-                  {roles.map(role => (
-                    <th key={role.id} className="px-4 py-3 text-center text-sm font-medium text-gray-700 border">
-                      <div className="flex flex-col items-center">
-                        <span>{role.name}</span>
-                        <span className="text-xs text-gray-500">({role.usersCount} {t('users')})</span>
-                      </div>
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {modules.map(module => (
-                  <React.Fragment key={module.id}>
-                    <tr className="bg-gray-25">
-                      <td className="px-4 py-3 font-semibold text-gray-800 border bg-blue-50">
-                        {module.name}
-                      </td>
-                      {roles.map(role => (
-                        <td key={role.id} className="px-4 py-3 border bg-blue-50"></td>
-                      ))}
-                    </tr>
-                    {module.actions.map(action => (
-                      <tr key={`${module.id}-${action}`} className="hover:bg-gray-50">
-                        <td className="px-4 py-2 pl-8 text-sm text-gray-600 border">
-                          {t(action)}
-                        </td>
-                        {roles.map(role => (
-                          <td key={role.id} className="px-4 py-2 text-center border">
-                            <button
-                              onClick={() => togglePermission(role.id, module.id, action)}
-                              className={`w-6 h-6 rounded border-2 flex items-center justify-center transition-all ${
-                                permissions[role.id]?.[module.id]?.[action]
-                                  ? 'bg-green-500 border-green-600 text-white'
-                                  : 'bg-white border-gray-300 hover:border-green-400'
-                              }`}
-                            >
-                              {permissions[role.id]?.[module.id]?.[action] && <Check className="w-4 h-4" />}
-                            </button>
-                          </td>
-                        ))}
-                      </tr>
-                    ))}
-                  </React.Fragment>
-                ))}
-              </tbody>
-            </table>
           </div>
-          
-          <div className="flex justify-end space-x-3 mt-6 pt-4 border-t">
-            <button
-              onClick={onClose}
-              className="px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50"
-            >
-              {t('cancel')}
-            </button>
-            <button
-              onClick={savePermissions}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center"
-            >
-              <Save className="w-4 h-4 mr-2" />
-              {t('savePermissions')}
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-// --- Enhanced User Profile Panel with Activity ---
-const UserProfilePanel = ({ user, isOpen, onClose, onUpdate, onAssignTask }) => {
-    const { t } = useTranslation(); // ADD THIS HOOK
-    const [editMode, setEditMode] = useState(false);
-    const [formData, setFormData] = useState({});
-    const [showActivityLog, setShowActivityLog] = useState(false);
-    const [showTasks, setShowTasks] = useState(false);;
-  
-    useEffect(() => {
-      if (user) {
-        setFormData({
-          employeeId: user.employeeId || '',
-          jobTitle: user.jobTitle || '',
-          department: user.department || '',
-        });
-      }
-    }, [user]);
-  
-    const handleSave = async () => {
-      try {
-        const token = localStorage.getItem('authToken');
-        await axios.patch(`${API_BASE_URL}/${user.id}`, formData, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        
-        toast.success(t('profileUpdated'));
-        setEditMode(false);
-        onUpdate();
-      } catch (error) {
-        toast.error(t('failedUpdateProfile'));
-      }
-    };
-  
-    if (!isOpen || !user) return null;
-
-    // Add Tasks section to the profile panel
-  const TasksSection = () => (
-    <div className="mb-6 p-4 bg-green-50 rounded-lg border border-green-200">
-      <h4 className="font-semibold text-gray-800 mb-3 flex items-center justify-between">
-        <div className="flex items-center">
-          <ListTodo className="w-4 h-4 mr-2 text-green-600" />
-          {t('taskOverview')}
-        </div>
-        <div className="flex space-x-2">
-          <button
-            onClick={() => setShowTasks(true)}
-            className="text-green-600 hover:text-green-800 text-sm flex items-center"
-          >
-            <Eye className="w-4 h-4 mr-1" />
-            {t('viewAll')}
-          </button>
-          <button
-            onClick={() => onAssignTask(user)}
-            className="text-blue-600 hover:text-blue-800 text-sm flex items-center"
-          >
-            <Plus className="w-4 h-4 mr-1" />
-            {t('assignTask')}
-          </button>
-        </div>
-      </h4>
-      <div className="grid grid-cols-2 gap-4 text-sm">
+        </Section>
+        {/* D — Actions */}
         <div>
-          <span className="text-gray-600">{t('pendingTasks')}:</span>
-          <p className="font-medium text-orange-600">2</p>
-        </div>
-        <div>
-          <span className="text-gray-600">{t('overdue')}:</span>
-          <p className="font-medium text-red-600">0</p>
-        </div>
-      </div>
-      <div className="mt-2 text-xs text-gray-500">
-        {t('lastTaskAssigned')}: {t('today')}
-      </div>
-    </div>
-  );
-  
-    return (
-      <>
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-            <div className="flex justify-between items-center mb-6">
-              <h3 className="text-xl font-bold text-gray-900 flex items-center">
-                <User className="w-6 h-6 mr-2 text-blue-600" />
-                {t('userProfile')} - {user.name}
-              </h3>
-              <button onClick={onClose} className="text-gray-500 hover:text-gray-700">
-                ✕
-              </button>
-            </div>
-            
-            <div className="grid grid-cols-2 gap-4 mb-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">{t('employeeId')}</label>
-                {editMode ? (
-                  <input
-                    type="text"
-                    value={formData.employeeId}
-                    onChange={(e) => setFormData(prev => ({ ...prev, employeeId: e.target.value }))}
-                    className="w-full p-2 border border-gray-300 rounded-lg"
-                    placeholder={t('enterEmployeeId')}
-                  />
-                ) : (
-                  <p className="text-gray-900 font-medium">{user.employeeId || t('notSet')}</p>
-                )}
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">{t('jobTitle')}</label>
-                {editMode ? (
-                  <input
-                    type="text"
-                    value={formData.jobTitle}
-                    onChange={(e) => setFormData(prev => ({ ...prev, jobTitle: e.target.value }))}
-                    className="w-full p-2 border border-gray-300 rounded-lg"
-                    placeholder={t('enterJobTitle')}
-                  />
-                ) : (
-                  <p className="text-gray-900">{user.jobTitle || t('notSet')}</p>
-                )}
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">{t('department')}</label>
-                {editMode ? (
-                  <select
-                    value={formData.department}
-                    onChange={(e) => setFormData(prev => ({ ...prev, department: e.target.value }))}
-                    className="w-full p-2 border border-gray-300 rounded-lg"
-                  >
-                    <option value="">{t('selectDepartment')}</option>
-                    <option value="Procurement">{t('procurement')}</option>
-                    <option value="Contracts">{t('contracts')}</option>
-                    <option value="Finance">{t('finance')}</option>
-                    <option value="Technical">{t('technical')}</option>
-                    <option value="Admin">{t('admin')}</option>
-                  </select>
-                ) : (
-                  <p className="text-gray-900">{user.department || t('notSet')}</p>
-                )}
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">{t('lastActivity')}</label>
-                <p className="text-gray-900 text-sm">
-                  {user.lastLoginDate 
-                    ? new Date(user.lastLoginDate).toLocaleString() 
-                    : t('noActivityRecorded')
-                  }
-                </p>
-              </div>
-            </div>
-
-            {/* Add Tasks Section */}
-         <TasksSection />
-            
-            {/* Activity Section */}
-            <div className="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
-              <h4 className="font-semibold text-gray-800 mb-3 flex items-center">
-                <Activity className="w-4 h-4 mr-2 text-blue-600" />
-                {t('activityOverview')}
-              </h4>
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div>
-                  <span className="text-gray-600">{t('lastLogin')}:</span>
-                  <p className="font-medium">
-                    {user.lastLoginDate 
-                      ? new Date(user.lastLoginDate).toLocaleDateString()
-                      : t('never')
-                    }
-                  </p>
-                </div>
-                <div>
-                  <span className="text-gray-600">{t('accountCreated')}:</span>
-                  <p className="font-medium">
-                    {new Date(user.createdAt).toLocaleDateString()}
-                  </p>
-                </div>
-              </div>
-              <button
-                onClick={() => setShowActivityLog(true)}
-                className="mt-3 text-blue-600 hover:text-blue-800 text-sm flex items-center"
-              >
-                <FileText className="w-4 h-4 mr-1" />
-                {t('viewDetailedActivityLog')}
-              </button>
-            </div>
-            
-            {/* Role Information */}
-            <div className="mb-6 p-4 bg-gray-50 rounded-lg">
-              <h4 className="font-semibold text-gray-800 mb-2">{t('roleInformation')}</h4>
-              <div className="flex items-center space-x-4">
-                <span className={`px-3 py-1 text-sm font-semibold rounded-full ${
-                  user.roleId === 1 ? 'bg-indigo-100 text-indigo-800' :
-                  user.roleId === 2 ? 'bg-green-100 text-green-800' :
-                  'bg-yellow-100 text-yellow-800'
-                }`}>
-                  {user.role?.name || t('unknownRole')}
-                </span>
-                <button className="text-blue-600 hover:text-blue-800 text-sm flex items-center">
-                  <Settings className="w-4 h-4 mr-1" />
-                  {t('changeRole')}
+          <h4 style={{ margin: '0 0 14px', fontSize: 13, fontWeight: 700, color: '#6B7280', textTransform: 'uppercase', letterSpacing: '0.05em' }}>D — Actions</h4>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <button onClick={() => onAction('change-role', user)} style={{ padding: '9px 14px', background: '#F3F4F6', border: '1px solid #E5E7EB', borderRadius: 8, cursor: 'pointer', textAlign: 'left', fontSize: 13, display: 'flex', alignItems: 'center', gap: 10 }}>
+              <Shield size={14} color="#374151" /> Change Role
+            </button>
+            <button onClick={() => onAction('reset-password', user)} style={{ padding: '9px 14px', background: '#F3F4F6', border: '1px solid #E5E7EB', borderRadius: 8, cursor: 'pointer', textAlign: 'left', fontSize: 13, display: 'flex', alignItems: 'center', gap: 10 }}>
+              <Key size={14} color="#374151" /> Reset Password
+            </button>
+            {user.isSuspended
+              ? <button onClick={() => onAction('unsuspend', user)} style={{ padding: '9px 14px', background: '#D1FAE5', border: '1px solid #A7F3D0', borderRadius: 8, cursor: 'pointer', textAlign: 'left', fontSize: 13, display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <Unlock size={14} color="#065F46" /> Unsuspend Account
                 </button>
-              </div>
-            </div>
-            
-            <div className="flex justify-end space-x-3">
-              {editMode ? (
-                <>
-                  <button 
-                    onClick={() => setEditMode(false)}
-                    className="px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50"
-                  >
-                    {t('cancel')}
-                  </button>
-                  <button 
-                    onClick={handleSave}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center"
-                  >
-                    <Save className="w-4 h-4 mr-2" />
-                    {t('saveChanges')}
-                  </button>
-                </>
-              ) : (
-                <>
-                  <button 
-                    onClick={() => setEditMode(true)}
-                    className="px-4 py-2 text-blue-600 border border-blue-300 rounded-lg hover:bg-blue-50 flex items-center"
-                  >
-                    <Edit className="w-4 h-4 mr-2" />
-                    {t('editProfile')}
-                  </button>
-                  <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
-                    {t('close')}
-                  </button>
-                </>
-              )}
-            </div>
+              : <button onClick={() => onAction('suspend', user)} style={{ padding: '9px 14px', background: '#FEF3C7', border: '1px solid #FDE68A', borderRadius: 8, cursor: 'pointer', textAlign: 'left', fontSize: 13, display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <Lock size={14} color="#92400E" /> Suspend Account
+                </button>}
+            {user.isActive
+              ? <button onClick={() => onAction('deactivate', user)} style={{ padding: '9px 14px', background: '#FEE2E2', border: '1px solid #FECACA', borderRadius: 8, cursor: 'pointer', textAlign: 'left', fontSize: 13, display: 'flex', alignItems: 'center', gap: 10, color: '#991B1B' }}>
+                  <UserX size={14} /> Deactivate Account
+                </button>
+              : <button onClick={() => onAction('activate', user)} style={{ padding: '9px 14px', background: '#D1FAE5', border: '1px solid #A7F3D0', borderRadius: 8, cursor: 'pointer', textAlign: 'left', fontSize: 13, display: 'flex', alignItems: 'center', gap: 10, color: '#065F46' }}>
+                  <UserCheck size={14} /> Activate Account
+                </button>}
           </div>
-        </div>
-
-        {/* Activity Log Modal */}
-      {showActivityLog && (
-        <UserActivityLog
-          userId={user.id}
-          userName={user.name}
-          isOpen={showActivityLog}
-          onClose={() => setShowActivityLog(false)}
-        />
-      )}
-
-      {/* Tasks Modal */}
-      {showTasks && (
-        <UserTasksPanel
-          userId={user.id}
-          userName={user.name}
-          isOpen={showTasks}
-          onClose={() => setShowTasks(false)}
-        />
-      )}
-    </>
-  );
-};
-
-  // --- Enhanced Summary Cards Component ---
-const EnhancedSummaryCards = ({ activityStats }) => {
-  const { t } = useTranslation(); // ADD THIS HOOK
-  
-  return (
-    <div className="grid grid-cols-5 gap-4 mb-6">
-      <div className="bg-white p-4 rounded-lg shadow border">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-sm text-gray-500">{t('totalUsers')}</p>
-            <p className="text-2xl font-bold text-gray-900">{activityStats.totalUsers || 0}</p>
+          {/* Admin Notes */}
+          <div style={{ marginTop: 20 }}>
+            <label style={{ fontSize: 13, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 6 }}>Admin Notes</label>
+            <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={3}
+              style={{ width: '100%', padding: '9px 12px', border: '1px solid #D1D5DB', borderRadius: 8, fontSize: 13, resize: 'vertical', boxSizing: 'border-box', outline: 'none' }} />
+            <button onClick={saveNotes} disabled={savingNotes} style={{ marginTop: 8, padding: '7px 16px', background: '#0A1628', color: '#fff', border: 'none', borderRadius: 8, cursor: 'pointer', fontSize: 13, display: 'flex', alignItems: 'center', gap: 6 }}>
+              {savingNotes ? <Loader2 size={12} /> : <FileText size={12} />} Save Notes
+            </button>
           </div>
-          <Users className="w-8 h-8 text-blue-500" />
-        </div>
-      </div>
-      <div className="bg-white p-4 rounded-lg shadow border">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-sm text-gray-500">{t('activeToday')}</p>
-            <p className="text-2xl font-bold text-green-600">{activityStats.activeToday || 0}</p>
-          </div>
-          <Activity className="w-8 h-8 text-green-500" />
-        </div>
-      </div>
-      <div className="bg-white p-4 rounded-lg shadow border">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-sm text-gray-500">{t('activeThisWeek')}</p>
-            <p className="text-2xl font-bold text-orange-600">{activityStats.activeThisWeek || 0}</p>
-          </div>
-          <Calendar className="w-8 h-8 text-orange-500" />
-        </div>
-      </div>
-      <div className="bg-white p-4 rounded-lg shadow border">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-sm text-gray-500">{t('neverLoggedIn')}</p>
-            <p className="text-2xl font-bold text-red-600">{activityStats.neverLoggedIn || 0}</p>
-          </div>
-          <XCircle className="w-8 h-8 text-red-500" />
-        </div>
-      </div>
-      <div className="bg-white p-4 rounded-lg shadow border">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-sm text-gray-500">{t('mostActiveDept')}</p>
-            <p className="text-lg font-bold text-purple-600 truncate">{activityStats.mostActiveDepartment || t('na')}</p>
-          </div>
-          <Building className="w-8 h-8 text-purple-500" />
         </div>
       </div>
     </div>
   );
-};
+}
 
-// --- Enhanced User Management Content (Updated for Mobile) ---
-const UserManagementContent = ({ users, loading, error, fetchUsers, handleToggleStatus }) => {
-  const { t } = useTranslation(); // ADD THIS HOOK
-  const [selectedUser, setSelectedUser] = useState(null);
-  const [showProfile, setShowProfile] = useState(false);
-  const [showPermissions, setShowPermissions] = useState(false);
-  const [showTaskAssignment, setShowTaskAssignment] = useState(false);
-  const [showNotifications, setShowNotifications] = useState(false);
-  const [showApprovalWorkflow, setShowApprovalWorkflow] = useState(false);
-  const [selectedWorkflow, setSelectedWorkflow] = useState(null);
-  const [roles, setRoles] = useState([]);
-  const [permissions, setPermissions] = useState({});
-  const [activityStats, setActivityStats] = useState({});
-  const [workflowStats, setWorkflowStats] = useState({});
-  const [notifications, setNotifications] = useState([]);
-
-    // Mock workflow data
-    const mockWorkflows = [
-        {
-            id: 1,
-            title: t('vendorQualificationReview'),
-            type: 'VENDOR_APPROVAL',
-            status: 'PENDING',
-            priority: 'HIGH',
-            currentStep: 2,
-            steps: [
-                { stepNumber: 1, role: t('procurementOfficer'), approver: 'John Doe', completedAt: new Date().toISOString(), comment: t('initialReviewCompleted') },
-                { stepNumber: 2, role: t('procurementManager'), approver: null, completedAt: null, comment: null },
-                { stepNumber: 3, role: t('headOfProcurement'), approver: null, completedAt: null, comment: null }
-            ],
-            assignedTo: 'Sarah Wilson',
-            dueDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(),
-            createdAt: new Date().toISOString()
-        }
-    ];
-
-    // Mock notifications
-    const mockNotifications = [
-        {
-            id: 1,
-            type: 'APPROVAL_REQUIRED',
-            title: t('approvalRequired'),
-            message: t('vendorQualificationApprovalRequired'),
-            read: false,
-            createdAt: new Date().toISOString()
-        },
-        {
-            id: 2,
-            type: 'TASK_ASSIGNED',
-            title: t('newTaskAssigned'),
-            message: t('taskAssignedMessage', { title: t('reviewVendorApplication') }),
-            read: true,
-            createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString()
-        },
-        {
-            id: 3,
-            type: 'APPROVAL_APPROVED',
-            title: t('approvalCompleted'),
-            message: t('rfqApproved'),
-            read: true,
-            createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
-        }
-    ];
-
-    // Initialize notifications
-    useEffect(() => {
-        setNotifications(mockNotifications);
-    }, []);
-
-    // Calculate workflow statistics
-    useEffect(() => {
-        if (users.length > 0) {
-            const stats = {
-                totalUsers: users.length,
-                usersWithTasks: 8, // Mock data
-                pendingApprovals: mockWorkflows.filter(w => w.status === 'PENDING').length,
-                overdueTasks: 3, // Mock data
-                avgTaskCompletion: '78%' // Mock data
-            };
-            setWorkflowStats(stats);
-        }
-    }, [users]);
-
-    // Calculate activity statistics
-    useEffect(() => {
-      if (users.length > 0) {
-          const stats = {
-              totalUsers: users.length,
-              activeToday: users.filter(u => {
-                  if (!u.lastLoginDate) return false;
-                  return new Date(u.lastLoginDate).toDateString() === new Date().toDateString();
-              }).length,
-              activeThisWeek: users.filter(u => {
-                  if (!u.lastLoginDate) return false;
-                  const daysAgo = Math.floor((new Date() - new Date(u.lastLoginDate)) / (1000 * 60 * 60 * 24));
-                  return daysAgo <= 7;
-              }).length,
-              neverLoggedIn: users.filter(u => !u.lastLoginDate).length,
-              mostActiveDepartment: getMostActiveDepartment(users)
-          };
-          setActivityStats(stats);
-      }
-  }, [users]);
-
-    // Fetch roles and permissions
-    const fetchRolesAndPermissions = async () => {
-        try {
-            const token = localStorage.getItem('authToken');
-            const response = await axios.get(`${API_BASE_URL}/permissions/roles`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            
-            if (response.data && Object.keys(response.data).length > 0) {
-                setPermissions(response.data);
-            } else {
-                setPermissions(getDefaultPermissions());
-                console.warn('No permissions data returned from API, using defaults');
-            }
-            
-            const roleData = [
-                { id: 1, name: t('admin'), usersCount: users.filter(u => u.roleId === 1).length },
-                { id: 2, name: t('procurementManager'), usersCount: users.filter(u => u.roleId === 2).length },
-                { id: 3, name: t('procurementOfficer'), usersCount: users.filter(u => u.roleId === 3).length },
-                { id: 4, name: t('vendor'), usersCount: users.filter(u => u.roleId === 4).length },
-            ];
-            setRoles(roleData);
-        } catch (error) {
-            console.error('Error fetching permissions:', error);
-            setPermissions(getDefaultPermissions());
-            toast.error(t('failedLoadPermissions'));
-        }
-    };
-
-    useEffect(() => {
-        if (users.length > 0) {
-            fetchRolesAndPermissions();
-        }
-    }, [users]);
-
-    // Helper Functions
-    const getMostActiveDepartment = (users) => {
-        const deptActivity = {};
-        users.forEach(user => {
-            if (user.department && user.lastLoginDate) {
-                const daysAgo = Math.floor((new Date() - new Date(user.lastLoginDate)) / (1000 * 60 * 60 * 24));
-                if (daysAgo <= 30) {
-                    deptActivity[user.department] = (deptActivity[user.department] || 0) + 1;
-                }
-            }
-        });
-        
-        return Object.keys(deptActivity).length > 0 
-            ? Object.keys(deptActivity).reduce((a, b) => deptActivity[a] > deptActivity[b] ? a : b)
-            : t('noData');
-    };
-
-    const getDefaultPermissions = () => ({
-        1: { // Admin
-            vendors: { view: true, create: true, edit: true, approve: true },
-            rfqs: { view: true, create: true, edit: true, approve: true },
-            contracts: { view: true, create: true, edit: true, approve: true },
-            purchase_orders: { view: true, create: true, edit: true, approve: true },
-            reports: { view: true, export: true },
-            user_management: { view: true, edit: true, delete: true }
-        },
-        2: { // Procurement Manager
-            vendors: { view: true, create: true, edit: true, approve: true },
-            rfqs: { view: true, create: true, edit: true, approve: true },
-            contracts: { view: true, create: false, edit: false, approve: true },
-            purchase_orders: { view: true, create: false, edit: false, approve: true },
-            reports: { view: true, export: true },
-            user_management: { view: false, edit: false, delete: false }
-        },
-        3: { // Procurement Officer
-            vendors: { view: true, create: true, edit: true, approve: false },
-            rfqs: { view: true, create: true, edit: true, approve: false },
-            contracts: { view: true, create: false, edit: false, approve: false },
-            purchase_orders: { view: true, create: true, edit: true, approve: false },
-            reports: { view: true, export: false },
-            user_management: { view: false, edit: false, delete: false }
-        },
-        4: { // Vendor
-            vendors: { view: false, create: false, edit: false, approve: false },
-            rfqs: { view: true, create: false, edit: false, approve: false },
-            contracts: { view: true, create: false, edit: false, approve: false },
-            purchase_orders: { view: false, create: false, edit: false, approve: false },
-            reports: { view: false, export: false },
-            user_management: { view: false, edit: false, delete: false }
-        }
-    });
-
-    const getActivityStatus = (lastActivity) => {
-        if (!lastActivity) return { color: 'text-gray-500', text: t('never'), bg: 'bg-gray-100' };
-        
-        const daysAgo = Math.floor((new Date() - new Date(lastActivity)) / (1000 * 60 * 60 * 24));
-        
-        if (daysAgo <= 7) return { color: 'text-green-600', text: t('active'), bg: 'bg-green-100' };
-        if (daysAgo <= 30) return { color: 'text-yellow-600', text: t('recent'), bg: 'bg-yellow-100' };
-        return { color: 'text-red-600', text: t('inactive'), bg: 'bg-red-100' };
-    };
-
-    // Notification handlers
-    const handleMarkAsRead = (notificationId) => {
-        setNotifications(prev => prev.map(n => 
-            n.id === notificationId ? { ...n, read: true } : n
-        ));
-    };
-
-    const handleMarkAllAsRead = () => {
-        setNotifications(prev => prev.map(n => ({ ...n, read: true })));
-    };
-
-    // Workflow handlers
-    const handleApproveWorkflow = (workflowId, comment) => {
-        console.log('Approving workflow:', workflowId, 'with comment:', comment);
-        setShowApprovalWorkflow(false);
-        setSelectedWorkflow(null);
-        
-        const newNotification = {
-            id: Date.now(),
-            type: 'APPROVAL_APPROVED',
-            title: t('workflowApproved'),
-            message: t('workflowApprovedMessage', { title: selectedWorkflow?.title }),
-            read: false,
-            createdAt: new Date().toISOString()
-        };
-        setNotifications(prev => [newNotification, ...prev]);
-    };
-
-    const handleRejectWorkflow = (workflowId, comment) => {
-        console.log('Rejecting workflow:', workflowId, 'with comment:', comment);
-        setShowApprovalWorkflow(false);
-        setSelectedWorkflow(null);
-        
-        const newNotification = {
-            id: Date.now(),
-            type: 'APPROVAL_REJECTED',
-            title: t('workflowRejected'),
-            message: t('workflowRejectedMessage', { title: selectedWorkflow?.title }),
-            read: false,
-            createdAt: new Date().toISOString()
-        };
-        setNotifications(prev => [newNotification, ...prev]);
-    };
-
-    const handlePermissionChange = async (updatedPermissions) => {
-        try {
-            const token = localStorage.getItem('authToken');
-            
-            for (const [roleId, rolePermissions] of Object.entries(updatedPermissions)) {
-                await axios.put(`${API_BASE_URL}/permissions/roles`, 
-                    { roleId: parseInt(roleId), permissions: rolePermissions },
-                    { headers: { Authorization: `Bearer ${token}` } }
-                );
-            }
-            
-            setPermissions(updatedPermissions);
-            toast.success(t('permissionsUpdated'));
-            setShowPermissions(false);
-        } catch (error) {
-            console.error('Error updating permissions:', error);
-            toast.error(t('failedUpdatePermissions'));
-        }
-    };
-
-    // Sub-Components
-    const NotificationBell = () => {
-        const unreadCount = notifications.filter(n => !n.read).length;
-        
-        return (
-            <button
-                onClick={() => setShowNotifications(true)}
-                className="relative p-2 text-gray-600 hover:text-gray-800 transition"
-            >
-                <Bell className="w-6 h-6" />
-                {unreadCount > 0 && (
-                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                        {unreadCount}
-                    </span>
-                )}
-            </button>
-        );
-    };
-
-    const EnhancedActions = ({ user }) => (
-        <div className="flex justify-center space-x-1">
-            <button
-                onClick={() => {
-                    setSelectedUser(user);
-                    setShowProfile(true);
-                }}
-                className="p-2 text-blue-600 hover:text-blue-800 transition"
-                title={t('viewProfile')}
-            >
-                <Eye className="w-4 h-4" />
-            </button>
-            <button
-                onClick={() => {
-                    setSelectedUser(user);
-                    setShowTaskAssignment(true);
-                }}
-                className="p-2 text-purple-600 hover:text-purple-800 transition"
-                title={t('assignTaskWorkflow')}
-            >
-                <ListTodo className="w-4 h-4" />
-            </button>
-            <button
-                onClick={() => handleToggleStatus(user.id, user.isActive)}
-                disabled={user.isUpdating || user.roleId === 1}
-                className={`p-2 rounded transition ${
-                    user.isUpdating 
-                        ? 'bg-gray-400 cursor-not-allowed text-white'
-                        : user.roleId === 1 
-                            ? 'bg-gray-300 text-gray-600 cursor-not-allowed'
-                            : user.isActive 
-                                ? 'bg-red-600 hover:bg-red-700 text-white' 
-                                : 'bg-green-600 hover:bg-green-700 text-white'
-                }`}
-                title={user.isActive ? t('deactivate') : t('activate')}
-            >
-                {user.isUpdating ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                    <ToggleRight className="w-4 h-4" />
-                )}
-            </button>
-        </div>
-    );
-
-    const WorkflowSummaryCards = () => {
-        const unreadNotifications = notifications.filter(n => !n.read).length;
-        const pendingApprovals = mockWorkflows.filter(w => w.status === 'PENDING').length;
-
-        return (
-            <div className="grid grid-cols-4 gap-4 mb-6">
-                <div 
-                    className="bg-white p-4 rounded-lg shadow border border-blue-200 cursor-pointer hover:bg-blue-50 transition-colors"
-                    onClick={() => setShowNotifications(true)}
-                >
-                    <div className="flex items-center justify-between">
-                        <div>
-                            <p className="text-sm text-gray-500">{t('unreadNotifications')}</p>
-                            <p className="text-2xl font-bold text-blue-600">{unreadNotifications}</p>
-                        </div>
-                        <div className="relative">
-                            <Bell className="w-8 h-8 text-blue-500" />
-                            {unreadNotifications > 0 && (
-                                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                                    {unreadNotifications}
-                                </span>
-                            )}
-                        </div>
-                    </div>
-                </div>
-
-                <div 
-                    className="bg-white p-4 rounded-lg shadow border border-orange-200 cursor-pointer hover:bg-orange-50 transition-colors"
-                    onClick={() => {
-                        setSelectedWorkflow(mockWorkflows[0]);
-                        setShowApprovalWorkflow(true);
-                    }}
-                >
-                    <div className="flex items-center justify-between">
-                        <div>
-                            <p className="text-sm text-gray-500">{t('pendingApprovals')}</p>
-                            <p className="text-2xl font-bold text-orange-600">{pendingApprovals}</p>
-                        </div>
-                        <CheckSquare className="w-8 h-8 text-orange-500" />
-                    </div>
-                </div>
-
-                <div className="bg-white p-4 rounded-lg shadow border border-red-200">
-                    <div className="flex items-center justify-between">
-                        <div>
-                            <p className="text-sm text-gray-500">{t('overdueTasks')}</p>
-                            <p className="text-2xl font-bold text-red-600">{workflowStats.overdueTasks || 0}</p>
-                        </div>
-                        <AlertCircle className="w-8 h-8 text-red-500" />
-                    </div>
-                </div>
-
-                <div className="bg-white p-4 rounded-lg shadow border border-green-200">
-                    <div className="flex items-center justify-between">
-                        <div>
-                            <p className="text-sm text-gray-500">{t('avgCompletion')}</p>
-                            <p className="text-2xl font-bold text-green-600">{workflowStats.avgTaskCompletion || '0%'}</p>
-                        </div>
-                        <Workflow className="w-8 h-8 text-green-500" />
-                    </div>
-                </div>
-            </div>
-        );
-    };
-
-    const EmptyTableState = () => (
-        <tr>
-            <td colSpan="5" className="px-6 py-12 text-center text-gray-500 text-lg">
-                {t('noUsersFound')}
-            </td>
-        </tr>
-    );
-
-    // Main Return
-    return (
-      <div className="space-y-6">
-          {/* Loading State */}
-          {loading && users.length === 0 && (
-              <div className="flex justify-center items-center min-h-[50vh]">
-                  <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
-                  <p className="ml-3 text-lg text-gray-600">{t('loadingUserList')}</p>
-              </div>
-          )}
-          
-          {/* Error State */}
-          {error && !users.length && (
-              <div className="p-4 sm:p-8 text-center min-h-[50vh]">
-                  <h1 className="text-xl sm:text-3xl font-bold text-red-600 mb-4">{t('error')}</h1>
-                  <p className="text-gray-600 text-sm sm:text-base">{error}</p>
-                  <button onClick={fetchUsers} className="mt-4 text-blue-600 hover:underline text-sm sm:text-base">{t('tryAgain')}</button>
-              </div>
-          )}
-            
-            {/* Main Content */}
-            <div className="max-w-7xl mx-auto">
-                {/* Header Section */}
-                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
-                    <div>
-                        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 flex items-center">
-                            <Users className="w-6 h-6 sm:w-7 sm:h-7 mr-2 sm:mr-3 text-blue-600" />
-                            {t('systemUserManagement')} ({users.length})
-                        </h1>
-                        <p className="text-gray-600 mt-2 text-sm sm:text-base">
-                            {t('manageUserRoles')}
-                        </p>
-                    </div>
-                    <div className="flex items-center space-x-2 sm:space-x-3">
-                        <NotificationBell />
-                        <button 
-                            onClick={() => setShowPermissions(true)}
-                            className="px-3 py-2 sm:px-4 sm:py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 flex items-center text-sm"
-                        >
-                            <Shield className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
-                            <span className="hidden sm:inline">{t('permissions')}</span>
-                        </button>
-                        <button className="px-3 py-2 sm:px-4 sm:py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center text-sm">
-                            <User className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
-                            <span className="hidden sm:inline">{t('addUser')}</span>
-                        </button>
-                        <button 
-                            onClick={fetchUsers} 
-                            className="flex items-center text-sm font-medium text-blue-600 hover:text-blue-800 transition"
-                            disabled={loading}
-                        >
-                            <Loader2 className={`w-3 h-3 sm:w-4 sm:h-4 mr-1 ${loading ? 'animate-spin' : ''}`} />
-                            <span className="hidden sm:inline">{t('refresh')}</span>
-                        </button>
-                    </div>
-                </div>
-
-                {/* Workflow Summary Cards */}
-                <WorkflowSummaryCards />
-
-                {/* Activity Summary Cards */}
-                <EnhancedSummaryCards activityStats={activityStats} />
-
-                {/* Enhanced User Table */}
-                <div className="bg-white shadow-xl rounded-xl overflow-hidden border border-gray-200">
-                    <div className="overflow-x-auto">
-                        <table className="min-w-full divide-y divide-gray-200">
-                            <thead className="bg-gray-50">
-                                <tr>
-                                    <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t('userDetails')}</th>
-                                    <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden sm:table-cell">{t('roleDepartment')}</th>
-                                    <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t('status')}</th>
-                                    <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell">{t('activity')}</th>
-                                    <th className="px-4 sm:px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">{t('actions')}</th>
-                                </tr>
-                            </thead>
-                            <tbody className="bg-white divide-y divide-gray-100">
-                                {users.map((user) => {
-                                    const activity = getActivityStatus(user.lastLoginDate);
-                                    
-                                    return (
-                                    <tr key={user.id} className="hover:bg-blue-50/50 transition duration-150">
-                                        {/* Enhanced User Details */}
-                                        <td className="px-4 sm:px-6 py-4">
-                                        <div className="flex items-center">
-                                            <div className="flex-shrink-0 w-8 h-8 sm:w-10 sm:h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                                            <User className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" />
-                                            </div>
-                                            <div className="ml-3">
-                                            <div className="text-sm font-medium text-gray-900">{user.name || t('na')}</div>
-                                            <div className="text-xs text-gray-500 flex items-center">
-                                                <Mail className="w-3 h-3 mr-1" />
-                                                {user.email}
-                                            </div>
-                                            {user.employeeId && (
-                                                <div className="text-xs text-gray-400 flex items-center mt-1">
-                                                <IdCard className="w-3 h-3 mr-1" />
-                                                {t('id')}: {user.employeeId}
-                                                </div>
-                                            )}
-                                            {/* Mobile: Show role and department */}
-                                            <div className="sm:hidden mt-1">
-                                                <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                                                user.roleId === 1 ? 'bg-indigo-100 text-indigo-800' :
-                                                user.roleId === 2 ? 'bg-green-100 text-green-800' :
-                                                user.roleId === 3 ? 'bg-yellow-100 text-yellow-800' :
-                                                'bg-gray-100 text-gray-800'
-                                                }`}>
-                                                {user.role?.name || t('unknown')}
-                                                </span>
-                                                {user.department && (
-                                                <div className="text-xs text-gray-600 mt-1">
-                                                    {user.department}
-                                                </div>
-                                                )}
-                                            </div>
-                                            </div>
-                                        </div>
-                                        </td>
-                                    
-                                    {/* Role & Department - Desktop */}
-                                    <td className="px-4 sm:px-6 py-4 hidden sm:table-cell">
-                                        <div className="space-y-1">
-                                            <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                                            user.roleId === 1 ? 'bg-indigo-100 text-indigo-800' :
-                                            user.roleId === 2 ? 'bg-green-100 text-green-800' :
-                                            user.roleId === 3 ? 'bg-yellow-100 text-yellow-800' :
-                                            'bg-gray-100 text-gray-800'
-                                            }`}>
-                                            {user.role?.name || t('unknownRole')}
-                                            </span>
-                                            {user.department && (
-                                            <div className="flex items-center text-xs text-gray-600">
-                                                <Building className="w-3 h-3 mr-1" />
-                                                {user.department}
-                                            </div>
-                                            )}
-                                            {user.jobTitle && (
-                                            <div className="flex items-center text-xs text-gray-600">
-                                                <Briefcase className="w-3 h-3 mr-1" />
-                                                {user.jobTitle}
-                                            </div>
-                                            )}
-                                        </div>
-                                        </td>
-                                        
-                                        {/* Status */}
-                                        <td className="px-4 sm:px-6 py-4">
-                                        <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                                            user.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                                        }`}>
-                                            <div className="flex items-center gap-1">
-                                            {user.isActive ? <CheckCircle className="w-3 h-3" /> : <XCircle className="w-3 h-3" />}
-                                            {user.isActive ? t('active') : t('inactive')}
-                                            </div>
-                                        </span>
-                                        </td>
-                                        
-                                        {/* Activity - Desktop */}
-                                        <td className="px-4 sm:px-6 py-4 hidden md:table-cell">
-                                        <div className={`px-2 py-1 text-xs font-medium rounded-full ${activity.bg} ${activity.color}`}>
-                                            {activity.text}
-                                        </div>
-                                        <div className="text-xs text-gray-500 mt-1">
-                                            {user.lastLoginDate 
-                                            ? new Date(user.lastLoginDate).toLocaleDateString()
-                                            : t('neverLoggedIn')
-                                            }
-                                        </div>
-                                        </td>
-
-                                    {/* Enhanced Actions */}
-                                    <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
-                                        <EnhancedActions user={user} />
-                                        </td>
-                                    </tr>
-                                    );
-                                })}
-                                
-                                {!users.length && !loading && !error && <EmptyTableState />}
-                                </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-            
-
-            {/* Modals */}
-            <UserProfilePanel 
-                user={selectedUser}
-                isOpen={showProfile}
-                onClose={() => setShowProfile(false)}
-                onUpdate={fetchUsers}
-                onAssignTask={(user) => {
-                    setSelectedUser(user);
-                    setShowTaskAssignment(true);
-                }}
-            />
-
-            {showPermissions && (
-                <PermissionMatrix 
-                    roles={roles}
-                    permissions={permissions}
-                    onPermissionChange={handlePermissionChange}
-                    onClose={() => setShowPermissions(false)}
-                />
-            )}
-
-            <TaskAssignmentModal
-                user={selectedUser}
-                isOpen={showTaskAssignment}
-                onClose={() => setShowTaskAssignment(false)}
-                onTaskAssigned={fetchUsers}
-            />
-
-            <NotificationCenter
-                isOpen={showNotifications}
-                onClose={() => setShowNotifications(false)}
-                notifications={notifications}
-                onMarkAsRead={handleMarkAsRead}
-                onMarkAllAsRead={handleMarkAllAsRead}
-            />
-
-            {showApprovalWorkflow && (
-                <ApprovalWorkflow
-                    workflow={selectedWorkflow}
-                    onApprove={handleApproveWorkflow}
-                    onReject={handleRejectWorkflow}
-                    onClose={() => {
-                        setShowApprovalWorkflow(false);
-                        setSelectedWorkflow(null);
-                    }}
-                />
-            )}
-        </div>
-    );
-};
-
-// --- Main Page Component (Updated with ResponsiveLayout) ---
-const UserManagementPage = () => {
-  const { t } = useTranslation(); // ADD THIS HOOK
+// ── Main Page ──────────────────────────────────────────────────────
+export default function UsersPage() {
+  const { t, i18n } = useTranslation();
+  const isRTL = i18n.language === 'ar';
   const [users, setUsers] = useState([]);
+  const [total, setTotal] = useState(0);
+  const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-
-  const fetchUsers = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-          const token = localStorage.getItem('authToken');
-          if (!token) throw new Error(t('authTokenMissing'));
-
-          const response = await axios.get(API_BASE_URL, {
-              headers: { Authorization: `Bearer ${token}` }
-          });
-          
-          setUsers(response.data.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)));
-      } catch (err) {
-          console.error("Failed to fetch users:", err);
-          setError(err.response?.data?.error || err.message || t('couldNotLoadUserData'));
-          toast.error(err.response?.data?.error || t('failedLoadUsers'));
-      } finally {
-          setLoading(false);
-      }
-  };
+  const [filters, setFilters] = useState({ search: '', role: '', status: '', department: '', twoFa: '', page: 1, pageSize: 20 });
+  const [selectedIds, setSelectedIds] = useState(new Set());
+  const [drawerUser, setDrawerUser] = useState(null);
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [showInviteModal, setShowInviteModal] = useState(false);
+  const [showImportModal, setShowImportModal] = useState(false);
+  const [actionModal, setActionModal] = useState(null); // { type, user }
+  const [bulkLoading, setBulkLoading] = useState(false);
+  const [token, setToken] = useState('');
 
   useEffect(() => {
-      fetchUsers();
+    const t = localStorage.getItem('authToken') || '';
+    setToken(t);
   }, []);
-  
-  const handleToggleStatus = async (userId, currentStatus) => {
-      const newStatus = !currentStatus;
-      const action = newStatus ? t('activate') : t('deactivate');
-      
-      if (!window.confirm(t('confirmToggleStatus', { action }))) {
-          return;
-      }
 
-      const userIndex = users.findIndex(u => u.id === userId);
-      if (userIndex === -1) return;
+  const fetchStats = useCallback(async () => {
+    if (!token) return;
+    try {
+      const res = await fetch(`${API_BASE}/users/stats`, { headers: { Authorization: `Bearer ${token}` } });
+      const data = await res.json();
+      setStats(data);
+    } catch {}
+  }, [token]);
 
-      const updatedUsers = [...users];
-      updatedUsers[userIndex] = { ...updatedUsers[userIndex], isUpdating: true };
-      setUsers(updatedUsers);
+  const fetchUsers = useCallback(async () => {
+    if (!token) return;
+    setLoading(true);
+    try {
+      const params = new URLSearchParams();
+      if (filters.search) params.set('search', filters.search);
+      if (filters.role) params.set('role', filters.role);
+      if (filters.status === 'active') params.set('isActive', 'true');
+      if (filters.status === 'inactive') params.set('isActive', 'false');
+      if (filters.status === 'suspended') params.set('isSuspended', 'true');
+      if (filters.twoFa) params.set('twoFactorEnabled', filters.twoFa);
+      params.set('page', filters.page);
+      params.set('pageSize', filters.pageSize);
+      const res = await fetch(`${API_BASE}/users?${params}`, { headers: { Authorization: `Bearer ${token}` } });
+      const data = await res.json();
+      setUsers(data.users || []);
+      setTotal(data.total || 0);
+    } catch {}
+    setLoading(false);
+  }, [token, filters]);
 
-      try {
-          const token = localStorage.getItem('authToken');
-          if (!token) throw new Error(t('authTokenMissing'));
+  useEffect(() => { fetchStats(); }, [fetchStats]);
+  useEffect(() => { fetchUsers(); }, [fetchUsers]);
 
-          await axios.patch(`${API_BASE_URL}/${userId}/status`, 
-              { isActive: newStatus },
-              { headers: { Authorization: `Bearer ${token}` } }
-          );
-
-          toast.success(t('userStatusUpdated', { status: newStatus ? t('activated') : t('deactivated') }));
-          await fetchUsers();
-
-      } catch (err) {
-          updatedUsers[userIndex] = { ...updatedUsers[userIndex], isUpdating: false };
-          setUsers(updatedUsers);
-          
-          console.error("Failed to toggle status:", err);
-          toast.error(err.response?.data?.error || t('failedToggleStatus', { action }));
-      }
+  const handleExport = async () => {
+    try {
+      const res = await fetch(`${API_BASE}/users/export`, { headers: { Authorization: `Bearer ${token}` } });
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a'); a.href = url; a.download = 'users-export.xlsx'; a.click();
+      URL.revokeObjectURL(url);
+    } catch {}
   };
-  
-  return (
-      <ResponsiveLayout>
-          <UserManagementContent 
-              users={users} 
-              loading={loading} 
-              error={error} 
-              fetchUsers={fetchUsers} 
-              handleToggleStatus={handleToggleStatus} 
-          />
-      </ResponsiveLayout>
-  );
-};
 
-export default UserManagementPage;
+  const handleBulkAction = async (action) => {
+    if (selectedIds.size === 0) return;
+    setBulkLoading(true);
+    await fetch(`${API_BASE}/users/bulk`, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ userIds: [...selectedIds], action }) });
+    setBulkLoading(false);
+    setSelectedIds(new Set());
+    fetchUsers(); fetchStats();
+  };
+
+  const handleAction = (type, user) => {
+    if (type === 'view') { setDrawerUser(user); return; }
+    if (type === 'audit') { window.open(`/dashboard/admin/audit-log?userId=${user.id}`, '_blank'); return; }
+    setActionModal({ type, user });
+  };
+
+  const handleActionDone = () => {
+    setActionModal(null);
+    setDrawerUser(null);
+    fetchUsers(); fetchStats();
+  };
+
+  const toggleSelect = (id) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedIds.size === users.length) setSelectedIds(new Set());
+    else setSelectedIds(new Set(users.map(u => u.id)));
+  };
+
+  const setFilter = (key, val) => setFilters(f => ({ ...f, [key]: val, page: 1 }));
+
+  const btnPrimary = { padding: '9px 16px', background: '#0A1628', color: '#fff', border: 'none', borderRadius: 8, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 7, fontSize: 13, fontWeight: 600 };
+  const btnOutline = { padding: '9px 16px', background: '#fff', color: '#374151', border: '1px solid #D1D5DB', borderRadius: 8, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 7, fontSize: 13, fontWeight: 500 };
+
+  return (
+    <div dir={isRTL ? 'rtl' : 'ltr'} style={{ padding: '24px 28px', background: '#F8FAFC', minHeight: '100vh', fontFamily: 'Inter, sans-serif' }}>
+      <style>{`.spin { animation: spin 1s linear infinite; } @keyframes spin { to { transform: rotate(360deg); } }`}</style>
+
+      {/* Page Header */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24, flexWrap: 'wrap', gap: 12 }}>
+        <div>
+          <h1 style={{ margin: 0, fontSize: 24, fontWeight: 800, color: '#0A1628' }}>User Management</h1>
+          <p style={{ margin: '4px 0 0', color: '#6B7280', fontSize: 14 }}>{total} users total</p>
+        </div>
+        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+          <button style={btnOutline} onClick={handleExport}><Download size={15} /> Export</button>
+          <button style={btnOutline} onClick={() => setShowImportModal(true)}><Upload size={15} /> Import</button>
+          <button style={btnOutline} onClick={() => setShowInviteModal(true)}><Mail size={15} /> Invite</button>
+          <button style={btnPrimary} onClick={() => setShowAddModal(true)}><Plus size={15} /> Add User</button>
+        </div>
+      </div>
+
+      {/* Security Summary Widget */}
+      {stats && (
+        <div style={{ display: 'flex', gap: 16, marginBottom: 24, flexWrap: 'wrap' }}>
+          <StatCard icon={<Users size={20} />} label="Total Users" value={stats.totalUsers} color="#2563EB" />
+          <StatCard icon={<UserCheck size={20} />} label="Active Users" value={stats.activeUsers} color="#22C55E" />
+          <StatCard icon={<UserX size={20} />} label="Suspended" value={stats.suspendedUsers} color="#EF4444" />
+          <StatCard icon={<Shield size={20} />} label="2FA Enabled" value={`${stats.twoFactorEnabledCount} (${stats.twoFactorEnabledPercent ?? 0}%)`} color="#B8960A" />
+        </div>
+      )}
+
+      {/* Filter Bar */}
+      <div style={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: 12, padding: '14px 16px', marginBottom: 16, display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
+        <div style={{ position: 'relative', flex: '1 1 220px', minWidth: 180 }}>
+          <Search size={15} style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: '#9CA3AF' }} />
+          <input value={filters.search} onChange={e => setFilter('search', e.target.value)} placeholder="Search name, email, ID..."
+            style={{ ...inputStyle, paddingLeft: 32 }} />
+        </div>
+        <select style={{ ...selectStyle, flex: '0 1 150px', minWidth: 130 }} value={filters.role} onChange={e => setFilter('role', e.target.value)}>
+          <option value="">All Roles</option>
+          <option value="1">Executive</option>
+          <option value="2">Proc. Manager</option>
+          <option value="3">Proc. Officer</option>
+          <option value="4">Vendor</option>
+        </select>
+        <select style={{ ...selectStyle, flex: '0 1 140px', minWidth: 120 }} value={filters.status} onChange={e => setFilter('status', e.target.value)}>
+          <option value="">All Status</option>
+          <option value="active">Active</option>
+          <option value="inactive">Inactive</option>
+          <option value="suspended">Suspended</option>
+        </select>
+        <select style={{ ...selectStyle, flex: '0 1 130px', minWidth: 110 }} value={filters.twoFa} onChange={e => setFilter('twoFa', e.target.value)}>
+          <option value="">All 2FA</option>
+          <option value="true">2FA On</option>
+          <option value="false">2FA Off</option>
+        </select>
+        <button onClick={() => setFilters({ search: '', role: '', status: '', department: '', twoFa: '', page: 1, pageSize: 20 })}
+          style={{ ...btnOutline, padding: '9px 12px' }}><RefreshCw size={14} /></button>
+      </div>
+
+      {/* Bulk Actions Toolbar */}
+      {selectedIds.size > 0 && (
+        <div style={{ background: '#B8960A', borderRadius: 10, padding: '10px 16px', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+          <span style={{ color: '#fff', fontWeight: 600, fontSize: 14 }}>{selectedIds.size} selected</span>
+          <button onClick={() => handleBulkAction('activate')} disabled={bulkLoading} style={{ padding: '6px 14px', background: 'rgba(255,255,255,0.15)', color: '#fff', border: '1px solid rgba(255,255,255,0.3)', borderRadius: 6, cursor: 'pointer', fontSize: 13 }}>Activate</button>
+          <button onClick={() => handleBulkAction('deactivate')} disabled={bulkLoading} style={{ padding: '6px 14px', background: 'rgba(255,255,255,0.15)', color: '#fff', border: '1px solid rgba(255,255,255,0.3)', borderRadius: 6, cursor: 'pointer', fontSize: 13 }}>Deactivate</button>
+          <button onClick={() => handleBulkAction('suspend')} disabled={bulkLoading} style={{ padding: '6px 14px', background: 'rgba(255,255,255,0.15)', color: '#fff', border: '1px solid rgba(255,255,255,0.3)', borderRadius: 6, cursor: 'pointer', fontSize: 13 }}>Suspend</button>
+          <button onClick={() => handleBulkAction('reset-password')} disabled={bulkLoading} style={{ padding: '6px 14px', background: 'rgba(255,255,255,0.15)', color: '#fff', border: '1px solid rgba(255,255,255,0.3)', borderRadius: 6, cursor: 'pointer', fontSize: 13 }}>Reset Passwords</button>
+          {bulkLoading && <Loader2 size={16} color="#fff" className="spin" />}
+          <button onClick={() => setSelectedIds(new Set())} style={{ marginLeft: 'auto', background: 'none', border: 'none', color: 'rgba(255,255,255,0.8)', cursor: 'pointer' }}><X size={16} /></button>
+        </div>
+      )}
+
+      {/* User Table */}
+      <div style={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: 12, overflow: 'auto' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 900 }}>
+          <thead>
+            <tr style={{ background: '#F9FAFB', borderBottom: '1px solid #E5E7EB' }}>
+              <th style={{ padding: '12px 16px', textAlign: 'left', width: 36 }}>
+                <button onClick={toggleSelectAll} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#6B7280', padding: 0 }}>
+                  {selectedIds.size === users.length && users.length > 0 ? <CheckSquare size={16} color="#0A1628" /> : <Square size={16} />}
+                </button>
+              </th>
+              {['User', 'Employee ID', 'Title / Dept', 'Role', 'Status', 'Last Login', '2FA', ''].map(h => (
+                <th key={h} style={{ padding: '12px 14px', textAlign: 'left', fontSize: 12, fontWeight: 700, color: '#6B7280', textTransform: 'uppercase', letterSpacing: '0.04em', whiteSpace: 'nowrap' }}>{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {loading
+              ? <tr><td colSpan={9} style={{ textAlign: 'center', padding: 40, color: '#9CA3AF' }}><Loader2 size={24} className="spin" style={{ display: 'inline' }} /></td></tr>
+              : users.length === 0
+              ? <tr><td colSpan={9} style={{ textAlign: 'center', padding: 40, color: '#9CA3AF' }}>No users found.</td></tr>
+              : users.map(user => (
+                <tr key={user.id} onClick={() => setDrawerUser(user)}
+                  style={{ borderBottom: '1px solid #F3F4F6', cursor: 'pointer', transition: 'background 0.1s' }}
+                  onMouseEnter={e => e.currentTarget.style.background = '#F9FAFB'} onMouseLeave={e => e.currentTarget.style.background = '#fff'}>
+                  <td style={{ padding: '12px 16px' }} onClick={e => e.stopPropagation()}>
+                    <button onClick={() => toggleSelect(user.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#6B7280', padding: 0 }}>
+                      {selectedIds.has(user.id) ? <CheckSquare size={16} color="#0A1628" /> : <Square size={16} />}
+                    </button>
+                  </td>
+                  <td style={{ padding: '12px 14px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                      <Avatar user={user} />
+                      <div>
+                        <div style={{ fontSize: 13, fontWeight: 600, color: '#111827' }}>{user.name}</div>
+                        <div style={{ fontSize: 12, color: '#9CA3AF' }}>{user.email}</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td style={{ padding: '12px 14px', fontSize: 13, color: '#374151' }}>{user.employeeId || '—'}</td>
+                  <td style={{ padding: '12px 14px' }}>
+                    <div style={{ fontSize: 13, color: '#374151' }}>{user.jobTitle || '—'}</div>
+                    <div style={{ fontSize: 12, color: '#9CA3AF' }}>{user.department || '—'}</div>
+                  </td>
+                  <td style={{ padding: '12px 14px' }}><RoleBadge roleId={user.roleId} /></td>
+                  <td style={{ padding: '12px 14px' }}><StatusPill user={user} /></td>
+                  <td style={{ padding: '12px 14px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+                      <span style={{ width: 8, height: 8, borderRadius: '50%', background: getLastLoginDot(user.lastLoginDate), flexShrink: 0 }} />
+                      <span style={{ fontSize: 12, color: '#6B7280' }}>{user.lastLoginDate ? formatDate(user.lastLoginDate) : 'Never'}</span>
+                    </div>
+                  </td>
+                  <td style={{ padding: '12px 14px', textAlign: 'center' }}>
+                    {user.twoFactorEnabled
+                      ? <Lock size={14} color="#B8960A" />
+                      : <Lock size={14} color="#D1D5DB" />}
+                  </td>
+                  <td style={{ padding: '12px 10px' }} onClick={e => e.stopPropagation()}>
+                    <UserActionMenu user={user} onAction={handleAction} />
+                  </td>
+                </tr>
+              ))}
+          </tbody>
+        </table>
+        {/* Pagination */}
+        {total > filters.pageSize && (
+          <div style={{ padding: '12px 16px', borderTop: '1px solid #F3F4F6', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <span style={{ fontSize: 13, color: '#6B7280' }}>Showing {((filters.page - 1) * filters.pageSize) + 1}–{Math.min(filters.page * filters.pageSize, total)} of {total}</span>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button onClick={() => setFilter('page', Math.max(1, filters.page - 1))} disabled={filters.page === 1}
+                style={{ ...btnOutline, padding: '6px 12px', opacity: filters.page === 1 ? 0.4 : 1 }}>← Prev</button>
+              <button onClick={() => setFilter('page', filters.page + 1)} disabled={filters.page * filters.pageSize >= total}
+                style={{ ...btnOutline, padding: '6px 12px', opacity: filters.page * filters.pageSize >= total ? 0.4 : 1 }}>Next →</button>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Side Drawer backdrop */}
+      {drawerUser && <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.2)', zIndex: 499 }} onClick={() => setDrawerUser(null)} />}
+      {drawerUser && <UserDrawer user={drawerUser} onClose={() => setDrawerUser(null)} onAction={handleAction} token={token} onRefresh={fetchUsers} />}
+
+      {/* Modals */}
+      {showAddModal && <AddUserModal token={token} onClose={() => setShowAddModal(false)} onSaved={() => { setShowAddModal(false); fetchUsers(); fetchStats(); }} />}
+      {showInviteModal && <InviteUserModal token={token} onClose={() => setShowInviteModal(false)} />}
+      {showImportModal && <ImportUsersModal token={token} onClose={() => setShowImportModal(false)} onDone={() => { setShowImportModal(false); fetchUsers(); fetchStats(); }} />}
+      {actionModal && <ActionModal type={actionModal.type} user={actionModal.user} token={token} onClose={() => setActionModal(null)} onDone={handleActionDone} />}
+    </div>
+  );
+}

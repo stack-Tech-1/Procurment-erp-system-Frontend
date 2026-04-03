@@ -1,7 +1,7 @@
 // C:\Users\SMC\Documents\GitHub\procurement-erp-system\frontend\src\app\signup\page.js
 "use client";
-import React, { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import React, { useState, useEffect, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useTranslation } from 'react-i18next';
 import ReCAPTCHA from "react-google-recaptcha";
 import AuthLayoutV2 from "@/components/layout/AuthLayoutV2";
@@ -192,9 +192,27 @@ const BUSINESS_TYPES = [
 const DEPARTMENTS = ["Procurement", "Contracts", "Finance", "Technical", "Admin"];
 
 
-// ─── Main Component ───────────────────────────────────────────────────────────
-export default function SignupPage() {
+// ─── Invitation Banner ────────────────────────────────────────────────────────
+function InvitationBanner({ invitationData, invitationError }) {
+  if (invitationError) return (
+    <div style={{ background: '#FEE2E2', border: '1px solid #FECACA', borderRadius: 10, padding: '12px 16px', marginBottom: 16, fontSize: 14, color: '#991B1B', display: 'flex', alignItems: 'center', gap: 10 }}>
+      <svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd"/></svg>
+      {invitationError}
+    </div>
+  );
+  if (!invitationData) return null;
+  return (
+    <div style={{ background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: 10, padding: '12px 16px', marginBottom: 16, fontSize: 14, color: '#1E40AF', display: 'flex', alignItems: 'center', gap: 10 }}>
+      <svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd"/></svg>
+      You've been invited as <strong style={{ marginLeft: 4 }}>{invitationData.roleName}</strong>. Your email is pre-filled and cannot be changed.
+    </div>
+  );
+}
+
+// ─── Main Component Inner (needs useSearchParams) ─────────────────────────────
+function SignupPageInner() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { t } = useTranslation();
 
   const [activeTab, setActiveTab]       = useState("supplier");
@@ -205,6 +223,9 @@ export default function SignupPage() {
   const [captchaToken, setCaptchaToken] = useState(null);
   const [showTermsModal, setShowTermsModal] = useState(false);
   const [branding, setBranding]         = useState(DEFAULT_BRANDING);
+  const [invitationToken, setInvitationToken] = useState(null);
+  const [invitationData, setInvitationData]   = useState(null);
+  const [invitationError, setInvitationError] = useState('');
 
   const [formData, setFormData] = useState({
     // Step 1 — both tabs
@@ -222,6 +243,25 @@ export default function SignupPage() {
   });
 
   useEffect(() => { setMounted(true); }, []);
+
+  // Invitation token flow
+  useEffect(() => {
+    const token = searchParams?.get('invitation');
+    if (!token) return;
+    setInvitationToken(token);
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/invitation/${token}`)
+      .then(r => r.json())
+      .then(data => {
+        if (data.error) {
+          setInvitationError(data.error);
+        } else {
+          setInvitationData(data);
+          setFormData(prev => ({ ...prev, email: data.email }));
+          setActiveTab('staff'); // Invitations are for staff users
+        }
+      })
+      .catch(() => setInvitationError('Failed to validate invitation link.'));
+  }, [searchParams]);
 
   useEffect(() => {
     fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/branding/public`)
@@ -358,6 +398,11 @@ export default function SignupPage() {
         }
       }
 
+      // Mark invitation as used if applicable
+      if (invitationToken) {
+        await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/invitation/${invitationToken}/use`, { method: 'PATCH' }).catch(() => {});
+      }
+
       alert("Account created successfully! Please check your email for verification.");
       router.push("/login");
     } catch (err) {
@@ -432,10 +477,17 @@ export default function SignupPage() {
             <p className="text-white/70 text-sm">{stepLabels[currentStep - 1]}</p>
           </div>
 
+          {/* Invitation Banner */}
+          {(invitationData || invitationError) && (
+            <div className="mb-4">
+              <InvitationBanner invitationData={invitationData} invitationError={invitationError} />
+            </div>
+          )}
+
           {/* Tab switcher */}
           <div className={`mb-6 transform transition-all duration-700 delay-100 ${mounted ? "translate-y-0 opacity-100" : "-translate-y-4 opacity-0"}`}>
             <div className="flex rounded-xl overflow-hidden border border-white/20">
-              <button type="button" onClick={() => handleTabSwitch("supplier")}
+              <button type="button" onClick={() => !invitationData && handleTabSwitch("supplier")}
                 className={`flex-1 py-3 px-4 text-sm font-bold transition-all duration-300 ${activeTab === "supplier" ? "bg-[#B8960A] text-white shadow-inner" : "bg-[#0A1628]/60 text-white/60 hover:text-white hover:bg-[#0A1628]"}`}>
                 {t('supplierRegistration')}
               </button>
@@ -778,5 +830,14 @@ export default function SignupPage() {
         </div>
       </div>
     </AuthLayoutV2>
+  );
+}
+
+// ─── Main export wrapped in Suspense (required for useSearchParams) ───────────
+export default function SignupPage() {
+  return (
+    <Suspense fallback={null}>
+      <SignupPageInner />
+    </Suspense>
   );
 }
