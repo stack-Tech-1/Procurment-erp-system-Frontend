@@ -28,6 +28,13 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [mounted, setMounted] = useState(false);
+  // 2FA challenge state
+  const [twoFAMode, setTwoFAMode] = useState(false);   // show 2FA screen
+  const [tempToken, setTempToken] = useState('');
+  const [twoFACode, setTwoFACode] = useState('');
+  const [twoFAError, setTwoFAError] = useState('');
+  const [useBackupCode, setUseBackupCode] = useState(false);
+  const [backupCode, setBackupCode] = useState('');
   const [captchaToken, setCaptchaToken] = useState(null);
   const [agreeToTerms, setAgreeToTerms] = useState(false);
   const [showTermsModal, setShowTermsModal] = useState(false);
@@ -94,7 +101,15 @@ export default function LoginPage() {
       });
 
       const data = await res.json();
-      if (!res.ok) throw new Error(data.message || "Invalid credentials");
+      if (!res.ok) throw new Error(data.message || data.error || "Invalid credentials");
+
+      // 2FA challenge required
+      if (data.requiresTwoFactor) {
+        setTempToken(data.tempToken);
+        setTwoFAMode(true);
+        setLoading(false);
+        return;
+      }
 
       localStorage.setItem("authToken", data.token);
       localStorage.setItem("user", JSON.stringify(data.user));
@@ -111,6 +126,47 @@ export default function LoginPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleTwoFAVerify = async () => {
+    if (!twoFACode || twoFACode.length !== 6) { setTwoFAError("Enter a 6-digit code."); return; }
+    setLoading(true); setTwoFAError('');
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/2fa/verify-login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tempToken, code: twoFACode }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Invalid code');
+      localStorage.setItem('authToken', data.token);
+      localStorage.setItem('user', JSON.stringify(data.user));
+      if (data.user.mustChangePassword) router.push('/change-password');
+      else if (data.user.roleId === 1) router.push('/dashboard/executive');
+      else if (data.user.roleId === 2) router.push('/dashboard/manager');
+      else if (data.user.roleId === 3) router.push('/dashboard/officer');
+      else if (data.user.roleId === 4) router.push('/vendor-dashboard');
+      else router.push('/');
+    } catch (e) { setTwoFAError(e.message || 'Verification failed'); }
+    setLoading(false);
+  };
+
+  const handleBackupCodeLogin = async () => {
+    if (!backupCode.trim()) { setTwoFAError('Enter your backup code.'); return; }
+    setLoading(true); setTwoFAError('');
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/profile/2fa/backup-code`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: formData.email, password: formData.password, backupCode: backupCode.trim() }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Invalid backup code');
+      localStorage.setItem('authToken', data.token);
+      localStorage.setItem('user', JSON.stringify(data.user));
+      router.push(data.user.roleId === 1 ? '/dashboard/executive' : data.user.roleId === 2 ? '/dashboard/manager' : data.user.roleId === 3 ? '/dashboard/officer' : '/vendor-dashboard');
+    } catch (e) { setTwoFAError(e.message || 'Failed'); }
+    setLoading(false);
   };
 
   const backgroundElement = (
@@ -190,7 +246,75 @@ export default function LoginPage() {
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-6">
+          {/* 2FA Challenge Screen */}
+          {twoFAMode && (
+            <div className="space-y-6">
+              <div className="text-center mb-4">
+                <div className="w-14 h-14 rounded-full bg-yellow-500/20 flex items-center justify-center mx-auto mb-3">
+                  <svg className="w-7 h-7 text-yellow-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                  </svg>
+                </div>
+                <h3 className="text-white font-bold text-xl">Two-Factor Authentication</h3>
+                <p className="text-white/60 text-sm mt-1">
+                  {useBackupCode ? "Enter one of your backup codes" : "Enter the 6-digit code from your authenticator app"}
+                </p>
+              </div>
+              {twoFAError && (
+                <div className="bg-red-500/20 border border-red-500/30 rounded-xl p-3 text-red-300 text-sm text-center">
+                  {twoFAError}
+                </div>
+              )}
+              {!useBackupCode ? (
+                <>
+                  <input
+                    value={twoFACode}
+                    onChange={e => setTwoFACode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                    maxLength={6}
+                    placeholder="000000"
+                    className="w-full p-4 bg-white/10 border border-white/20 rounded-2xl text-white text-3xl text-center tracking-widest font-mono focus:outline-none focus:ring-4 focus:ring-yellow-400/30 focus:border-yellow-400"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleTwoFAVerify}
+                    disabled={loading || twoFACode.length !== 6}
+                    className={`w-full py-4 rounded-2xl font-bold text-lg transition-all duration-300 flex items-center justify-center gap-2 ${twoFACode.length === 6 ? 'bg-gradient-to-r from-yellow-500 to-yellow-600 text-white' : 'bg-white/10 text-white/30 cursor-not-allowed'}`}
+                  >
+                    {loading ? '…' : 'Verify'}
+                  </button>
+                  <p className="text-center">
+                    <button type="button" onClick={() => setUseBackupCode(true)} className="text-yellow-300 text-sm hover:underline">
+                      Use a backup code instead
+                    </button>
+                  </p>
+                </>
+              ) : (
+                <>
+                  <input
+                    value={backupCode}
+                    onChange={e => setBackupCode(e.target.value)}
+                    placeholder="Enter backup code (e.g. A1B2C3D4)"
+                    className="w-full p-4 bg-white/10 border border-white/20 rounded-2xl text-white text-center tracking-wider font-mono focus:outline-none focus:ring-4 focus:ring-yellow-400/30 focus:border-yellow-400"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleBackupCodeLogin}
+                    disabled={loading || !backupCode}
+                    className="w-full py-4 bg-gradient-to-r from-yellow-500 to-yellow-600 text-white rounded-2xl font-bold text-lg"
+                  >
+                    {loading ? '…' : 'Use Backup Code'}
+                  </button>
+                  <p className="text-center">
+                    <button type="button" onClick={() => setUseBackupCode(false)} className="text-yellow-300 text-sm hover:underline">
+                      Use authenticator app instead
+                    </button>
+                  </p>
+                </>
+              )}
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit} className={`space-y-6 ${twoFAMode ? 'hidden' : ''}`}>
             {/* Email */}
             <div className="space-y-2">
               <label className="block text-sm font-bold text-white mb-2 flex items-center gap-2">

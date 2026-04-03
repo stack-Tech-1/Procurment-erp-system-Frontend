@@ -1,8 +1,8 @@
 // frontend/src/components/Topbar.js - ENHANCED DYNAMIC VERSION
 "use client";
 import { useState, useEffect } from 'react';
-import { 
-  Bell, 
+import {
+  Bell,
   UserCircle2,
   BadgeAlert,
   Settings,
@@ -11,7 +11,10 @@ import {
   Building,
   Shield,
   Briefcase,
-  Users
+  Users,
+  User,
+  Lock,
+  Palette
 } from 'lucide-react';
 import NotificationsPanel from './NotificationsPanel';
 import LanguageSwitcher from './LanguageSwitcher';
@@ -223,12 +226,20 @@ export default function Topbar() {
                   <p className="text-xs text-gray-400 mt-1">{userData?.jobTitle}</p>
                 </div>
                 
-                <button className="w-full flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
-                  <Settings size={16} />
-                  Account Settings
-                </button>
-                
-                <button 
+                <a href="/dashboard/profile" className="w-full flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
+                  <User size={16} />
+                  My Profile
+                </a>
+                <a href="/dashboard/profile?tab=security" className="w-full flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
+                  <Lock size={16} />
+                  Security Settings
+                </a>
+                <a href="/dashboard/profile?tab=appearance" className="w-full flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
+                  <Palette size={16} />
+                  Preferences
+                </a>
+                <div className="border-t border-gray-100 my-1" />
+                <button
                   onClick={handleLogout}
                   className="w-full flex items-center gap-3 px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
                 >
