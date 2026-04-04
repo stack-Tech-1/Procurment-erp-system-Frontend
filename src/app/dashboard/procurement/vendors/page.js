@@ -279,7 +279,33 @@ const VendorListPage = () => {
                         <div className="p-8 text-center text-gray-500">{t('loadingVendors')}</div>
                     ) : (
                         <div className="min-w-full">
-                            <table className="min-w-full divide-y divide-gray-200">
+                            {/* Mobile card list */}
+                            <div className="md:hidden divide-y divide-gray-100">
+                                {vendors.length === 0 ? (
+                                    <div className="p-8 text-center text-gray-500">{t('noVendorsMatch')}</div>
+                                ) : vendors.map((vendor) => (
+                                    <div key={vendor.id} className="p-4 hover:bg-gray-50">
+                                        <div className="flex justify-between items-start mb-2">
+                                            <div>
+                                                <p className="text-sm font-semibold text-gray-900">{vendor.name}</p>
+                                                <p className="text-xs text-gray-500">{vendor.vendorId}</p>
+                                            </div>
+                                            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${vendor.status === 'APPROVED' ? 'bg-green-100 text-green-800' : vendor.status === 'REJECTED' || vendor.status === 'NEEDS_RENEWAL' ? 'bg-red-100 text-red-800' : 'bg-yellow-100 text-yellow-800'}`}>
+                                                {translateStatus(vendor.status)}
+                                            </span>
+                                        </div>
+                                        <div className="flex justify-between items-center mt-2">
+                                            <span className="text-xs text-gray-500">{translateVendorType(vendor.vendorType)}</span>
+                                            <a href={`/dashboard/procurement/vendors/${vendor.id}`} className="text-sm text-blue-600 font-semibold">
+                                                {t('review')}
+                                            </a>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+
+                            {/* Desktop table */}
+                            <table className="hidden md:table min-w-full divide-y divide-gray-200">
                                 <thead className="bg-gray-50">
                                     <tr>
                                         {[

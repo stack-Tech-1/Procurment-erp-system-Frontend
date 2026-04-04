@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import axios from 'axios';
 import Link from 'next/link';
+import { useCountUp } from '@/hooks/useCountUp';
 
 const getAvatarColor = (index) => {
   const colors = [
@@ -742,9 +743,24 @@ useEffect(() => {
           )}
         </div>
         
-        <p className="text-2xl font-bold text-gray-900">{value}</p>
+        <AnimatedKPIValue value={value} />
         <p className="text-sm text-gray-600 mt-2">{subtitle}</p>
       </div>
+    );
+  };
+
+  // Animated KPI value helper — uses count-up for numeric values
+  const AnimatedKPIValue = ({ value: val }) => {
+    const numVal = typeof val === 'number' ? val : parseFloat(String(val).replace(/[^0-9.]/g, ''));
+    const hasPercent = typeof val === 'string' && val.includes('%');
+    const counted = useCountUp(isNaN(numVal) ? 0 : numVal);
+    if (isNaN(numVal)) {
+      return <p className="text-2xl font-bold text-gray-900">{val}</p>;
+    }
+    return (
+      <p className="text-2xl font-bold text-gray-900">
+        {counted.toLocaleString()}{hasPercent ? '%' : ''}
+      </p>
     );
   };
 

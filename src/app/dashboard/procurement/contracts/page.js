@@ -231,7 +231,32 @@ const ContractsPage = () => {
               </Link>
             </div>
           ) : (
-            <div className="overflow-x-auto">
+            {/* Mobile card list */}
+            <div className="md:hidden divide-y divide-gray-100">
+              {contracts.map((contract) => {
+                const statusCfg = getStatusConfig(contract.status);
+                return (
+                  <div key={contract.id} className="p-4 hover:bg-gray-50">
+                    <div className="flex justify-between items-start mb-1">
+                      <p className="text-sm font-semibold text-gray-900">{contract.contractNumber}</p>
+                      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${statusCfg.color}`}>
+                        {statusCfg.label}
+                      </span>
+                    </div>
+                    <p className="text-sm text-gray-700">{contract.vendor?.companyLegalName}</p>
+                    <div className="flex justify-between items-center mt-2 text-xs text-gray-500">
+                      <span>{contract.contractValue ? `$${(contract.contractValue / 1000).toFixed(0)}K` : 'N/A'}</span>
+                      <Link href={`/dashboard/procurement/contracts/${contract.id}`} className="text-blue-600 font-semibold text-sm">
+                        View
+                      </Link>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Desktop table */}
+            <div className="hidden md:block overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                   <tr>
@@ -300,6 +325,7 @@ const ContractsPage = () => {
                   ))}
                 </tbody>
               </table>
+            </div>
             </div>
           )}
         </div>

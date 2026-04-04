@@ -238,7 +238,33 @@ const IPCsPage = () => {
                 <p className="mt-2">Loading IPCs...</p>
               </div>
             ) : (
-              <table className="min-w-full divide-y divide-gray-200">
+              <>
+              {/* Mobile card list */}
+              <div className="md:hidden divide-y divide-gray-100">
+                {ipcs.length === 0 ? (
+                  <div className="p-8 text-center text-gray-500">No IPCs found.</div>
+                ) : ipcs.map((ipc) => {
+                  const netPayable = (ipc.currentValue || 0) - (ipc.deductions || 0);
+                  return (
+                    <div key={ipc.id} className="p-4 hover:bg-gray-50">
+                      <div className="flex justify-between items-start mb-1">
+                        <p className="text-sm font-semibold text-gray-900">{ipc.ipcNumber}</p>
+                        <StatusBadge status={ipc.status} />
+                      </div>
+                      <p className="text-xs text-gray-500">{ipc.contract?.contractNumber} · {ipc.contract?.vendor?.companyLegalName}</p>
+                      <div className="flex justify-between items-center mt-2">
+                        <span className="text-sm font-semibold text-gray-900">${netPayable.toLocaleString()}</span>
+                        <Link href={`/dashboard/procurement/ipcs/${ipc.id}`} className="text-sm text-blue-600 font-semibold">
+                          View
+                        </Link>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Desktop table */}
+              <table className="hidden md:table min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                   <tr>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">IPC #</th>
@@ -344,6 +370,7 @@ const IPCsPage = () => {
                   )}
                 </tbody>
               </table>
+              </>
             )}
           </div>
         </main>

@@ -751,7 +751,33 @@ export default function UsersPage() {
 
       {/* User Table */}
       <div style={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: 12, overflow: 'auto' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 900 }}>
+
+        {/* Mobile card list */}
+        <div className="md:hidden divide-y divide-gray-100">
+          {loading ? (
+            <div className="p-8 text-center text-gray-400"><Loader2 size={24} className="spin inline" /></div>
+          ) : users.length === 0 ? (
+            <div className="p-8 text-center text-gray-400">No users found.</div>
+          ) : users.map(user => (
+            <div key={user.id} className="p-4 hover:bg-gray-50 cursor-pointer" onClick={() => setDrawerUser(user)}>
+              <div className="flex items-center gap-3 mb-2">
+                <Avatar user={user} />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-gray-900 truncate">{user.name}</p>
+                  <p className="text-xs text-gray-500 truncate">{user.email}</p>
+                </div>
+                <StatusPill user={user} />
+              </div>
+              <div className="flex items-center justify-between mt-1">
+                <RoleBadge roleId={user.roleId} />
+                <span className="text-xs text-gray-500">{user.department || '—'}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Desktop table */}
+        <table className="hidden md:table" style={{ width: '100%', borderCollapse: 'collapse', minWidth: 900 }}>
           <thead>
             <tr style={{ background: '#F9FAFB', borderBottom: '1px solid #E5E7EB' }}>
               <th style={{ padding: '12px 16px', textAlign: 'left', width: 36 }}>
