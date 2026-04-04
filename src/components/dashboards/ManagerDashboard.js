@@ -47,6 +47,8 @@ const ManagerDashboard = () => {
     pendingApprovals: 0, trendPendingApprovals: null,
     overdueTasks: 0, trendOverdueTasks: null,
     vendorsUnderReview: 0, trendVendorsUnderReview: null,
+    overdueSubmittals: 0,
+    overdueDrawings: 0,
   });
   const [chartsData,    setChartsData]    = useState({ teamTrends: [], priorityData: [], teamStats: [] });
   const [queueData,     setQueueData]     = useState([]);
@@ -1120,6 +1122,50 @@ const getActionButton = (item) => {
               color="info"
               {...trendProps(kpiData.trendVendorsUnderReview)}
             />
+          </div>
+
+          {/* Phase 2 KPIs */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+            <div
+              className="bg-white p-5 rounded-xl shadow-sm border border-orange-100 hover:shadow-md transition-all duration-200 cursor-pointer"
+              onClick={() => router.push('/dashboard/manager/material-submittals')}
+            >
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-3">
+                  <div className="p-2.5 rounded-lg bg-orange-50">
+                    <FileText size={20} className="text-orange-500" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-gray-600">Overdue Submittals</p>
+                    <AnimatedKPIValue value={kpiData.overdueSubmittals} />
+                  </div>
+                </div>
+                {kpiData.overdueSubmittals > 0 && (
+                  <span className="badge badge-orange text-xs">{kpiData.overdueSubmittals} overdue</span>
+                )}
+              </div>
+              <p className="text-xs text-gray-400">Material submittals past required date</p>
+            </div>
+            <div
+              className="bg-white p-5 rounded-xl shadow-sm border border-purple-100 hover:shadow-md transition-all duration-200 cursor-pointer"
+              onClick={() => router.push('/dashboard/manager/shop-drawings')}
+            >
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-3">
+                  <div className="p-2.5 rounded-lg bg-purple-50">
+                    <Target size={20} className="text-purple-500" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-gray-600">Overdue Drawings</p>
+                    <AnimatedKPIValue value={kpiData.overdueDrawings} />
+                  </div>
+                </div>
+                {kpiData.overdueDrawings > 0 && (
+                  <span className="badge badge-purple text-xs">{kpiData.overdueDrawings} overdue</span>
+                )}
+              </div>
+              <p className="text-xs text-gray-400">Shop drawings past required review date</p>
+            </div>
           </div>
         </>
       )}
