@@ -231,6 +231,7 @@ const ContractsPage = () => {
               </Link>
             </div>
           ) : (
+            <>
             {/* Mobile card list */}
             <div className="md:hidden divide-y divide-gray-100">
               {contracts.map((contract) => {
@@ -326,7 +327,7 @@ const ContractsPage = () => {
                 </tbody>
               </table>
             </div>
-            </div>
+            </>
           )}
         </div>
       </>
