@@ -1,493 +1,486 @@
 "use client";
-import { useState, useEffect } from 'react';
-import { 
-  Truck, CheckCircle, Clock, AlertTriangle, TrendingUp, TrendingDown, 
-  RefreshCw, Database, WifiOff, Eye, BarChart, PieChart as PieChartIcon,
-  Users, Calendar, Filter, Download, ChevronRight, Search,
-  Building, Package, Shield, Box, Gauge, Percent
+import { useState, useEffect, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
+import {
+  Truck, CheckCircle, Clock, AlertTriangle, Search, Filter, Plus,
+  Download, RefreshCw, ChevronRight, Eye, TrendingUp, TrendingDown,
+  Package, X
 } from 'lucide-react';
 import ResponsiveLayout from '@/components/layout/ResponsiveLayout';
+import {
+  LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid,
+  Tooltip, ResponsiveContainer, Legend
+} from 'recharts';
 
-const DeliveriesDashboard = () => {
-  const [dashboardData, setDashboardData] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [dataSource, setDataSource] = useState('fallback');
-  const [timeRange, setTimeRange] = useState('month');
-  const [searchQuery, setSearchQuery] = useState('');
+const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
 
-  // Mock data for Deliveries
-  const generateFallbackData = () => ({
-    summary: {
-      completedDeliveries: 245,
-      lateDeliveries: 32,
-      qcRejections: 18,
-      poDeliveredPercentage: 78.5,
-      onTimeRate: 87.3
-    },
-    charts: {
-      deliveriesByProject: [
-        { project: 'Core DQ', count: 85 },
-        { project: 'Obhur Beach', count: 56 },
-        { project: 'Tower B', count: 72 },
-        { project: 'Commercial', count: 48 },
-        { project: 'HQ Office', count: 34 }
-      ],
-      supplierPerformance: [
-        { supplier: 'TechBuild Co.', onTime: 45, late: 8, color: '#3b82f6' },
-        { supplier: 'Gulf Materials', onTime: 38, late: 12, color: '#10b981' },
-        { supplier: 'SteelTech', onTime: 28, late: 6, color: '#ef4444' },
-        { supplier: 'Concrete Masters', onTime: 32, late: 4, color: '#f59e0b' }
-      ],
-      poDeliveryStatus: [
-        { po: 'PO-2024-0456', ordered: 100, delivered: 85, percentage: 85 },
-        { po: 'PO-2024-0457', ordered: 50, delivered: 50, percentage: 100 },
-        { po: 'PO-2024-0458', ordered: 75, delivered: 60, percentage: 80 },
-        { po: 'PO-2024-0459', ordered: 100, delivered: 70, percentage: 70 }
-      ]
-    },
-    deliveries: [
-      {
-        id: 1,
-        deliveryNo: 'DL-2024-0789',
-        poNo: 'PO-2024-0456',
-        project: 'Tower B Construction',
-        supplier: 'TechBuild Co.',
-        requiredDate: '2024-01-15',
-        deliveryDate: '2024-01-18',
-        qcStatus: 'Passed',
-        delayDays: 3,
-        quantityDelivered: 85,
-        quantityOrdered: 100
-      },
-      {
-        id: 2,
-        deliveryNo: 'DL-2024-0790',
-        poNo: 'PO-2024-0457',
-        project: 'Commercial Complex',
-        supplier: 'Gulf Materials',
-        requiredDate: '2024-01-18',
-        deliveryDate: '2024-01-18',
-        qcStatus: 'Passed',
-        delayDays: 0,
-        quantityDelivered: 50,
-        quantityOrdered: 50
-      },
-      {
-        id: 3,
-        deliveryNo: 'DL-2024-0791',
-        poNo: 'PO-2024-0458',
-        project: 'Obhur Beach',
-        supplier: 'SteelTech',
-        requiredDate: '2024-01-12',
-        deliveryDate: '2024-01-20',
-        qcStatus: 'Rejected',
-        delayDays: 8,
-        quantityDelivered: 60,
-        quantityOrdered: 75
-      },
-      {
-        id: 4,
-        deliveryNo: 'DL-2024-0792',
-        poNo: 'PO-2024-0459',
-        project: 'Core DQ',
-        supplier: 'Concrete Masters',
-        requiredDate: '2024-01-20',
-        deliveryDate: '2024-01-19',
-        qcStatus: 'Pending',
-        delayDays: -1,
-        quantityDelivered: 70,
-        quantityOrdered: 100
-      },
-      {
-        id: 5,
-        deliveryNo: 'DL-2024-0793',
-        poNo: 'PO-2024-0460',
-        project: 'HQ Office',
-        supplier: 'TechBuild Co.',
-        requiredDate: '2024-01-22',
-        deliveryDate: '2024-01-25',
-        qcStatus: 'Passed',
-        delayDays: 3,
-        quantityDelivered: 45,
-        quantityOrdered: 50
-      },
-      {
-        id: 6,
-        deliveryNo: 'DL-2024-0794',
-        poNo: 'PO-2024-0461',
-        project: 'Tower B Construction',
-        supplier: 'Gulf Materials',
-        requiredDate: '2024-01-25',
-        deliveryDate: '2024-01-23',
-        qcStatus: 'Passed',
-        delayDays: -2,
-        quantityDelivered: 100,
-        quantityOrdered: 100
-      },
-      {
-        id: 7,
-        deliveryNo: 'DL-2024-0795',
-        poNo: 'PO-2024-0462',
-        project: 'Commercial Complex',
-        supplier: 'SteelTech',
-        requiredDate: '2024-01-28',
-        deliveryDate: null,
-        qcStatus: 'Not Delivered',
-        delayDays: null,
-        quantityDelivered: 0,
-        quantityOrdered: 80
-      }
-    ]
-  });
+const STATUS_CONFIG = {
+  PENDING:              { label: 'Pending',              cls: 'bg-gray-100 text-gray-700' },
+  IN_TRANSIT:           { label: 'In Transit',           cls: 'bg-blue-100 text-blue-700' },
+  DELIVERED:            { label: 'Delivered',            cls: 'bg-green-100 text-green-700' },
+  PARTIALLY_DELIVERED:  { label: 'Partial',              cls: 'bg-orange-100 text-orange-700' },
+  QC_IN_PROGRESS:       { label: 'QC In Progress',       cls: 'bg-yellow-100 text-yellow-700' },
+  QC_ACCEPTED:          { label: 'QC Accepted',          cls: 'bg-green-100 text-green-700' },
+  QC_REJECTED:          { label: 'QC Rejected',          cls: 'bg-red-100 text-red-700' },
+  COMPLETED:            { label: 'Completed',            cls: 'bg-emerald-100 text-emerald-700' },
+  CANCELLED:            { label: 'Cancelled',            cls: 'bg-gray-100 text-gray-500' },
+};
 
-  useEffect(() => {
-    setTimeout(() => {
-      setDashboardData(generateFallbackData());
-      setLoading(false);
-    }, 1000);
-  }, [timeRange]);
+const QC_CONFIG = {
+  PENDING_INSPECTION: { label: 'Pending Inspection', cls: 'bg-gray-100 text-gray-600' },
+  IN_PROGRESS:        { label: 'In Progress',         cls: 'bg-yellow-100 text-yellow-700' },
+  ACCEPTED:           { label: 'Accepted',            cls: 'bg-green-100 text-green-700' },
+  REJECTED:           { label: 'Rejected',            cls: 'bg-red-100 text-red-700' },
+};
 
-  const handleRetry = () => {
-    setLoading(true);
-    setTimeout(() => {
-      setDashboardData(generateFallbackData());
-      setLoading(false);
-    }, 1000);
-  };
-
-  const DataSourceIndicator = () => (
-    <div className="flex items-center gap-2 text-amber-600 bg-amber-50 px-3 py-1 rounded-full text-sm">
-      <Database size={16} />
-      Mock Data
-    </div>
-  );
-
-  const KPICard = ({ title, value, subtitle, icon, color = 'primary', trend, trendPositive }) => {
-    const colorClasses = {
-      primary: 'bg-blue-100 text-blue-800 border-blue-200',
-      warning: 'bg-amber-100 text-amber-800 border-amber-200',
-      error: 'bg-red-100 text-red-800 border-red-200',
-      success: 'bg-green-100 text-green-800 border-green-200',
-      info: 'bg-teal-100 text-teal-800 border-teal-200'
-    };
-
-    return (
-      <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-all duration-200">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center">
-            <div className={`p-3 rounded-lg ${colorClasses[color]}`}>
-              {icon}
-            </div>
-            <h3 className="text-lg font-semibold ml-3 text-gray-800">{title}</h3>
-          </div>
-          {trend && (
-            <span className={`text-sm font-medium px-2 py-1 rounded-full ${
-              trendPositive 
-                ? 'bg-green-100 text-green-800' 
-                : 'bg-red-100 text-red-800'
-            }`}>
-              {trend}
-            </span>
-          )}
-        </div>
-        
-        <p className="text-2xl font-bold text-gray-900">{value}</p>
-        <p className="text-sm text-gray-600 mt-2">{subtitle}</p>
-      </div>
-    );
-  };
-
-  const QCStatusBadge = ({ status }) => {
-    const config = {
-      'Passed': { color: 'bg-green-100 text-green-800' },
-      'Pending': { color: 'bg-blue-100 text-blue-800' },
-      'Rejected': { color: 'bg-red-100 text-red-800' },
-      'Not Delivered': { color: 'bg-gray-100 text-gray-800' }
-    };
-    
-    const { color } = config[status] || config['Pending'];
-    
-    return (
-      <span className={`px-2 py-1 rounded-full text-xs font-medium whitespace-nowrap ${color}`}>
-        {status}
-      </span>
-    );
-  };
-
-  const DeliveryStatusBadge = ({ delayDays }) => {
-    if (delayDays === null) {
-      return (
-        <span className="px-2 py-1 rounded-full text-xs font-medium whitespace-nowrap bg-gray-100 text-gray-800">
-          Not Delivered
-        </span>
-      );
-    }
-    
-    if (delayDays <= 0) {
-      return (
-        <span className="px-2 py-1 rounded-full text-xs font-medium whitespace-nowrap bg-green-100 text-green-800">
-          On Time
-        </span>
-      );
-    }
-    
-    return (
-      <span className="px-2 py-1 rounded-full text-xs font-medium whitespace-nowrap bg-red-100 text-red-800">
-        {delayDays} day{delayDays !== 1 ? 's' : ''} late
-      </span>
-    );
-  };
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <RefreshCw className="animate-spin h-12 w-12 text-blue-600 mx-auto mb-4" />
-          <h2 className="text-xl font-semibold text-gray-800">Loading Deliveries Dashboard...</h2>
-        </div>
-      </div>
-    );
-  }
-
-  const { summary, charts, deliveries } = dashboardData;
-
+const Badge = ({ value, config }) => {
+  const cfg = config[value] || { label: value, cls: 'bg-gray-100 text-gray-600' };
   return (
-    <ResponsiveLayout>
-    <div className="p-6 space-y-6 bg-gray-50 min-h-screen">
-      {/* Header */}
-      <div className="flex justify-between items-start">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-800">Deliveries Dashboard</h1>
-          <p className="text-gray-600 mt-1">Track material deliveries and supplier performance</p>
-          <div className="flex items-center gap-2 mt-2">
-            <DataSourceIndicator />
-          </div>
-        </div>
-        <div className="flex items-center space-x-4">
-          <select 
-            value={timeRange}
-            onChange={(e) => setTimeRange(e.target.value)}
-            className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-          >
-            <option value="month">This Month</option>
-            <option value="quarter">This Quarter</option>
-            <option value="year">This Year</option>
-          </select>        
-        </div>
-      </div>
-
-      {/* KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <KPICard
-          icon={<Truck className="text-green-500" size={24} />}
-          title="Completed"
-          value={summary.completedDeliveries}
-          subtitle="Deliveries fulfilled"
-          color="success"
-          trend="+24"
-          trendPositive={true}
-        />
-        
-        <KPICard
-          icon={<Clock className="text-amber-500" size={24} />}
-          title="Late Deliveries"
-          value={summary.lateDeliveries}
-          subtitle="Past required date"
-          color="warning"
-          trend="-5"
-          trendPositive={true}
-        />
-        
-        <KPICard
-          icon={<AlertTriangle className="text-red-500" size={24} />}
-          title="QC Rejections"
-          value={summary.qcRejections}
-          subtitle="Failed quality checks"
-          color="error"
-          trend="-3"
-          trendPositive={true}
-        />
-        
-        <KPICard
-          icon={<Percent className="text-blue-500" size={24} />}
-          title="PO Delivered"
-          value={`${summary.poDeliveredPercentage}%`}
-          subtitle={`${summary.onTimeRate}% on-time rate`}
-          color="primary"
-          trend="+2.5%"
-          trendPositive={true}
-        />
-      </div>
-
-      {/* Charts Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Deliveries by Project */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <h3 className="text-xl font-semibold text-gray-800 mb-4">Deliveries by Project</h3>
-          <div className="h-64">
-            <div className="flex items-end h-48 gap-2 mt-4">
-              {charts.deliveriesByProject.map((item, index) => (
-                <div key={index} className="flex-1 flex flex-col items-center">
-                  <div 
-                    className="w-3/4 bg-blue-500 rounded-t"
-                    style={{ height: `${(item.count / 100) * 100}%` }}
-                    title={`${item.project}: ${item.count} deliveries`}
-                  ></div>
-                  <span className="text-xs text-gray-500 mt-2">{item.project.substring(0, 5)}</span>
-                </div>
-              ))}
-            </div>
-            <div className="text-center mt-4">
-              <p className="text-sm text-gray-600">
-                Total deliveries across all projects: <span className="font-semibold">295</span>
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* Supplier Performance */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <h3 className="text-xl font-semibold text-gray-800 mb-4">Supplier On-Time vs Late</h3>
-          <div className="h-64">
-            <div className="flex items-end h-48 gap-4 mt-4 justify-center">
-              {charts.supplierPerformance.map((item, index) => (
-                <div key={index} className="flex flex-col items-center">
-                  <div className="flex gap-1 mb-2">
-                    <div 
-                      className="w-6 bg-green-500 rounded-t"
-                      style={{ height: `${(item.onTime / 50) * 100}%` }}
-                      title={`On-time: ${item.onTime}`}
-                    ></div>
-                    <div 
-                      className="w-6 bg-red-500 rounded-t"
-                      style={{ height: `${(item.late / 50) * 100}%` }}
-                      title={`Late: ${item.late}`}
-                    ></div>
-                  </div>
-                  <span className="text-xs text-gray-500">{item.supplier.substring(0, 8)}</span>
-                </div>
-              ))}
-            </div>
-            <div className="flex justify-center gap-4 mt-4">
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 bg-green-500 rounded"></div>
-                <span className="text-sm text-gray-600">On-time</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 bg-red-500 rounded"></div>
-                <span className="text-sm text-gray-600">Late</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* PO Delivery Gauge */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-        <h3 className="text-xl font-semibold text-gray-800 mb-4">PO Delivery Status</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {charts.poDeliveryStatus.map((po, index) => (
-            <div key={index} className="p-4 border border-gray-200 rounded-lg">
-              <div className="flex justify-between items-start mb-2">
-                <span className="font-medium text-gray-800">{po.po}</span>
-                <span className="text-sm font-semibold text-blue-600">{po.percentage}%</span>
-              </div>
-              <div className="w-full bg-gray-200 rounded-full h-2 mb-1">
-                <div 
-                  className={`h-2 rounded-full ${
-                    po.percentage >= 90 ? 'bg-green-500' : 
-                    po.percentage >= 70 ? 'bg-yellow-500' : 'bg-red-500'
-                  }`}
-                  style={{ width: `${po.percentage}%` }}
-                ></div>
-              </div>
-              <p className="text-xs text-gray-500">
-                {po.delivered} of {po.ordered} units
-              </p>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Deliveries Table */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h3 className="text-xl font-semibold text-gray-800">Delivery Tracking</h3>
-            <p className="text-gray-600 text-sm">All material deliveries and QC status</p>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={16} />
-              <input
-                type="text"
-                placeholder="Search deliveries..."
-                className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-            </div>
-            <Filter className="text-gray-400 cursor-pointer" size={20} />
-          </div>
-        </div>
-        
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-gray-200">
-                <th className="text-left py-3 px-4 text-sm font-medium text-gray-500 min-w-[120px]">Delivery No</th>
-                <th className="text-left py-3 px-4 text-sm font-medium text-gray-500 min-w-[120px]">PO No</th>
-                <th className="text-left py-3 px-4 text-sm font-medium text-gray-500 min-w=[150px]">Project</th>
-                <th className="text-left py-3 px-4 text-sm font-medium text-gray-500 min-w=[140px]">Supplier</th>
-                <th className="text-left py-3 px-4 text-sm font-medium text-gray-500 min-w=[120px]">Required Date</th>
-                <th className="text-left py-3 px-4 text-sm font-medium text-gray-500 min-w=[120px]">Delivery Date</th>
-                <th className="text-left py-3 px-4 text-sm font-medium text-gray-500 min-w=[100px]">QC Status</th>
-                <th className="text-left py-3 px-4 text-sm font-medium text-gray-500 min-w=[100px]">Delay Days</th>
-              </tr>
-            </thead>
-            <tbody>
-              {deliveries.map((item) => (
-                <tr key={item.id} className="border-b border-gray-100 hover:bg-gray-50">
-                  <td className="py-3 px-4">
-                    <span className="font-medium text-blue-600">{item.deliveryNo}</span>
-                  </td>
-                  <td className="py-3 px-4">
-                    <span className="font-medium text-gray-700">{item.poNo}</span>
-                  </td>
-                  <td className="py-3 px-4">
-                    <span className="text-gray-700">{item.project}</span>
-                  </td>
-                  <td className="py-3 px-4">
-                    <span className="text-gray-700">{item.supplier}</span>
-                  </td>
-                  <td className="py-3 px-4">
-                    <span className="text-gray-700">{new Date(item.requiredDate).toLocaleDateString()}</span>
-                  </td>
-                  <td className="py-3 px-4">
-                    <span className="text-gray-700">
-                      {item.deliveryDate ? new Date(item.deliveryDate).toLocaleDateString() : 'Not delivered'}
-                    </span>
-                  </td>
-                  <td className="py-3 px-4">
-                    <QCStatusBadge status={item.qcStatus} />
-                  </td>
-                  <td className="py-3 px-4">
-                    <DeliveryStatusBadge delayDays={item.delayDays} />
-                    {item.quantityDelivered > 0 && (
-                      <p className="text-xs text-gray-500 mt-1">
-                        {item.quantityDelivered}/{item.quantityOrdered} units
-                      </p>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-    </ResponsiveLayout>
+    <span className={`px-2 py-0.5 rounded-full text-xs font-medium whitespace-nowrap ${cfg.cls}`}>
+      {cfg.label}
+    </span>
   );
 };
 
-export default DeliveriesDashboard;
+export default function DeliveriesDashboard() {
+  const router = useRouter();
+  const [stats, setStats] = useState(null);
+  const [dashboard, setDashboard] = useState(null);
+  const [deliveries, setDeliveries] = useState([]);
+  const [total, setTotal] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [tableLoading, setTableLoading] = useState(false);
+  const [filters, setFilters] = useState({ search: '', status: '', qcStatus: '', overdue: false });
+  const [page, setPage] = useState(1);
+  const PAGE_SIZE = 20;
+
+  const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+  const headers = { Authorization: `Bearer ${token}` };
+
+  const fetchStats = useCallback(async () => {
+    try {
+      const r = await fetch(`${API}/api/deliveries/stats`, { headers });
+      if (r.ok) setStats(await r.json());
+    } catch (_) {}
+  }, []);
+
+  const fetchDashboard = useCallback(async () => {
+    try {
+      const r = await fetch(`${API}/api/deliveries/dashboard`, { headers });
+      if (r.ok) setDashboard(await r.json());
+    } catch (_) {}
+  }, []);
+
+  const fetchDeliveries = useCallback(async (f = filters, p = page) => {
+    setTableLoading(true);
+    try {
+      const params = new URLSearchParams({ page: p, limit: PAGE_SIZE });
+      if (f.search)    params.set('projectName', f.search);
+      if (f.status)    params.set('status', f.status);
+      if (f.qcStatus)  params.set('qcStatus', f.qcStatus);
+      if (f.overdue)   params.set('overdue', 'true');
+      const r = await fetch(`${API}/api/deliveries?${params}`, { headers });
+      if (r.ok) {
+        const data = await r.json();
+        setDeliveries(p === 1 ? (data.deliveries || data) : prev => [...prev, ...(data.deliveries || data)]);
+        setTotal(data.total || 0);
+      }
+    } catch (_) {}
+    setTableLoading(false);
+  }, [filters, page]);
+
+  useEffect(() => {
+    (async () => {
+      setLoading(true);
+      await Promise.all([fetchStats(), fetchDashboard(), fetchDeliveries(filters, 1)]);
+      setLoading(false);
+    })();
+  }, []);
+
+  const applyFilters = () => {
+    setPage(1);
+    fetchDeliveries(filters, 1);
+  };
+
+  const clearFilters = () => {
+    const f = { search: '', status: '', qcStatus: '', overdue: false };
+    setFilters(f);
+    setPage(1);
+    fetchDeliveries(f, 1);
+  };
+
+  const loadMore = () => {
+    const next = page + 1;
+    setPage(next);
+    fetchDeliveries(filters, next);
+  };
+
+  const onTimeRate = stats?.onTimeRate ?? 0;
+  const onTimeColor = onTimeRate >= 85 ? 'text-green-600' : onTimeRate >= 70 ? 'text-orange-500' : 'text-red-500';
+
+  if (loading) {
+    return (
+      <ResponsiveLayout>
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="text-center">
+            <RefreshCw className="animate-spin h-10 w-10 text-[#C6A35D] mx-auto mb-3" />
+            <p className="text-gray-600 font-medium">Loading deliveries...</p>
+          </div>
+        </div>
+      </ResponsiveLayout>
+    );
+  }
+
+  return (
+    <ResponsiveLayout>
+      <div className="p-6 space-y-6 bg-gray-50 min-h-screen">
+
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold text-[#0A1628]">Site Deliveries (GRN)</h1>
+            <p className="text-gray-500 text-sm mt-0.5">Track material deliveries, QC inspections, and vendor performance</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => router.push('/dashboard/manager/deliveries/create')}
+              className="flex items-center gap-2 bg-[#C6A35D] hover:bg-[#b8924a] text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+            >
+              <Plus size={16} /> New Delivery
+            </button>
+          </div>
+        </div>
+
+        {/* KPI Cards */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="bg-[#0A1628] text-white p-5 rounded-xl">
+            <div className="flex items-center justify-between mb-3">
+              <Truck size={20} className="text-[#C6A35D]" />
+              <span className="text-xs text-gray-400">Total</span>
+            </div>
+            <p className="text-3xl font-bold">{stats?.total ?? 0}</p>
+            <p className="text-xs text-gray-300 mt-1">All deliveries</p>
+          </div>
+
+          <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm">
+            <div className="flex items-center justify-between mb-3">
+              <CheckCircle size={20} className="text-green-500" />
+              <span className="text-xs text-gray-400">On-Time Rate</span>
+            </div>
+            <p className={`text-3xl font-bold ${onTimeColor}`}>{onTimeRate.toFixed(1)}%</p>
+            <p className="text-xs text-gray-500 mt-1">{stats?.delivered ?? 0} delivered</p>
+          </div>
+
+          <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm">
+            <div className="flex items-center justify-between mb-3">
+              <Clock size={20} className="text-orange-500" />
+              {(stats?.lateDeliveries ?? 0) > 0 && <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />}
+            </div>
+            <p className="text-3xl font-bold text-orange-600">{stats?.lateDeliveries ?? 0}</p>
+            <p className="text-xs text-gray-500 mt-1">Late deliveries</p>
+          </div>
+
+          <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm">
+            <div className="flex items-center justify-between mb-3">
+              <AlertTriangle size={20} className="text-red-500" />
+              <span className="text-xs text-gray-400">QC</span>
+            </div>
+            <p className="text-3xl font-bold text-red-600">{stats?.qcRejections ?? 0}</p>
+            <p className="text-xs text-gray-500 mt-1">QC rejections</p>
+          </div>
+        </div>
+
+        {/* Charts */}
+        {dashboard && (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Vendor On-Time Performance */}
+            <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
+              <h3 className="font-semibold text-[#0A1628] mb-4">Vendor On-Time Rate</h3>
+              {dashboard.vendorOnTime?.length > 0 ? (
+                <ResponsiveContainer width="100%" height={200}>
+                  <BarChart data={dashboard.vendorOnTime} layout="vertical" margin={{ left: 10 }}>
+                    <CartesianGrid strokeDasharray="3 3" horizontal={false} />
+                    <XAxis type="number" domain={[0, 100]} tickFormatter={v => `${v}%`} tick={{ fontSize: 11 }} />
+                    <YAxis type="category" dataKey="vendorName" tick={{ fontSize: 11 }} width={90} />
+                    <Tooltip formatter={v => `${Number(v).toFixed(1)}%`} />
+                    <Bar dataKey="onTimeRate" name="On-Time %" fill="#C6A35D" radius={[0, 4, 4, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="h-[200px] flex items-center justify-center text-gray-400 text-sm">No vendor data yet</div>
+              )}
+            </div>
+
+            {/* Delivery Trend (6 months) */}
+            <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
+              <h3 className="font-semibold text-[#0A1628] mb-4">Delivery Trend (6 Months)</h3>
+              {dashboard.deliveryTrend?.length > 0 ? (
+                <ResponsiveContainer width="100%" height={200}>
+                  <LineChart data={dashboard.deliveryTrend}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="month" tick={{ fontSize: 11 }} />
+                    <YAxis tick={{ fontSize: 11 }} />
+                    <Tooltip />
+                    <Legend iconType="circle" iconSize={10} />
+                    <Line type="monotone" dataKey="onTime" name="On-Time" stroke="#22c55e" strokeWidth={2} dot={false} />
+                    <Line type="monotone" dataKey="late" name="Late" stroke="#ef4444" strokeWidth={2} dot={false} />
+                  </LineChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="h-[200px] flex items-center justify-center text-gray-400 text-sm">No trend data yet</div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Status Distribution */}
+        {stats && (
+          <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
+            <h3 className="font-semibold text-[#0A1628] mb-4">Status Distribution</h3>
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+              {[
+                { key: 'pending', label: 'Pending', color: 'bg-gray-400', val: stats.pending },
+                { key: 'inTransit', label: 'In Transit', color: 'bg-blue-500', val: stats.inTransit },
+                { key: 'delivered', label: 'Delivered', color: 'bg-green-500', val: stats.delivered },
+                { key: 'qcInProgress', label: 'QC In Progress', color: 'bg-yellow-400', val: stats.qcInProgress },
+                { key: 'rejected', label: 'QC Rejected', color: 'bg-red-500', val: stats.rejected },
+              ].map(s => (
+                <div key={s.key} className="flex items-center gap-3 p-3 rounded-lg bg-gray-50">
+                  <div className={`w-3 h-3 rounded-full flex-shrink-0 ${s.color}`} />
+                  <div>
+                    <p className="text-lg font-bold text-[#0A1628]">{s.val ?? 0}</p>
+                    <p className="text-xs text-gray-500">{s.label}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* PO Delivery Progress */}
+        {dashboard?.poDeliveryStatus?.length > 0 && (
+          <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
+            <h3 className="font-semibold text-[#0A1628] mb-4">PO Delivery Progress</h3>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-gray-100">
+                    <th className="text-left py-2 px-3 text-gray-500 font-medium">PO Number</th>
+                    <th className="text-left py-2 px-3 text-gray-500 font-medium">Vendor</th>
+                    <th className="text-left py-2 px-3 text-gray-500 font-medium">Project</th>
+                    <th className="text-left py-2 px-3 text-gray-500 font-medium">Progress</th>
+                    <th className="text-right py-2 px-3 text-gray-500 font-medium">%</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {dashboard.poDeliveryStatus.map((po, i) => {
+                    const pct = po.deliveryCount > 0 ? Math.min(100, Math.round((po.deliveryCount / (po.totalExpected || po.deliveryCount)) * 100)) : 0;
+                    const barColor = pct >= 90 ? 'bg-green-500' : pct >= 60 ? 'bg-orange-400' : 'bg-red-500';
+                    return (
+                      <tr key={i} className="border-b border-gray-50 hover:bg-gray-50">
+                        <td className="py-2 px-3 font-mono text-[#C6A35D] font-medium">{po.poNumber}</td>
+                        <td className="py-2 px-3 text-gray-700">{po.vendorName || '—'}</td>
+                        <td className="py-2 px-3 text-gray-600">{po.projectName || '—'}</td>
+                        <td className="py-2 px-3 w-40">
+                          <div className="w-full bg-gray-200 rounded-full h-2">
+                            <div className={`h-2 rounded-full transition-all ${barColor}`} style={{ width: `${pct}%` }} />
+                          </div>
+                        </td>
+                        <td className="py-2 px-3 text-right font-semibold text-gray-700">{pct}%</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* Deliveries Table */}
+        <div className="bg-white rounded-xl border border-gray-200 shadow-sm">
+          <div className="p-5 border-b border-gray-100">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <div>
+                <h3 className="font-semibold text-[#0A1628]">All Deliveries</h3>
+                <p className="text-xs text-gray-500">{total} total records</p>
+              </div>
+              <button
+                onClick={() => router.push('/dashboard/manager/deliveries/create')}
+                className="sm:hidden flex items-center gap-2 bg-[#C6A35D] text-white px-3 py-1.5 rounded-lg text-sm"
+              >
+                <Plus size={14} /> New
+              </button>
+            </div>
+
+            {/* Filters */}
+            <div className="mt-4 flex flex-wrap gap-3">
+              <div className="relative flex-1 min-w-[180px]">
+                <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Search project..."
+                  value={filters.search}
+                  onChange={e => setFilters(f => ({ ...f, search: e.target.value }))}
+                  onKeyDown={e => e.key === 'Enter' && applyFilters()}
+                  className="w-full pl-8 pr-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#C6A35D]/30"
+                />
+              </div>
+              <select
+                value={filters.status}
+                onChange={e => setFilters(f => ({ ...f, status: e.target.value }))}
+                className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#C6A35D]/30"
+              >
+                <option value="">All Statuses</option>
+                {Object.entries(STATUS_CONFIG).map(([k, v]) => (
+                  <option key={k} value={k}>{v.label}</option>
+                ))}
+              </select>
+              <select
+                value={filters.qcStatus}
+                onChange={e => setFilters(f => ({ ...f, qcStatus: e.target.value }))}
+                className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#C6A35D]/30"
+              >
+                <option value="">All QC</option>
+                {Object.entries(QC_CONFIG).map(([k, v]) => (
+                  <option key={k} value={k}>{v.label}</option>
+                ))}
+              </select>
+              <label className="flex items-center gap-2 px-3 py-2 border border-gray-200 rounded-lg text-sm cursor-pointer hover:bg-gray-50">
+                <input
+                  type="checkbox"
+                  checked={filters.overdue}
+                  onChange={e => setFilters(f => ({ ...f, overdue: e.target.checked }))}
+                  className="accent-[#C6A35D]"
+                />
+                Overdue only
+              </label>
+              <button onClick={applyFilters} className="px-4 py-2 bg-[#0A1628] text-white rounded-lg text-sm hover:bg-[#0A1628]/90 transition-colors">
+                Apply
+              </button>
+              {(filters.search || filters.status || filters.qcStatus || filters.overdue) && (
+                <button onClick={clearFilters} className="flex items-center gap-1 px-3 py-2 text-sm text-gray-500 hover:text-gray-700">
+                  <X size={14} /> Clear
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Desktop Table */}
+          <div className="hidden md:block overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="bg-gray-50 border-b border-gray-100">
+                <tr>
+                  <th className="text-left py-3 px-4 text-gray-500 font-medium">Delivery #</th>
+                  <th className="text-left py-3 px-4 text-gray-500 font-medium">PO</th>
+                  <th className="text-left py-3 px-4 text-gray-500 font-medium">Project</th>
+                  <th className="text-left py-3 px-4 text-gray-500 font-medium">Vendor</th>
+                  <th className="text-left py-3 px-4 text-gray-500 font-medium">Required</th>
+                  <th className="text-left py-3 px-4 text-gray-500 font-medium">Delivered</th>
+                  <th className="text-left py-3 px-4 text-gray-500 font-medium">Status</th>
+                  <th className="text-left py-3 px-4 text-gray-500 font-medium">QC</th>
+                  <th className="text-left py-3 px-4 text-gray-500 font-medium">Delay</th>
+                  <th className="py-3 px-4" />
+                </tr>
+              </thead>
+              <tbody>
+                {deliveries.length === 0 && !tableLoading ? (
+                  <tr>
+                    <td colSpan={10} className="py-12 text-center text-gray-400">
+                      <Package size={32} className="mx-auto mb-2 opacity-30" />
+                      No deliveries found
+                    </td>
+                  </tr>
+                ) : (
+                  deliveries.map(d => (
+                    <tr
+                      key={d.id}
+                      className="border-b border-gray-50 hover:bg-gray-50 cursor-pointer"
+                      onClick={() => router.push(`/dashboard/manager/deliveries/${d.id}`)}
+                    >
+                      <td className="py-3 px-4 font-mono text-[#C6A35D] font-medium text-xs">{d.deliveryNumber}</td>
+                      <td className="py-3 px-4 text-gray-600 text-xs">{d.purchaseOrder?.poNumber || '—'}</td>
+                      <td className="py-3 px-4 text-gray-700 max-w-[140px] truncate">{d.projectName}</td>
+                      <td className="py-3 px-4 text-gray-600 max-w-[120px] truncate">{d.vendor?.companyName || d.vendor?.companyLegalName || '—'}</td>
+                      <td className="py-3 px-4 text-gray-600 text-xs whitespace-nowrap">
+                        {d.requiredDate ? new Date(d.requiredDate).toLocaleDateString() : '—'}
+                      </td>
+                      <td className="py-3 px-4 text-gray-600 text-xs whitespace-nowrap">
+                        {d.deliveryDate ? new Date(d.deliveryDate).toLocaleDateString() : '—'}
+                      </td>
+                      <td className="py-3 px-4"><Badge value={d.status} config={STATUS_CONFIG} /></td>
+                      <td className="py-3 px-4"><Badge value={d.qcStatus} config={QC_CONFIG} /></td>
+                      <td className="py-3 px-4">
+                        {d.delayDays > 0 ? (
+                          <span className="text-red-600 font-medium text-xs">{d.delayDays}d late</span>
+                        ) : d.delayDays === 0 ? (
+                          <span className="text-green-600 text-xs">On time</span>
+                        ) : (
+                          <span className="text-gray-400 text-xs">—</span>
+                        )}
+                      </td>
+                      <td className="py-3 px-4">
+                        <ChevronRight size={14} className="text-gray-400" />
+                      </td>
+                    </tr>
+                  ))
+                )}
+                {tableLoading && (
+                  <tr>
+                    <td colSpan={10} className="py-4 text-center">
+                      <RefreshCw size={16} className="animate-spin text-gray-400 mx-auto" />
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Mobile Cards */}
+          <div className="md:hidden divide-y divide-gray-50">
+            {deliveries.length === 0 && !tableLoading ? (
+              <div className="py-10 text-center text-gray-400 text-sm">No deliveries found</div>
+            ) : (
+              deliveries.map(d => (
+                <div
+                  key={d.id}
+                  className="p-4 hover:bg-gray-50 cursor-pointer"
+                  onClick={() => router.push(`/dashboard/manager/deliveries/${d.id}`)}
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex-1 min-w-0">
+                      <p className="font-mono text-[#C6A35D] font-semibold text-sm">{d.deliveryNumber}</p>
+                      <p className="text-gray-700 font-medium text-sm mt-0.5 truncate">{d.projectName}</p>
+                      <p className="text-gray-500 text-xs">{d.vendor?.companyName || '—'} · {d.purchaseOrder?.poNumber || '—'}</p>
+                    </div>
+                    <div className="flex flex-col items-end gap-1">
+                      <Badge value={d.status} config={STATUS_CONFIG} />
+                      <Badge value={d.qcStatus} config={QC_CONFIG} />
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between mt-2 text-xs text-gray-500">
+                    <span>Required: {d.requiredDate ? new Date(d.requiredDate).toLocaleDateString() : '—'}</span>
+                    {d.delayDays > 0 && <span className="text-red-600 font-medium">{d.delayDays}d late</span>}
+                    {d.delayDays === 0 && <span className="text-green-600">On time</span>}
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+
+          {/* Load More */}
+          {deliveries.length < total && (
+            <div className="p-4 text-center border-t border-gray-100">
+              <button
+                onClick={loadMore}
+                disabled={tableLoading}
+                className="px-6 py-2 border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-50 disabled:opacity-50"
+              >
+                {tableLoading ? 'Loading...' : `Load more (${total - deliveries.length} remaining)`}
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+    </ResponsiveLayout>
+  );
+}

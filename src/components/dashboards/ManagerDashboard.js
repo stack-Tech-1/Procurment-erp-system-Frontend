@@ -420,15 +420,15 @@ const ManagerDashboard = () => {
         rawApprovals: results.approvals?.data || [],
 
         budgetData: {
-          summary: results.budgetSummary?.data || {
+          summary: results.budgetSummary || {
             totalBudget: 0,
-            totalSpent: 0,
-            budgetUtilization: 0,
-            totalContracts: 0,
-            activeContracts: 0,
-            remainingBudget: 0
+            totalCommitted: 0,
+            totalInvoiced: 0,
+            totalPaid: 0,
+            totalProjects: 0,
+            overBudgetProjects: 0,
           },
-          projects: results.budgetProjects?.data || [],
+          projects: results.budgetProjects || [],
           trends: results.budgetTrends?.data || []
         }
       };
@@ -1185,7 +1185,7 @@ const getActionButton = (item) => {
   <KPICard
     icon={<AlertTriangle className="text-red-500" size={24} />}
     title="Projects >90% Budget"
-    value={dashboardData.extendedKPIs?.projectsOver90PercentBudget || 0}
+    value={dashboardData.extendedKPIs?.projectsOver90PercentBudget || dashboardData.budgetData?.summary?.overBudgetProjects || 0}
     subtitle="Approaching budget limits"
     color="error"
     trend="+1"
@@ -1843,44 +1843,30 @@ const getActionButton = (item) => {
                 <p className="text-xl font-bold text-gray-900">
                   SAR {formatCurrency(dashboardData?.budgetData?.summary?.totalBudget || 0)}
                 </p>
+                <p className="text-xs text-gray-400 mt-0.5">{dashboardData?.budgetData?.summary?.totalProjects || 0} projects</p>
+              </div>
+              <div className="text-center p-4 border border-yellow-200 bg-yellow-50 rounded-lg">
+                <p className="text-sm text-yellow-700">Committed (POs)</p>
+                <p className="text-xl font-bold text-yellow-800">
+                  SAR {formatCurrency(dashboardData?.budgetData?.summary?.totalCommitted || 0)}
+                </p>
               </div>
               <div className="text-center p-4 border border-blue-200 bg-blue-50 rounded-lg">
-                <p className="text-sm text-blue-700">Total Spent</p>
+                <p className="text-sm text-blue-700">Invoiced</p>
                 <p className="text-xl font-bold text-blue-800">
-                  SAR {formatCurrency(dashboardData?.budgetData?.summary?.totalSpent || 0)}
+                  SAR {formatCurrency(dashboardData?.budgetData?.summary?.totalInvoiced || 0)}
                 </p>
-              </div>
-              <div className="text-center p-4 border rounded-lg" style={{ borderColor: '#B8960A', backgroundColor: '#FFFBEB' }}>
-                <p className="text-sm font-medium" style={{ color: '#92400E' }}>PO Committed Value</p>
-                <p className="text-xl font-bold" style={{ color: '#78350F' }}>
-                  SAR {formatCurrency(poStats.totalCommittedValue)}
-                </p>
-                <p className="text-xs mt-0.5" style={{ color: '#B8960A' }}>{poStats.totalPOs} active POs</p>
               </div>
               <div className={`text-center p-4 border rounded-lg ${
-                (dashboardData?.budgetData?.summary?.budgetUtilization || 0) >= 90 
-                  ? 'border-red-200 bg-red-50' 
-                  : (dashboardData?.budgetData?.summary?.budgetUtilization || 0) >= 75
-                  ? 'border-yellow-200 bg-yellow-50'
+                (dashboardData?.budgetData?.summary?.overBudgetProjects || 0) > 0
+                  ? 'border-red-200 bg-red-50'
                   : 'border-green-200 bg-green-50'
               }`}>
-                <p className={`text-sm ${
-                  (dashboardData?.budgetData?.summary?.budgetUtilization || 0) >= 90 
-                    ? 'text-red-700' 
-                    : (dashboardData?.budgetData?.summary?.budgetUtilization || 0) >= 75
-                    ? 'text-yellow-700'
-                    : 'text-green-700'
-                }`}>
-                  Budget Utilization
+                <p className={`text-sm ${(dashboardData?.budgetData?.summary?.overBudgetProjects || 0) > 0 ? 'text-red-700' : 'text-green-700'}`}>
+                  Over Budget Projects
                 </p>
-                <p className={`text-xl font-bold ${
-                  (dashboardData?.budgetData?.summary?.budgetUtilization || 0) >= 90 
-                    ? 'text-red-800' 
-                    : (dashboardData?.budgetData?.summary?.budgetUtilization || 0) >= 75
-                    ? 'text-yellow-800'
-                    : 'text-green-800'
-                }`}>
-                  {(dashboardData?.budgetData?.summary?.budgetUtilization || 0).toFixed(1)}%
+                <p className={`text-xl font-bold ${(dashboardData?.budgetData?.summary?.overBudgetProjects || 0) > 0 ? 'text-red-800' : 'text-green-800'}`}>
+                  {dashboardData?.budgetData?.summary?.overBudgetProjects || 0}
                 </p>
               </div>
             </div>
@@ -1891,65 +1877,50 @@ const getActionButton = (item) => {
                 <thead>
                   <tr className="border-b border-gray-200">
                     <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Project</th>
-                    <th className="text-right py-3 px-4 text-sm font-medium text-gray-500">Budget</th>
-                    <th className="text-right py-3 px-4 text-sm font-medium text-gray-500">Spent</th>
-                    <th className="text-right py-3 px-4 text-sm font-medium text-gray-500">Remaining</th>
-                    <th className="text-right py-3 px-4 text-sm font-medium text-gray-500">Budget Usage %</th>
+                    <th className="text-right py-3 px-4 text-sm font-medium text-gray-500">Budget (SAR)</th>
+                    <th className="text-right py-3 px-4 text-sm font-medium text-gray-500">Committed (SAR)</th>
+                    <th className="text-right py-3 px-4 text-sm font-medium text-gray-500">Paid (SAR)</th>
+                    <th className="text-right py-3 px-4 text-sm font-medium text-gray-500">Usage %</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {(dashboardData?.budgetData?.projects || []).slice(0, 5).map((project, index) => (
+                  {(dashboardData?.budgetData?.projects || []).slice(0, 5).map((project, index) => {
+                    const pct = project.utilizationPercent || (project.totalBudget > 0 ? (project.totalCommitted / project.totalBudget) * 100 : 0);
+                    return (
                     <tr key={`project-${index}`} className="border-b border-gray-100 hover:bg-gray-50">
                       <td className="py-3 px-4">
-                        <div>
-                          <p className="font-medium text-gray-800">{project.projectName || 'Unnamed Project'}</p>
-                          <p className="text-xs text-gray-500">
-                            {project.contractCount} contracts • {project.rfqCount} RFQs
-                          </p>
-                        </div>
+                        <p className="font-medium text-gray-800">{project.projectName || 'Unnamed Project'}</p>
                       </td>
                       <td className="py-3 px-4 text-right">
                         <p className="font-medium text-gray-800">
-                          SAR {formatCurrency(project.budget || 0)}
+                          {formatCurrency(project.totalBudget || project.budget || 0)}
                         </p>
                       </td>
                       <td className="py-3 px-4 text-right">
-                        <p className="font-medium text-gray-800">
-                          SAR {formatCurrency(project.spent || 0)}
+                        <p className="font-medium text-yellow-600">
+                          {formatCurrency(project.totalCommitted || project.spent || 0)}
                         </p>
                       </td>
                       <td className="py-3 px-4 text-right">
-                        <p className={`font-medium ${
-                          (project.budget - project.spent) < 0 
-                            ? 'text-red-600' 
-                            : (project.budget - project.spent) < (project.budget * 0.1)
-                            ? 'text-yellow-600'
-                            : 'text-green-600'
-                        }`}>
-                          SAR {formatCurrency(Math.max(0, (project.budget || 0) - (project.spent || 0)))}
+                        <p className="font-medium text-green-600">
+                          {formatCurrency(project.totalPaid || 0)}
                         </p>
                       </td>
                       <td className="py-3 px-4">
                         <div className="flex items-center justify-end gap-3">
                           <div className="w-32 bg-gray-200 rounded-full h-2">
-                            <div 
-                              className={`h-2 rounded-full ${
-                                (project.budgetUsage || 0) >= 90 ? 'bg-red-500' : 
-                                (project.budgetUsage || 0) >= 75 ? 'bg-yellow-500' : 'bg-green-500'
-                              }`}
-                              style={{ width: `${Math.min(project.budgetUsage || 0, 100)}%` }}
-                            ></div>
+                            <div
+                              className={`h-2 rounded-full ${pct >= 100 ? 'bg-red-500' : pct >= 90 ? 'bg-orange-400' : pct >= 75 ? 'bg-yellow-500' : 'bg-green-500'}`}
+                              style={{ width: `${Math.min(pct, 100)}%` }}
+                            />
                           </div>
-                          <span className={`text-sm font-semibold min-w-[50px] text-right ${
-                            (project.budgetUsage || 0) >= 90 ? 'text-red-600' : 
-                            (project.budgetUsage || 0) >= 75 ? 'text-yellow-600' : 'text-green-600'
-                          }`}>
-                            {(project.budgetUsage || 0).toFixed(1)}%
+                          <span className={`text-sm font-semibold min-w-[50px] text-right ${pct >= 100 ? 'text-red-600' : pct >= 90 ? 'text-orange-600' : pct >= 75 ? 'text-yellow-600' : 'text-green-600'}`}>
+                            {pct.toFixed(1)}%
                           </span>
                         </div>
                       </td>
                     </tr>
-                  ))}
+                  )})}
                 </tbody>
               </table>
             </div>

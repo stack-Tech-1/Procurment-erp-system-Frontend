@@ -131,6 +131,7 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
             engineerNotes: '', recommendation: 'APPROVE'
         });
         const [actionToast, setActionToast] = useState(null);
+        const [deliveryPerf, setDeliveryPerf] = useState(null);
 
         // Get authentication token
         const getAuthToken = () => {
@@ -690,7 +691,14 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
 
         useEffect(() => {
             fetchVendorDetails();
-        }, [fetchVendorDetails]);
+            // Fetch delivery performance in parallel
+            const token = typeof window !== 'undefined' ? (localStorage.getItem('token') || localStorage.getItem('authToken')) : null;
+            if (vendorId && token) {
+                fetch(`${API_BASE_URL}/api/deliveries/vendor/${vendorId}`, {
+                    headers: { Authorization: `Bearer ${token}` }
+                }).then(r => r.ok ? r.json() : null).then(data => { if (data) setDeliveryPerf(data); }).catch(() => {});
+            }
+        }, [fetchVendorDetails, vendorId]);
 
         // Update form categoryIds when selectedCategoryIds changes
         useEffect(() => {
@@ -1161,6 +1169,44 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
                         <section className="p-6 bg-white rounded-xl shadow-md border border-gray-200">
                             <SectionHeader title={t('projectExperience')} icon={FileText} />
                             {renderProjects()}
+                        </section>
+
+                        {/* F. Delivery Performance */}
+                        <section className="p-6 bg-white rounded-xl shadow-md border border-gray-200">
+                            <SectionHeader title="Delivery Performance" icon={TrendingUp} />
+                            {!deliveryPerf || deliveryPerf.totalDeliveries === 0 ? (
+                                <div className="text-center py-6 text-gray-400 text-sm">
+                                    <p>No delivery history yet for this vendor.</p>
+                                </div>
+                            ) : (
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="p-4 bg-gray-50 rounded-lg text-center">
+                                        <p className="text-2xl font-bold text-gray-800">{deliveryPerf.totalDeliveries}</p>
+                                        <p className="text-xs text-gray-500 mt-0.5">Total Deliveries</p>
+                                    </div>
+                                    <div className="p-4 bg-gray-50 rounded-lg text-center">
+                                        <p className={`text-2xl font-bold ${
+                                            deliveryPerf.onTimeRate >= 85 ? 'text-green-600' :
+                                            deliveryPerf.onTimeRate >= 70 ? 'text-orange-500' : 'text-red-600'
+                                        }`}>
+                                            {Number(deliveryPerf.onTimeRate || 0).toFixed(1)}%
+                                        </p>
+                                        <p className="text-xs text-gray-500 mt-0.5">On-Time Rate</p>
+                                    </div>
+                                    <div className="p-4 bg-gray-50 rounded-lg text-center">
+                                        <p className={`text-2xl font-bold ${(deliveryPerf.averageDelayDays || 0) > 3 ? 'text-red-500' : 'text-gray-800'}`}>
+                                            {Number(deliveryPerf.averageDelayDays || 0).toFixed(1)}d
+                                        </p>
+                                        <p className="text-xs text-gray-500 mt-0.5">Avg Delay Days</p>
+                                    </div>
+                                    <div className="p-4 bg-gray-50 rounded-lg text-center">
+                                        <p className={`text-2xl font-bold ${(deliveryPerf.qcRejectionRate || 0) > 10 ? 'text-red-500' : 'text-gray-800'}`}>
+                                            {Number(deliveryPerf.qcRejectionRate || 0).toFixed(1)}%
+                                        </p>
+                                        <p className="text-xs text-gray-500 mt-0.5">QC Rejection Rate</p>
+                                    </div>
+                                </div>
+                            )}
                         </section>
                     </div>
                     
