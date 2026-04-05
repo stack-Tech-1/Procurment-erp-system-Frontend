@@ -1,6 +1,7 @@
 // frontend/src/components/dashboards/OfficerDashboard.js
 "use client";
 import { useState, useEffect } from 'react';
+import { queryCache, STALE_TIMES } from '@/utils/queryCache';
 import { 
   FileText, Clock, AlertTriangle, CheckCircle, 
   TrendingUp, TrendingDown, RefreshCw, Database, 
@@ -164,12 +165,16 @@ const OfficerDashboard = ({ data }) => {
       const params = new URLSearchParams();
       if (taskFilter !== 'ALL') params.set('status', taskFilter);
       if (priorityFilter !== 'ALL') params.set('priority', priorityFilter);
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/tasks/my-tasks?${params}`, {
+      const cacheKey = `/api/tasks/my-tasks?${params}`;
+      const cached = queryCache.get(cacheKey);
+      if (cached && !cached.isStale) { setMyTasks(cached.data?.data || cached.data || []); return; }
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}${cacheKey}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (res.ok) {
         const json = await res.json();
         setMyTasks(json.data || []);
+        queryCache.set(cacheKey, json, STALE_TIMES.SHORT);
       }
     } catch (e) {
       console.error('fetchMyTasks error:', e);
@@ -177,10 +182,7 @@ const OfficerDashboard = ({ data }) => {
   };
 
   useEffect(() => { fetchMyTasks(); }, [taskFilter, priorityFilter]);
-  useEffect(() => {
-    const interval = setInterval(fetchMyTasks, 300000);
-    return () => clearInterval(interval);
-  }, [taskFilter, priorityFilter]);
+  // Removed setInterval — queryCache stale-while-revalidate handles background refreshes.
 
   const handleTaskUpdate = async (taskId) => {
     const token = localStorage.getItem('authToken');

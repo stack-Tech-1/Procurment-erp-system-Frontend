@@ -13,6 +13,7 @@ import {
 import axios from 'axios';
 import Link from 'next/link';
 import { useCountUp } from '@/hooks/useCountUp';
+import { queryCache, STALE_TIMES } from '@/utils/queryCache';
 
 const getAvatarColor = (index) => {
   const colors = [
@@ -473,8 +474,8 @@ useEffect(() => {
   if (!insightsLastFetch || now - insightsLastFetch > 30 * 60 * 1000) {
     fetchInsights();
   }
-  const liveInterval = setInterval(fetchAllLive, 5 * 60 * 1000);
-  return () => clearInterval(liveInterval);
+  // Removed setInterval — stale-while-revalidate via queryCache handles background refreshes.
+  // Manual refresh button still available for explicit re-fetch.
 }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
 useEffect(() => {
@@ -609,10 +610,36 @@ useEffect(() => {
 
   // ── fetchAllLive ───────────────────────────────────────────────────────────
 
-  const fetchAllLive = async () => {
+  const fetchAllLive = async (force = false) => {
     const token = localStorage.getItem('authToken');
     const base  = process.env.NEXT_PUBLIC_API_URL;
     const headers = { Authorization: `Bearer ${token}` };
+
+    // Serve from cache immediately if available and not stale (skip on force refresh)
+    if (!force) {
+      const endpoints = [
+        { key: '/api/dashboard/manager/kpis',              setter: setKpiData,       transform: null,             staleTime: STALE_TIMES.MEDIUM },
+        { key: '/api/dashboard/manager/charts',            setter: setChartsData,    transform: transformCharts,  staleTime: STALE_TIMES.MEDIUM },
+        { key: '/api/dashboard/manager/approval-queue',    setter: setQueueData,     transform: null,             staleTime: STALE_TIMES.SHORT  },
+        { key: '/api/dashboard/manager/critical-deadlines',setter: setDeadlinesData, transform: transformDeadlines, staleTime: STALE_TIMES.SHORT },
+        { key: '/api/purchase-orders/stats/summary',       setter: setPoStats,       transform: (d) => ({ totalCommittedValue: d.totalCommittedValue || 0, totalIssuedValue: d.totalIssuedValue || 0, totalPOs: d.totalPOs || 0, issuedCount: d.issuedCount || 0 }), staleTime: STALE_TIMES.MEDIUM },
+      ];
+      let allFresh = true;
+      endpoints.forEach(({ key, setter, transform, staleTime }) => {
+        const cached = queryCache.get(key);
+        if (cached) {
+          setter(transform ? transform(cached.data) : cached.data);
+          if (cached.isStale) allFresh = false;
+        } else {
+          allFresh = false;
+        }
+      });
+      if (allFresh) {
+        setLoadingStates({ kpis: false, charts: false, queue: false, deadlines: false });
+        setRefreshing(false);
+        return;
+      }
+    }
 
     setRefreshing(true);
     setLoadingStates({ kpis: true, charts: true, queue: true, deadlines: true });
@@ -644,6 +671,20 @@ useEffect(() => {
     await handle(chartsRes, setChartsData,    'charts',    transformCharts);
     await handle(queueRes,  setQueueData,     'queue',     null);
     await handle(dlRes,     setDeadlinesData, 'deadlines', transformDeadlines);
+
+    // Write to frontend cache after successful fetch
+    const cacheWrites = [
+      { res: kpiRes,    key: '/api/dashboard/manager/kpis',              staleTime: STALE_TIMES.MEDIUM },
+      { res: chartsRes, key: '/api/dashboard/manager/charts',            staleTime: STALE_TIMES.MEDIUM },
+      { res: queueRes,  key: '/api/dashboard/manager/approval-queue',    staleTime: STALE_TIMES.SHORT  },
+      { res: dlRes,     key: '/api/dashboard/manager/critical-deadlines',staleTime: STALE_TIMES.SHORT  },
+    ];
+    for (const { res, key, staleTime } of cacheWrites) {
+      if (res.status === 'fulfilled' && res.value.ok) {
+        const clone = res.value.clone();
+        try { const d = await clone.json(); queryCache.set(key, d, staleTime); } catch { /* noop */ }
+      }
+    }
 
     // PO stats — non-fatal, update silently
     if (poStatsRes.status === 'fulfilled' && poStatsRes.value.ok) {
@@ -1032,7 +1073,7 @@ const getActionButton = (item) => {
             <option value="year">This Year</option>
           </select>
           <button
-            onClick={() => fetchAllLive()}
+            onClick={() => fetchAllLive(true)}
             className="flex items-center gap-2 px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 text-gray-600 text-sm"
           >
             <RefreshCw size={16} className={refreshing ? 'animate-spin' : ''} />

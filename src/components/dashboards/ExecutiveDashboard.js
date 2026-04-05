@@ -1,8 +1,9 @@
 // frontend/src/components/dashboards/ExecutiveDashboard.js - CORRECTED
 "use client";
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation'; 
+import { useRouter } from 'next/navigation';
 import { useTranslation } from 'react-i18next';
+import { queryCache, STALE_TIMES } from '@/utils/queryCache';
 import { 
   BarChart3, Users, FileText, DollarSign, CheckCircle, Briefcase, 
   Clock, TrendingUp, AlertTriangle, PieChart, Target, BarChart,
@@ -96,11 +97,26 @@ const ExecutiveDashboard = () => {
   };
 
   // Fetch analytics data from new service
-  const fetchAnalyticsData = async () => {
+  const fetchAnalyticsData = async (force = false) => {
+    // Check cache first
+    if (!force) {
+      const kpisKey = `/api/analytics/kpis?range=${timeRange}`;
+      const forecastKey = `/api/analytics/forecast?range=${timeRange}`;
+      const spendKey = `/api/analytics/spend-analysis?category=all`;
+      const cachedKpis = queryCache.get(kpisKey);
+      const cachedForecast = queryCache.get(forecastKey);
+      const cachedSpend = queryCache.get(spendKey);
+      if (cachedKpis && cachedForecast && cachedSpend && !cachedKpis.isStale) {
+        setAnalyticsData({ kpis: cachedKpis.data, forecast: cachedForecast.data, spendAnalysis: cachedSpend.data });
+        setAnalyticsLoading(false);
+        setDataSource('api');
+        return;
+      }
+    }
     try {
       setAnalyticsLoading(true);
       const token = localStorage.getItem('authToken');
-      
+
       const [kpisResponse, forecastResponse, spendAnalysisResponse] = await Promise.all([
         fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/analytics/kpis?range=${timeRange}`, {
           headers: {
@@ -129,7 +145,12 @@ const ExecutiveDashboard = () => {
       };
 
       setAnalyticsData(analyticsResult);
-      
+
+      // Write to frontend cache
+      if (analyticsResult.kpis) queryCache.set(`/api/analytics/kpis?range=${timeRange}`, analyticsResult.kpis, STALE_TIMES.MEDIUM);
+      if (analyticsResult.forecast) queryCache.set(`/api/analytics/forecast?range=${timeRange}`, analyticsResult.forecast, STALE_TIMES.LONG);
+      if (analyticsResult.spendAnalysis) queryCache.set(`/api/analytics/spend-analysis?category=all`, analyticsResult.spendAnalysis, STALE_TIMES.MEDIUM);
+
       if (analyticsResult.kpis?.data) {
         setPreviousKPIs({
           procurementEfficiency: analyticsResult.kpis.data.operational?.approvalEfficiency || 0,
@@ -249,8 +270,10 @@ const ExecutiveDashboard = () => {
 
   const handleRefreshAll = () => {
     console.log('🔄 Manually refreshing all data...');
+    queryCache.invalidatePrefix('/api/analytics');
+    queryCache.invalidatePrefix('/api/dashboard');
     fetchDashboardData();
-    fetchAnalyticsData();
+    fetchAnalyticsData(true);
   };
 
   const DataSourceIndicator = () => {
