@@ -3,7 +3,7 @@ import {
   Home, Users, ClipboardList, Briefcase, Receipt, BarChart3, FileText,
   TrendingUp, DollarSign, Shield, CheckCircle, Building, Send, ListOrdered,
   CheckSquare, UserPlus, Settings, MessageSquare, Grid, Truck, Palette,
-  ShoppingCart, Bell, Lock
+  ShoppingCart, Bell, Lock, Database
 } from 'lucide-react';
 import { ROLES } from '../constants/roles';
 
@@ -49,7 +49,8 @@ export const getNavigationItems = (roleId) => {
         { name: "Shop Drawings", translationKey: "shopDrawings", icon: <Grid size={18} />, href: "/dashboard/manager/shop-drawings" },
         { name: "Deliveries", translationKey: "deliveries", icon: <Truck size={18} />, href: "/dashboard/manager/deliveries" },
         { name: "Budget Control", translationKey: "budgetControl", icon: <DollarSign size={18} />, href: "/dashboard/manager/budget-control" },
-        { name: "Supplier Performance", translationKey: "supplierPerformance", icon: <Users size={18} />, href: "/dashboard/manager/supplier-performance" },
+        { name: "Supplier Performance", translationKey: "supplierPerformance", icon: <TrendingUp size={18} />, href: "/dashboard/manager/supplier-performance" },
+        { name: "Materials DB", translationKey: "materialsDB", icon: <Database size={18} />, href: "/dashboard/procurement/materials" },
         { name: "Task Assignment", translationKey: "taskAssignment", icon: <CheckSquare size={18} />, href: "/dashboard/tasks" },
         { name: "Vendor Management", translationKey: "vendorManagement", icon: <Building size={18} />, href: "/dashboard/procurement/vendors" },
         { name: "RFQs", translationKey: "rfqs", icon: <ClipboardList size={18} />, href: "/dashboard/procurement/rfq" },
@@ -73,6 +74,7 @@ export const getNavigationItems = (roleId) => {
         { name: "Material Submittals", translationKey: "materialSubmittals", icon: <FileText size={18} />, href: "/dashboard/manager/material-submittals" },
         { name: "Shop Drawings", translationKey: "shopDrawings", icon: <Grid size={18} />, href: "/dashboard/manager/shop-drawings" },
         { name: "Deliveries", translationKey: "deliveries", icon: <Truck size={18} />, href: "/dashboard/manager/deliveries" },
+        { name: "Materials DB", translationKey: "materialsDB", icon: <Database size={18} />, href: "/dashboard/procurement/materials" },
         { name: "Vendors", translationKey: "vendors", icon: <Users size={18} />, href: "/dashboard/procurement/vendors" },
         { name: "RFOs", translationKey: "rfos", icon: <Send size={18} />, href: "/dashboard/procurement/rfos" },
         { name: "Contracts", translationKey: "contracts", icon: <Briefcase size={18} />, href: "/dashboard/procurement/contracts" },

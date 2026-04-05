@@ -132,6 +132,7 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
         });
         const [actionToast, setActionToast] = useState(null);
         const [deliveryPerf, setDeliveryPerf] = useState(null);
+        const [vendorPerf, setVendorPerf] = useState(null);
 
         // Get authentication token
         const getAuthToken = () => {
@@ -697,6 +698,9 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
                 fetch(`${API_BASE_URL}/api/deliveries/vendor/${vendorId}`, {
                     headers: { Authorization: `Bearer ${token}` }
                 }).then(r => r.ok ? r.json() : null).then(data => { if (data) setDeliveryPerf(data); }).catch(() => {});
+                fetch(`${API_BASE_URL}/api/supplier-performance/${vendorId}`, {
+                    headers: { Authorization: `Bearer ${token}` }
+                }).then(r => r.ok ? r.json() : null).then(data => { if (data) setVendorPerf(data); }).catch(() => {});
             }
         }, [fetchVendorDetails, vendorId]);
 
@@ -1208,6 +1212,86 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
                                 </div>
                             )}
                         </section>
+
+                        {/* G. RFQ Performance */}
+                        {vendorPerf && (
+                            <section className="p-6 bg-white rounded-xl shadow-md border border-gray-200">
+                                <SectionHeader title="RFQ Performance" icon={TrendingUp} />
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="p-4 bg-gray-50 rounded-lg text-center">
+                                        <p className={`text-2xl font-bold ${vendorPerf.winRate >= 30 ? 'text-green-600' : vendorPerf.winRate >= 15 ? 'text-orange-500' : 'text-red-500'}`}>
+                                            {Number(vendorPerf.winRate || 0).toFixed(1)}%
+                                        </p>
+                                        <p className="text-xs text-gray-500 mt-0.5">Win Rate</p>
+                                    </div>
+                                    <div className="p-4 bg-gray-50 rounded-lg text-center">
+                                        <p className={`text-2xl font-bold ${vendorPerf.responseRate >= 80 ? 'text-green-600' : vendorPerf.responseRate >= 60 ? 'text-orange-500' : 'text-red-500'}`}>
+                                            {Number(vendorPerf.responseRate || 0).toFixed(1)}%
+                                        </p>
+                                        <p className="text-xs text-gray-500 mt-0.5">Response Rate</p>
+                                    </div>
+                                    <div className="p-4 bg-gray-50 rounded-lg text-center">
+                                        <p className="text-lg font-bold text-gray-800">{vendorPerf.totalRFQsInvited}</p>
+                                        <p className="text-xs text-gray-500 mt-0.5">RFQs Invited</p>
+                                    </div>
+                                    <div className="p-4 bg-gray-50 rounded-lg text-center">
+                                        <p className="text-lg font-bold text-gray-800">{vendorPerf.totalRFQsAwarded}</p>
+                                        <p className="text-xs text-gray-500 mt-0.5">RFQs Awarded</p>
+                                    </div>
+                                    <div className="p-4 bg-gray-50 rounded-lg text-center col-span-2">
+                                        <p className="text-xl font-bold" style={{ color: '#B8960A' }}>
+                                            {vendorPerf.totalAwardedValue != null
+                                                ? new Intl.NumberFormat('en-SA', { style: 'currency', currency: 'SAR', minimumFractionDigits: 0 }).format(vendorPerf.totalAwardedValue)
+                                                : '—'}
+                                        </p>
+                                        <p className="text-xs text-gray-500 mt-0.5">Total Awarded Value</p>
+                                    </div>
+                                </div>
+                            </section>
+                        )}
+
+                        {/* H. Overall Performance Score */}
+                        {vendorPerf && (
+                            <section className="p-6 bg-white rounded-xl shadow-md border border-gray-200">
+                                <SectionHeader title="Overall Performance" icon={TrendingUp} />
+                                <div className="flex items-center gap-5 mb-4">
+                                    {/* Score circle */}
+                                    <div className={`w-20 h-20 rounded-full border-4 flex items-center justify-center flex-shrink-0 ${
+                                        vendorPerf.overallScore >= 80 ? 'border-green-400' :
+                                        vendorPerf.overallScore >= 60 ? 'border-orange-400' : 'border-red-400'
+                                    }`}>
+                                        <div className="text-center">
+                                            <p className={`text-2xl font-bold leading-none ${
+                                                vendorPerf.overallScore >= 80 ? 'text-green-600' :
+                                                vendorPerf.overallScore >= 60 ? 'text-orange-500' : 'text-red-500'
+                                            }`}>{Number(vendorPerf.overallScore || 0).toFixed(0)}</p>
+                                            <p className="text-[10px] text-gray-400 mt-0.5">score</p>
+                                        </div>
+                                    </div>
+                                    <div className="flex-1">
+                                        <div className="flex items-center gap-2 mb-1">
+                                            <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+                                                vendorPerf.riskLevel === 'LOW'    ? 'bg-green-100 text-green-700' :
+                                                vendorPerf.riskLevel === 'MEDIUM' ? 'bg-orange-100 text-orange-700' :
+                                                                                    'bg-red-100 text-red-700'
+                                            }`}>{vendorPerf.riskLevel === 'LOW' ? 'Low Risk' : vendorPerf.riskLevel === 'MEDIUM' ? 'Medium Risk' : 'High Risk'}</span>
+                                            <span className={`font-bold text-lg ${
+                                                vendorPerf.performanceTrend === 'IMPROVING' ? 'text-green-600' :
+                                                vendorPerf.performanceTrend === 'DECLINING' ? 'text-red-500' : 'text-gray-400'
+                                            }`}>
+                                                {vendorPerf.performanceTrend === 'IMPROVING' ? '↑' : vendorPerf.performanceTrend === 'DECLINING' ? '↓' : '→'}
+                                            </span>
+                                        </div>
+                                        <p className="text-xs text-gray-500">{vendorPerf.performanceTrend?.charAt(0) + vendorPerf.performanceTrend?.slice(1).toLowerCase()}</p>
+                                    </div>
+                                </div>
+                                <a href={`/dashboard/manager/supplier-performance/${vendorId}`}
+                                    className="block w-full text-center py-2 rounded-xl text-sm font-medium text-white transition-colors hover:opacity-90"
+                                    style={{ backgroundColor: '#0A1628' }}>
+                                    View Full Performance Report →
+                                </a>
+                            </section>
+                        )}
                     </div>
                     
                     {/* Right Column: AI Evaluation + Admin Action Panel */}
