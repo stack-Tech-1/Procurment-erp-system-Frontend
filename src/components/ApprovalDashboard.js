@@ -32,7 +32,7 @@ import {
 } from '@mui/icons-material';
 
 const ApprovalDashboard = ({ pendingApprovals: initialPendingApprovals, onRefresh, loading: externalLoading }) => {
-  const { t } = useTranslation(); // ADD THIS HOOK
+  const { t, i18n } = useTranslation();
   const [pendingApprovals, setPendingApprovals] = useState(initialPendingApprovals || []);
   const [selectedTab, setSelectedTab] = useState(0);
   const [openDialog, setOpenDialog] = useState(false);

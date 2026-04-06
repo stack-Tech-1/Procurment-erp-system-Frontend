@@ -1,82 +1,16 @@
-// frontend/src/app/dashboard/executive/page.js - UPDATED WITH i18n
 "use client";
-import { useEffect, useState } from 'react';
-import { useTranslation } from 'react-i18next'; // ADD THIS IMPORT
-import ExecutiveDashboard from '@/components/dashboards/ExecutiveDashboard.js';
-import ResponsiveLayout from '@/components/layout/ResponsiveLayout';
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 
-export default function ExecutivePage() {
-  const { t } = useTranslation(); // ADD THIS HOOK
-  const [dashboardData, setDashboardData] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-
-  useEffect(() => {
-    fetchDashboardData();
-  }, []);
-
-  const fetchDashboardData = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      
-      const token = localStorage.getItem('authToken');
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/dashboard`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-      
-      if (!response.ok) {
-        throw new Error(t('dashboardFetchError', { status: response.status }));
-      }
-      
-      const data = await response.json();
-      setDashboardData(data.data);
-    } catch (error) {
-      console.error('Failed to fetch dashboard data:', error);
-      setError(error.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const renderContent = () => {
-    if (loading) {
-      return (
-        <div className="flex items-center justify-center min-h-64 py-8">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-            <div className="text-lg text-gray-600">{t('loadingDashboard')}</div>
-          </div>
-        </div>
-      );
-    }
-
-    if (error) {
-      return (
-        <div className="flex items-center justify-center min-h-64 py-8">
-          <div className="text-center max-w-md mx-auto">
-            <div className="text-red-600 text-lg mb-2">{t('dashboardError')}</div>
-            <div className="text-gray-600 mb-4 text-sm">{error}</div>
-            <button
-              onClick={fetchDashboardData}
-              className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors w-full sm:w-auto"
-            >
-              {t('retry')}
-            </button>
-          </div>
-        </div>
-      );
-    }
-
-    return <ExecutiveDashboard data={dashboardData} />;
-  };
-  
+export default function RedirectToDashboard() {
+  const router = useRouter();
+  useEffect(() => { router.replace('/dashboard'); }, [router]);
   return (
-    <ResponsiveLayout>
-      {renderContent()}
-    </ResponsiveLayout>
+    <div className="flex items-center justify-center min-h-screen bg-gray-50">
+      <div className="text-center">
+        <div className="animate-spin rounded-full h-10 w-10 border-b-2 mx-auto mb-3" style={{ borderColor: '#B8960A' }}></div>
+        <p className="text-gray-500 text-sm">Redirecting...</p>
+      </div>
+    </div>
   );
 }

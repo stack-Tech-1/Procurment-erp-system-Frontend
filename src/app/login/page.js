@@ -116,9 +116,9 @@ export default function LoginPage() {
 
       if (data.user.mustChangePassword) {
         router.push("/change-password");
-      } else if (data.user.roleId === 1) router.push("/dashboard/executive");
-      else if (data.user.roleId === 2) router.push("/dashboard/manager");
-      else if (data.user.roleId === 3) router.push("/dashboard/officer");
+      } else if (data.user.roleId === 1) router.push("/dashboard");
+      else if (data.user.roleId === 2) router.push("/dashboard");
+      else if (data.user.roleId === 3) router.push("/dashboard");
       else if (data.user.roleId === 4) router.push("/vendor-dashboard");
       else router.push("/");
     } catch (err) {
@@ -142,9 +142,9 @@ export default function LoginPage() {
       localStorage.setItem('authToken', data.token);
       localStorage.setItem('user', JSON.stringify(data.user));
       if (data.user.mustChangePassword) router.push('/change-password');
-      else if (data.user.roleId === 1) router.push('/dashboard/executive');
-      else if (data.user.roleId === 2) router.push('/dashboard/manager');
-      else if (data.user.roleId === 3) router.push('/dashboard/officer');
+      else if (data.user.roleId === 1) router.push('/dashboard');
+      else if (data.user.roleId === 2) router.push('/dashboard');
+      else if (data.user.roleId === 3) router.push('/dashboard');
       else if (data.user.roleId === 4) router.push('/vendor-dashboard');
       else router.push('/');
     } catch (e) { setTwoFAError(e.message || 'Verification failed'); }
@@ -164,7 +164,7 @@ export default function LoginPage() {
       if (!res.ok) throw new Error(data.error || 'Invalid backup code');
       localStorage.setItem('authToken', data.token);
       localStorage.setItem('user', JSON.stringify(data.user));
-      router.push(data.user.roleId === 1 ? '/dashboard/executive' : data.user.roleId === 2 ? '/dashboard/manager' : data.user.roleId === 3 ? '/dashboard/officer' : '/vendor-dashboard');
+      router.push(data.user.roleId === 4 ? '/vendor-dashboard' : '/dashboard');
     } catch (e) { setTwoFAError(e.message || 'Failed'); }
     setLoading(false);
   };

@@ -652,39 +652,34 @@ useEffect(() => {
       fetch(`${base}/api/purchase-orders/stats/summary`,        { headers }),
     ]);
 
-    const handle = async (result, setter, errorKey, transform) => {
+    // Returns parsed data (so we can cache it without re-reading the consumed body)
+    const handle = async (result, errorKey) => {
       if (result.status === 'fulfilled') {
-        if (result.value.status === 401) { router.replace('/login'); return; }
+        if (result.value.status === 401) { router.replace('/login'); return null; }
         if (result.value.ok) {
           const data = await result.value.json();
-          setter(transform ? transform(data) : data);
           setErrorStates(p => ({ ...p, [errorKey]: false }));
+          return data;
         } else {
           setErrorStates(p => ({ ...p, [errorKey]: true }));
         }
       } else {
         setErrorStates(p => ({ ...p, [errorKey]: true }));
       }
+      return null;
     };
 
-    await handle(kpiRes,    setKpiData,       'kpis',      null);
-    await handle(chartsRes, setChartsData,    'charts',    transformCharts);
-    await handle(queueRes,  setQueueData,     'queue',     null);
-    await handle(dlRes,     setDeadlinesData, 'deadlines', transformDeadlines);
+    const [kpiRaw, chartsRaw, queueRaw, dlRaw] = await Promise.all([
+      handle(kpiRes,    'kpis'),
+      handle(chartsRes, 'charts'),
+      handle(queueRes,  'queue'),
+      handle(dlRes,     'deadlines'),
+    ]);
 
-    // Write to frontend cache after successful fetch
-    const cacheWrites = [
-      { res: kpiRes,    key: '/api/dashboard/manager/kpis',              staleTime: STALE_TIMES.MEDIUM },
-      { res: chartsRes, key: '/api/dashboard/manager/charts',            staleTime: STALE_TIMES.MEDIUM },
-      { res: queueRes,  key: '/api/dashboard/manager/approval-queue',    staleTime: STALE_TIMES.SHORT  },
-      { res: dlRes,     key: '/api/dashboard/manager/critical-deadlines',staleTime: STALE_TIMES.SHORT  },
-    ];
-    for (const { res, key, staleTime } of cacheWrites) {
-      if (res.status === 'fulfilled' && res.value.ok) {
-        const clone = res.value.clone();
-        try { const d = await clone.json(); queryCache.set(key, d, staleTime); } catch { /* noop */ }
-      }
-    }
+    if (kpiRaw)    { setKpiData(kpiRaw);                         queryCache.set('/api/dashboard/manager/kpis',               kpiRaw,    STALE_TIMES.MEDIUM); }
+    if (chartsRaw) { setChartsData(transformCharts(chartsRaw));  queryCache.set('/api/dashboard/manager/charts',             chartsRaw, STALE_TIMES.MEDIUM); }
+    if (queueRaw)  { setQueueData(queueRaw);                     queryCache.set('/api/dashboard/manager/approval-queue',     queueRaw,  STALE_TIMES.SHORT);  }
+    if (dlRaw)     { setDeadlinesData(transformDeadlines(dlRaw));queryCache.set('/api/dashboard/manager/critical-deadlines', dlRaw,     STALE_TIMES.SHORT);  }
 
     // PO stats — non-fatal, update silently
     if (poStatsRes.status === 'fulfilled' && poStatsRes.value.ok) {
@@ -1088,7 +1083,7 @@ const getActionButton = (item) => {
       </div>
 
       {/* Data Status Alert */}
-      {dataSource === 'fallback' && (
+      {dataSource === 'fallback' && !kpiData.openPRs && !kpiData.pendingApprovals && !kpiData.overdueTasks && chartsData.teamTrends.length === 0 && queueData.length === 0 && (
         <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
           <div className="flex items-center gap-3">
             <AlertTriangle className="text-amber-600" size={20} />

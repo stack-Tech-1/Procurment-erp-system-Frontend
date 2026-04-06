@@ -81,7 +81,7 @@ export default function Topbar() {
   const fetchUserData = async () => {
     try {
       const token = localStorage.getItem('authToken');
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/me`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/profile/me`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
